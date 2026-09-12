@@ -2,20 +2,22 @@
 
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useOpalStore } from '@/lib/opal-store'
+import { useOpalStore, TAB_KEYS } from '@/lib/opal-store'
 import { StatusBar } from './status-bar'
 import { BottomTabBar } from './bottom-tab-bar'
 import { HomeTab } from './home-tab'
-import { FocusTab } from './focus-tab'
-import { StatsTab } from './stats-tab'
 import { AppsTab } from './apps-tab'
-import { ProfileTab } from './profile-tab'
-import { ActiveSessionOverlay } from './active-session-overlay'
+import { TimerTab } from './timer-tab'
+import { TodayView } from './today-view'
+import { ProfileView } from './profile-view'
+import { SessionPill } from './session-pill'
+import { BlockScreen } from './block-screen'
 import { Onboarding, useNeedsOnboarding } from './onboarding'
 import { NotificationBanner } from './notification-banner'
 import { BreathingOverlay } from './breathing-overlay'
 import { LockScreen } from './lock-screen'
 import { cn } from '@/lib/utils'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 /** PIN sozlamasi — SSR-safe (serverda null, keyin store'dan) */
 function usePinEnabled(): boolean | null {
@@ -26,19 +28,44 @@ function usePinEnabled(): boolean | null {
   )
 }
 
+/** suzuvchi opal bo'lakchalari */
+function OpalShards() {
+  const shards = [
+    { left: '8%', top: '16%', size: 26, delay: 0, dur: 9, rot: 24 },
+    { left: '84%', top: '24%', size: 20, delay: 2.2, dur: 11, rot: -18 },
+    { left: '16%', top: '64%', size: 18, delay: 4.1, dur: 10, rot: 40 },
+    { left: '78%', top: '72%', size: 24, delay: 1.2, dur: 12, rot: -30 },
+    { left: '58%', top: '6%', size: 14, delay: 3.3, dur: 8, rot: 12 },
+  ]
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      {shards.map((s, i) => (
+        <motion.div
+          key={i}
+          className="absolute rounded-[30%] bg-gradient-to-br from-[#7d8ba8]/40 via-[#4a5570]/30 to-[#1c2233]/50 blur-[1px]"
+          style={{ left: s.left, top: s.top, width: s.size, height: s.size * 1.5 }}
+          animate={{ y: [0, -18, 0], rotate: [s.rot, s.rot + 14, s.rot], opacity: [0.5, 0.85, 0.5] }}
+          transition={{ duration: s.dur, repeat: Infinity, delay: s.delay, ease: 'easeInOut' }}
+        />
+      ))}
+    </div>
+  )
+}
+
+type OverlayView = 'today' | 'profile' | null
+
 export function OpalApp() {
   const tab = useOpalStore((s) => s.tab)
+  const setTab = useOpalStore((s) => s.setTab)
   const activeSession = useOpalStore((s) => s.activeSession)
   const endSession = useOpalStore((s) => s.endSession)
   const needsOnboarding = useNeedsOnboarding()
-  const theme = useOpalStore((s) => s.theme)
   const breathingOpen = useOpalStore((s) => s.breathingOpen)
   const [obDone, setObDone] = useState(false)
   const showOnboarding = needsOnboarding === true && !obDone
-  const isDark = theme === 'dark'
+  const [view, setView] = useState<OverlayView>(null)
 
-  // PIN lock — pinEnabled joriy sessiyada false→true o‘tsa (foydalanuvchi sozlaganda)
-  // darhol qulflanmaydi; faqat sahifa yuklanganda (boshlang‘ich true) qulflanadi
+  // PIN lock
   const pinEnabled = usePinEnabled()
   const [unlocked, setUnlocked] = useState(false)
   const [prevPin, setPrevPin] = useState<boolean | null>(pinEnabled)
@@ -47,6 +74,11 @@ export function OpalApp() {
     if (prevPin === false && pinEnabled === true) setUnlocked(true)
   }
   const locked = pinEnabled === true && !unlocked
+
+  // eski (5-tab) saqlangan holatini tozalash
+  useEffect(() => {
+    if (!TAB_KEYS.includes(tab)) setTab('home')
+  }, [tab, setTab])
 
   // stale session cleanup: legacy 'preview' sessions or sessions from a previous day
   useEffect(() => {
@@ -59,75 +91,87 @@ export function OpalApp() {
     }
   }, [activeSession, endSession])
 
+  // bolalar komponentlaridan drill-in navigatsiya so'rovlari
+  useEffect(() => {
+    const openToday = () => setView('today')
+    const openProfile = () => setView('profile')
+    window.addEventListener('opal:open-today', openToday)
+    window.addEventListener('opal:open-profile', openProfile)
+    return () => {
+      window.removeEventListener('opal:open-today', openToday)
+      window.removeEventListener('opal:open-profile', openProfile)
+    }
+  }, [])
+
   return (
-    <div className="relative flex min-h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#0a0b2a]">
-      {/* Desktop aurora backdrop */}
+    <div className="relative flex min-h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#04050c]">
+      {/* desktop fon: tuman + yulduzlar */}
       <div className="pointer-events-none absolute inset-0 hidden md:block" aria-hidden="true">
-        <div className="absolute -left-32 top-1/4 h-96 w-96 animate-blob rounded-full bg-[#3d5afe]/30 blur-3xl" />
-        <div className="absolute -right-24 top-10 h-80 w-80 animate-blob-delayed rounded-full bg-[#e861ff]/25 blur-3xl" />
-        <div className="absolute bottom-0 left-1/3 h-72 w-72 animate-blob rounded-full bg-[#ff9f5a]/20 blur-3xl" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,#0a0b2a_75%)]" />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse 70% 50% at 30% 20%, rgba(50,64,102,0.35) 0%, transparent 60%),' +
+              'radial-gradient(ellipse 60% 45% at 75% 75%, rgba(70,52,110,0.3) 0%, transparent 60%),' +
+              'radial-gradient(ellipse 50% 40% at 55% 45%, rgba(40,80,110,0.22) 0%, transparent 65%)',
+          }}
+        />
+        <div
+          className="absolute inset-0 opacity-60"
+          style={{
+            backgroundImage:
+              'radial-gradient(1px 1px at 12% 24%, rgba(255,255,255,0.5) 50%, transparent 51%),' +
+              'radial-gradient(1px 1px at 68% 12%, rgba(255,255,255,0.4) 50%, transparent 51%),' +
+              'radial-gradient(1.5px 1.5px at 84% 58%, rgba(255,255,255,0.5) 50%, transparent 51%),' +
+              'radial-gradient(1px 1px at 32% 78%, rgba(255,255,255,0.35) 50%, transparent 51%),' +
+              'radial-gradient(1px 1px at 52% 44%, rgba(255,255,255,0.3) 50%, transparent 51%)',
+          }}
+        />
       </div>
 
-      {/* Desktop side branding */}
-      <aside className="pointer-events-none absolute left-[6%] top-1/2 z-10 hidden max-w-xs -translate-y-1/2 xl:block" aria-hidden="true">
-        <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#3d5afe] via-[#7b61ff] to-[#e861ff] text-2xl shadow-lg shadow-indigo-500/40">
-            <span className="text-white font-black">O</span>
-          </div>
-          <span className="text-2xl font-extrabold tracking-tight text-white">Opal</span>
-        </div>
-        <h1 className="bg-gradient-to-r from-white via-indigo-100 to-violet-300 bg-clip-text text-4xl font-extrabold leading-tight text-transparent">
-          Ijtimoiy tarmoqlardan ozod hayot
-        </h1>
-        <p className="mt-3 text-sm leading-relaxed text-indigo-200/70">
-          Ilovalarni bloklang, fokus sessiyalarini boshlang va kunlik ekran vaqtingizni nazorat qiling.
-        </p>
-        <div className="mt-6 flex items-center gap-2 text-xs text-indigo-200/50">
-          <span className="rounded-full border border-white/10 px-3 py-1">iOS uslubi</span>
-          <span className="rounded-full border border-white/10 px-3 py-1">Web clone</span>
-          <span className="rounded-full border border-white/10 px-3 py-1">Next.js</span>
-        </div>
-      </aside>
-
-      <aside className="pointer-events-none absolute right-[6%] top-1/2 z-10 hidden max-w-[220px] -translate-y-1/2 space-y-4 xl:block" aria-hidden="true">
-        {[
-          { icon: '🛡️', title: 'Aqlli himoya', desc: 'Chalg‘ituvchi ilovalar bloklang' },
-          { icon: '⏱️', title: 'Fokus sessiyalari', desc: 'Deep Focus, Ish, O‘qish rejimlari' },
-          { icon: '🔥', title: 'Ketma-ketlik', desc: 'Streakni saqlab qoling' },
-        ].map((f) => (
-          <div
-            key={f.title}
-            className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm"
-          >
-            <div className="text-xl">{f.icon}</div>
-            <div className="mt-1.5 text-sm font-semibold text-white">{f.title}</div>
-            <div className="text-xs text-indigo-200/60">{f.desc}</div>
-          </div>
-        ))}
-      </aside>
-
-      {/* Phone */}
-      <div
-        className={cn(
-          'relative z-20 h-[100dvh] w-full overflow-hidden shadow-2xl shadow-black/60 transition-colors duration-300 md:h-[844px] md:max-h-[94vh] md:w-[392px] md:rounded-[3.4rem] md:border-[11px] md:border-[#131540] md:ring-1 md:ring-white/10',
-          isDark ? 'bg-[#0d0e2b]' : 'bg-[#f4f4fb]',
-          isDark && 'dark'
-        )}
+      {/* desktop yon brending */}
+      <aside
+        className="pointer-events-none absolute left-[6%] top-1/2 z-10 hidden max-w-xs -translate-y-1/2 xl:block"
+        aria-hidden="true"
       >
+        <div className="mb-4 flex items-center gap-3">
+          <span className="inline-block h-10 w-10 rounded-[13px] bg-gradient-to-br from-[#8fd9ff] via-[#b18cff] to-[#ff9ad5] shadow-[0_0_24px_rgba(143,217,255,0.45)]" />
+          <span className="text-2xl font-bold tracking-tight text-white">Opal</span>
+        </div>
+        <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white">
+          Chalg‘ituvchilar
+          <br />
+          siz uchun bloklanadi.
+        </h1>
+        <p className="mt-4 text-sm leading-relaxed text-white/45">
+          Uyqu, fokus va dam uchun bitta ko‘rsatkich. Bir bosish — to‘liq fokus.
+        </p>
+        <div className="mt-6 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-white/40">
+          <span className="rounded-full border border-white/10 px-3 py-1">Apple Design Award 2025 uslubi</span>
+          <span className="rounded-full border border-white/10 px-3 py-1">Battle Math</span>
+        </div>
+      </aside>
+
+      {/* telefon */}
+      <div className="dark relative z-20 h-[100dvh] w-full overflow-hidden bg-[#05060f] shadow-2xl shadow-black/60 md:h-[844px] md:max-h-[94vh] md:w-[392px] md:rounded-[3.4rem] md:border-[11px] md:border-[#181c26] md:ring-1 md:ring-white/10">
         <div className="relative flex h-full w-full flex-col">
-          {/* notch (desktop only) */}
-          <div className="pointer-events-none absolute left-1/2 top-2 z-40 hidden h-7 w-32 -translate-x-1/2 rounded-full bg-[#131540] md:block" aria-hidden="true" />
+          {/* notch (desktop) */}
+          <div
+            className="pointer-events-none absolute left-1/2 top-2 z-40 hidden h-7 w-32 -translate-x-1/2 rounded-full bg-[#181c26] md:block"
+            aria-hidden="true"
+          />
+          {/* suzuvchi bo'lakchalar (onboardingda ham ko'rinadi) */}
+          <OpalShards />
 
           {needsOnboarding === null ? (
             <div className="flex h-full items-center justify-center">
-              <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-[#3d5afe]/20 border-t-[#3d5afe]" />
+              <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-[#7dd3fc]/20 border-t-[#7dd3fc]" />
             </div>
           ) : showOnboarding ? (
             <Onboarding onDone={() => setObDone(true)} />
           ) : (
             <>
-              <StatusBar dark={isDark} />
+              <StatusBar />
 
               <main className="thin-scrollbar relative flex-1 overflow-y-auto overflow-x-hidden">
                 <AnimatePresence mode="wait" initial={false}>
@@ -136,27 +180,88 @@ export function OpalApp() {
                     initial={{ opacity: 0, y: 14 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
                     className="min-h-full"
                   >
                     {tab === 'home' && <HomeTab />}
-                    {tab === 'focus' && <FocusTab />}
-                    {tab === 'stats' && <StatsTab />}
                     {tab === 'apps' && <AppsTab />}
-                    {tab === 'profile' && <ProfileTab />}
+                    {tab === 'timer' && <TimerTab />}
                   </motion.div>
                 </AnimatePresence>
               </main>
 
               <BottomTabBar />
+              <SessionPill />
+
+              {/* drill-in: Bugun (stats) */}
+              <AnimatePresence>
+                {view === 'today' && (
+                  <motion.div
+                    key="today-view"
+                    initial={{ x: '100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: '100%' }}
+                    transition={{ type: 'spring', stiffness: 340, damping: 34 }}
+                    className="absolute inset-0 z-40 flex flex-col bg-[#05060f]"
+                  >
+                    <StatusBar />
+                    <div className="flex items-center justify-between px-4 pb-1 pt-1">
+                      <button
+                        onClick={() => setView(null)}
+                        aria-label="Orqaga"
+                        className="flex h-10 w-10 items-center justify-center rounded-full bg-white/8 text-white/80 ring-1 ring-white/12 backdrop-blur transition-transform active:scale-90"
+                      >
+                        <ChevronLeft size={19} />
+                      </button>
+                      <div className="flex items-center gap-2.5 text-white">
+                        <ChevronLeft size={14} className="text-white/30" />
+                        <span className="text-[16px] font-bold">Today</span>
+                        <ChevronRight size={14} className="text-white/30" />
+                      </div>
+                      <span className="h-10 w-10" aria-hidden="true" />
+                    </div>
+                    <div className="thin-scrollbar flex-1 overflow-y-auto">
+                      <TodayView />
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* drill-in: Profil */}
+                {view === 'profile' && (
+                  <motion.div
+                    key="profile-view"
+                    initial={{ x: '100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: '100%' }}
+                    transition={{ type: 'spring', stiffness: 340, damping: 34 }}
+                    className="absolute inset-0 z-40 flex flex-col bg-[#05060f]"
+                  >
+                    <StatusBar />
+                    <div className="flex items-center justify-between px-4 pb-1 pt-1">
+                      <button
+                        onClick={() => setView(null)}
+                        aria-label="Orqaga"
+                        className="flex h-10 w-10 items-center justify-center rounded-full bg-white/8 text-white/80 ring-1 ring-white/12 backdrop-blur transition-transform active:scale-90"
+                      >
+                        <ChevronLeft size={19} />
+                      </button>
+                      <span className="text-[16px] font-bold text-white">Profil</span>
+                      <span className="h-10 w-10" aria-hidden="true" />
+                    </div>
+                    <div className="thin-scrollbar flex-1 overflow-y-auto">
+                      <ProfileView />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <NotificationBanner />
+              {breathingOpen && !activeSession && <BreathingOverlay />}
+              <BlockScreen />
             </>
           )}
 
-          {!showOnboarding && needsOnboarding === false && <NotificationBanner />}
-          {activeSession && <ActiveSessionOverlay />}
-          {breathingOpen && !activeSession && <BreathingOverlay />}
-
-          {/* PIN lock — topmost overlay */}
+          {/* PIN lock — eng ustda */}
           <AnimatePresence>
             {locked && <LockScreen key="lock" onUnlock={() => setUnlocked(true)} />}
           </AnimatePresence>

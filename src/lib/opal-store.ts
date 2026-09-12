@@ -4,9 +4,11 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { SessionType } from '@/lib/opal-types'
 
-export type TabKey = 'home' | 'focus' | 'stats' | 'apps' | 'profile'
+export type TabKey = 'home' | 'apps' | 'timer'
 
-interface ActiveSession {
+export const TAB_KEYS: TabKey[] = ['home', 'apps', 'timer']
+
+export interface ActiveSession {
   sessionId: string
   type: SessionType
   label: string
@@ -17,17 +19,38 @@ interface ActiveSession {
   strict: boolean
 }
 
+/** Rule/Tanlov → Timer tab'ga uzatiladigan qoralama */
+export interface TimerDraft {
+  type: SessionType
+  label: string
+  emoji: string
+  durationMinutes: number
+  strict: boolean
+  nonce: number // qayta tanlashda ham effekt ishlashi uchun
+}
+
+/** Bloklangan ilova ekrani (haqiqiy Opal "Blocked by Opal" sahifasi) */
+export interface BlockedAppView {
+  name: string
+  emoji: string
+  gradient: string
+}
+
 interface OpalState {
   tab: TabKey
   setTab: (t: TabKey) => void
   activeSession: ActiveSession | null
   startSession: (s: ActiveSession) => void
   endSession: () => void
-  theme: 'light' | 'dark'
-  setTheme: (t: 'light' | 'dark') => void
-  toggleTheme: () => void
+  timerDraft: TimerDraft | null
+  setTimerDraft: (d: Omit<TimerDraft, 'nonce'>) => void
+  clearTimerDraft: () => void
+  blockedView: BlockedAppView | null
+  setBlockedView: (v: BlockedAppView | null) => void
   breathingOpen: boolean
   setBreathingOpen: (v: boolean) => void
+  /** legacy — eski saqlangan holat bilan mos kelishi uchun; endi ishlatilmaydi */
+  theme: 'light' | 'dark'
   // PIN lock
   pinEnabled: boolean
   pinCode: string | null
@@ -46,11 +69,14 @@ export const useOpalStore = create<OpalState>()(
       activeSession: null,
       startSession: (activeSession) => set({ activeSession }),
       endSession: () => set({ activeSession: null }),
-      theme: 'light',
-      setTheme: (theme) => set({ theme }),
-      toggleTheme: () => set((s) => ({ theme: s.theme === 'light' ? 'dark' : 'light' })),
+      timerDraft: null,
+      setTimerDraft: (d) => set({ timerDraft: { ...d, nonce: Date.now() } }),
+      clearTimerDraft: () => set({ timerDraft: null }),
+      blockedView: null,
+      setBlockedView: (blockedView) => set({ blockedView }),
       breathingOpen: false,
       setBreathingOpen: (breathingOpen) => set({ breathingOpen }),
+      theme: 'dark',
       pinEnabled: false,
       pinCode: null,
       setPin: (code) => set({ pinCode: code, pinEnabled: true }),
@@ -59,6 +85,15 @@ export const useOpalStore = create<OpalState>()(
       markAchievementsSeen: (labels) =>
         set((s) => ({ seenAchievements: [...s.seenAchievements, ...labels] })),
     }),
-    { name: 'opal-session-store' }
+    {
+      name: 'opal-session-store',
+      migrate: (persisted) => {
+        const p = (persisted ?? {}) as Partial<OpalState>
+        // eski 5-tab holatini yangi 3-tab'ga o'tkazish
+        if (p.tab && !TAB_KEYS.includes(p.tab)) p.tab = 'home'
+        return p as OpalState
+      },
+      version: 2,
+    }
   )
 )

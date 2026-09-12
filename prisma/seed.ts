@@ -21,7 +21,7 @@ async function main() {
     { name: 'TikTok', emoji: '🎵', gradient: 'from-slate-800 to-cyan-500', category: 'Ijtimoiy tarmoq', blocked: true, dailyLimitMinutes: 15, todayMinutes: 47, order: 1 },
     { name: 'Instagram', emoji: '📸', gradient: 'from-fuchsia-500 via-rose-500 to-amber-400', category: 'Ijtimoiy tarmoq', blocked: true, dailyLimitMinutes: 20, todayMinutes: 36, order: 2 },
     { name: 'YouTube', emoji: '▶️', gradient: 'from-red-600 to-rose-500', category: 'Zerikarli', blocked: false, dailyLimitMinutes: 45, todayMinutes: 58, order: 3 },
-    { name: 'X (Twitter)', emoji: '𝕏', gradient: 'from-slate-900 to-slate-600', category: 'Ijtimoiy tarmoq', blocked: true, dailyLimitMinutes: 10, todayMinutes: 22, order: 4 },
+    { name: 'X (Twitter)', emoji: '🐦', gradient: 'from-slate-900 to-slate-600', category: 'Ijtimoiy tarmoq', blocked: true, dailyLimitMinutes: 10, todayMinutes: 22, order: 4 },
     { name: 'Telegram', emoji: '✈️', gradient: 'from-sky-400 to-blue-500', category: 'Messenger', blocked: false, dailyLimitMinutes: 0, todayMinutes: 31, order: 5 },
     { name: 'Snapchat', emoji: '👻', gradient: 'from-yellow-300 to-amber-500', category: 'Ijtimoiy tarmoq', blocked: false, dailyLimitMinutes: 15, todayMinutes: 9, order: 6 },
     { name: 'Reddit', emoji: '👽', gradient: 'from-orange-500 to-red-500', category: 'Zerikarli', blocked: true, dailyLimitMinutes: 10, todayMinutes: 18, order: 7 },

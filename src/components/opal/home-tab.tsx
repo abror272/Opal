@@ -1,77 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useOpalStore } from '@/lib/opal-store'
-import { createAndStartSession } from '@/lib/opal-session-actions'
-import { formatMinutes, type StatsResponse, type UserProfile, type BlockApp } from '@/lib/opal-types'
+import { motion } from 'framer-motion'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
-import { toast } from 'sonner'
-import { Flame, ShieldCheck, ShieldOff, ChevronRight, Timer, Sparkles } from 'lucide-react'
+import { useOpalStore } from '@/lib/opal-store'
+import { computeScores, GLASS } from '@/lib/opal-ui'
+import { formatMinutes, type FocusSession, type StatsResponse, type UserProfile, type BlockApp } from '@/lib/opal-types'
 import { cn } from '@/lib/utils'
-import { useCountUp } from '@/hooks/use-count-up'
+import { ChevronRight, Play, Moon, TreePine, Sigma, ShieldOff } from 'lucide-react'
 
-function ProtectionRing({ progress, minutes, goal }: { progress: number; minutes: string; goal: number }) {
-  const R = 84
-  const C = 2 * Math.PI * R
-  const clamped = Math.min(progress, 1)
-
-  return (
-    <div className="relative mx-auto h-[212px] w-[212px]">
-      {/* rotating conic highlight behind the ring */}
-      <div
-        aria-hidden="true"
-        className="animate-ring-sweep pointer-events-none absolute -inset-2 rounded-full opacity-50 blur-md"
-        style={{
-          background:
-            'conic-gradient(from 0deg, transparent 0deg, transparent 295deg, rgba(123,97,255,0.5) 325deg, rgba(232,97,255,0.55) 340deg, transparent 360deg)',
-        }}
-      />
-      <svg viewBox="0 0 200 200" className="relative h-full w-full -rotate-90">
-        <defs>
-          <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#3d5afe" />
-            <stop offset="60%" stopColor="#7b61ff" />
-            <stop offset="100%" stopColor="#e861ff" />
-          </linearGradient>
-        </defs>
-        <circle cx="100" cy="100" r={R} fill="none" strokeWidth="16" className="stroke-[#e9e9f7] dark:stroke-[#272a55]" />
-        <circle
-          cx="100"
-          cy="100"
-          r={R}
-          fill="none"
-          stroke="url(#ringGrad)"
-          strokeWidth="16"
-          strokeLinecap="round"
-          strokeDasharray={C}
-          strokeDashoffset={C * (1 - clamped)}
-          className="transition-all duration-700 ease-out"
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-          Bugun
-        </span>
-        <span className="mt-0.5 text-[34px] font-extrabold leading-none tracking-tight text-slate-900 dark:text-slate-50">
-          {minutes}
-        </span>
-        <span className="mt-1 text-[12px] font-medium text-slate-400">
-          maqsad {formatMinutes(goal)}
-        </span>
-      </div>
-    </div>
-  )
-}
-
-export function HomeTab() {
-  const qc = useQueryClient()
-  const setTab = useOpalStore((s) => s.setTab)
-  const activeSession = useOpalStore((s) => s.activeSession)
-  const setBreathingOpen = useOpalStore((s) => s.setBreathingOpen)
-  const [starting, setStarting] = useState(false)
-
+function useOpalData() {
   const statsQ = useQuery<StatsResponse>({
     queryKey: ['stats'],
     queryFn: async () => (await fetch('/api/stats')).json(),
@@ -80,14 +20,53 @@ export function HomeTab() {
     queryKey: ['profile'],
     queryFn: async () => (await fetch('/api/profile')).json(),
   })
-  const appsQ = useQuery<BlockApp[]>({
-    queryKey: ['apps'],
-    queryFn: async () => (await fetch('/api/apps')).json(),
+  const sessionsQ = useQuery<FocusSession[]>({
+    queryKey: ['sessions'],
+    queryFn: async () => (await fetch('/api/sessions')).json(),
   })
+  return { statsQ, profileQ, sessionsQ }
+}
 
-  // hooks must run unconditionally — animate as soon as data arrives
-  const animatedStreak = useCountUp(profileQ.data?.streakDays ?? 0, 800)
-  const animatedScreen = useCountUp(statsQ.data?.today.screenTimeMinutes ?? 0, 900)
+/** Kichik dumaloq progress halqasi (Sleep/Focus/Rest pilllari uchun) */
+function MiniRing({ value, icon }: { value: number; icon: React.ReactNode }) {
+  const R = 13
+  const C = 2 * Math.PI * R
+  return (
+    <span className="relative inline-flex h-8 w-8 items-center justify-center">
+      <svg viewBox="0 0 32 32" className="absolute inset-0 h-full w-full -rotate-90">
+        <circle cx="16" cy="16" r={R} fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="2.4" />
+        <circle
+          cx="16"
+          cy="16"
+          r={R}
+          fill="none"
+          stroke="#8fd9ff"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+          strokeDasharray={C}
+          strokeDashoffset={C * (1 - value / 100)}
+          style={{ filter: 'drop-shadow(0 0 3px rgba(143,217,255,0.6))' }}
+        />
+      </svg>
+      <span className="relative text-white/90">{icon}</span>
+    </span>
+  )
+}
+
+export function HomeTab() {
+  const { statsQ, profileQ, sessionsQ } = useOpalData()
+  const qc = useQueryClient()
+  const setTab = useOpalStore((s) => s.setTab)
+  const setTimerDraft = useOpalStore((s) => s.setTimerDraft)
+  const setBreathingOpen = useOpalStore((s) => s.setBreathingOpen)
+  const setBlockedView = useOpalStore((s) => s.setBlockedView)
+
+  const [navigating, setNavigating] = useState(false)
+
+  const profile = profileQ.data
+  const stats = statsQ.data
+  const scores = computeScores(stats, sessionsQ.data)
+  const activeSession = useOpalStore((s) => s.activeSession)
 
   const protectionMutation = useMutation({
     mutationFn: async (enabled: boolean) => {
@@ -110,218 +89,330 @@ export function HomeTab() {
     onSettled: () => qc.invalidateQueries({ queryKey: ['profile'] }),
   })
 
-  if (statsQ.isLoading || profileQ.isLoading) {
-    return (
-      <div className="space-y-5 p-5 pt-3">
-        <Skeleton className="h-12 w-full rounded-2xl" />
-        <Skeleton className="mx-auto h-[212px] w-[212px] rounded-full" />
-        <Skeleton className="h-20 w-full rounded-3xl" />
-        <Skeleton className="h-40 w-full rounded-3xl" />
-      </div>
-    )
+  const blockedAppsQ = useQuery<BlockApp[]>({
+    queryKey: ['apps', 'blocked'],
+    queryFn: async () => (await fetch('/api/apps?blocked=1')).json(),
+  })
+
+  const loading = statsQ.isLoading || profileQ.isLoading
+  const today = stats?.today
+  const overGoal = today && today.screenTimeMinutes > today.goalMinutes
+  const savedToday = today?.savedMinutes ?? 0
+  const screenDelta = stats && today ? today.screenTimeMinutes - stats.avgDailyScreenMinutes : 0
+
+  const startFocus = () => {
+    if (activeSession) {
+      setTab('timer')
+      return
+    }
+    setNavigating(true)
+    setTimerDraft({ type: 'DEEP_FOCUS', label: 'Deep Focus', emoji: '🧠', durationMinutes: 45, strict: false })
+    setTab('timer')
+    setTimeout(() => setNavigating(false), 700)
   }
 
-  const stats = statsQ.data
-  const profile = profileQ.data
-  const apps = appsQ.data ?? []
-  if (!stats || !profile) return null
-
-  const today = stats.today
-  const progress = Math.min(today.screenTimeMinutes / Math.max(today.goalMinutes, 1), 1)
-  const blockedApps = apps.filter((a) => a.blocked)
-  const protectedNow = profile.protectionEnabled || !!activeSession
-  const hour = new Date().getHours()
-  const greeting = hour < 5 ? 'Xayrli tong' : hour < 12 ? 'Xayrli tong' : hour < 18 ? 'Xayrli kun' : 'Xayrli kech'
+  const openTimer = () => {
+    setTab('timer')
+  }
 
   return (
-    <div className="animate-slide-up space-y-5 px-5 pb-6 pt-3">
+    <div className="relative flex min-h-full flex-col px-5 pb-4 pt-1">
       {/* header */}
       <header className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#3d5afe] via-[#7b61ff] to-[#e861ff] text-lg font-black text-white shadow-md shadow-indigo-500/30">
-            O
-          </div>
-          <div>
-            <p className="text-[12px] font-medium text-slate-400">{greeting} 👋</p>
-            <p className="text-[17px] font-bold leading-tight text-slate-900 dark:text-slate-50">{profile.name}</p>
-          </div>
+        <div className="flex items-center gap-2">
+          <span
+            className="inline-block h-6 w-6 rounded-[7px] bg-gradient-to-br from-[#8fd9ff] via-[#b18cff] to-[#ff9ad5] shadow-[0_0_12px_rgba(143,217,255,0.5)]"
+            aria-hidden="true"
+          />
+          <span className="text-[19px] font-bold tracking-tight text-white">Opal</span>
         </div>
-        <div className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-400/15 to-amber-400/15 px-3 py-1.5 ring-1 ring-orange-400/25">
-          <Flame size={15} className="text-orange-500" strokeWidth={2.4} />
-          <span className="text-[14px] font-bold tabular-nums text-orange-600">{animatedStreak}</span>
-          <span className="text-[11px] font-medium text-orange-500/80">kun</span>
+        <div className="flex items-center gap-2.5">
+          {profile && (
+            <span className="flex items-center gap-1 rounded-full bg-white/[0.07] px-2.5 py-1 text-[12px] font-bold text-orange-300 ring-1 ring-white/10">
+              🔥 {profile.streakDays}
+            </span>
+          )}
+          <motion.button
+            whileTap={{ scale: 0.92 }}
+            onClick={() => window.dispatchEvent(new CustomEvent('opal:open-profile'))}
+            aria-label="Profil"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#5b7bff] via-[#8b7bff] to-[#c86bff] text-[12px] font-black text-white shadow-[0_0_14px_rgba(139,123,255,0.45)] ring-1 ring-white/25"
+          >
+            {profile ? profile.name[0] : 'A'}
+          </motion.button>
         </div>
       </header>
 
-      {/* protection status card */}
-      <div
-        className={cn(
-          'relative overflow-hidden rounded-3xl p-4 text-white shadow-lg transition-all',
-          protectedNow
-            ? 'bg-gradient-to-br from-[#10123f] via-[#1b1e5c] to-[#3d2f86] shadow-indigo-900/30'
-            : 'bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900'
-        )}
-      >
-        <div className="pointer-events-none absolute -right-10 -top-14 h-40 w-40 rounded-full bg-[#7b61ff]/30 blur-2xl" />
-        <div className="relative flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                'flex h-11 w-11 items-center justify-center rounded-2xl',
-                protectedNow ? 'bg-white/10' : 'bg-white/5'
-              )}
-            >
-              {protectedNow ? (
-                <ShieldCheck size={22} className="text-emerald-400" />
-              ) : (
-                <ShieldOff size={22} className="text-slate-400" />
-              )}
-            </div>
-            <div>
-              <p className="text-[15px] font-bold">
-                {protectedNow ? 'Himoya faol' : 'Himoya o‘chirilgan'}
-              </p>
-              <p className="text-[12px] text-white/60">
-                {blockedApps.length} ilova bloklangan
-                {activeSession ? ` · ${activeSession.label} davom etmoqda` : ''}
-              </p>
-            </div>
-          </div>
-          <Switch
-            checked={profile.protectionEnabled}
-            onCheckedChange={(v) => protectionMutation.mutate(v)}
-            disabled={!!activeSession}
-            aria-label="Himoyani yoqish/o'chirish"
-            className="data-[state=checked]:bg-emerald-500"
-          />
+      {loading ? (
+        <div className="mt-8 space-y-5">
+          <Skeleton className="mx-auto h-56 w-56 rounded-full bg-white/5" />
+          <Skeleton className="h-20 w-full rounded-3xl bg-white/5" />
+          <Skeleton className="h-32 w-full rounded-3xl bg-white/5" />
         </div>
-      </div>
-
-      {/* ring */}
-      <section aria-label="Bugungi ekran vaqti" className="rounded-[2rem] bg-white p-5 shadow-sm shadow-slate-200/60 dark:bg-[#181b42] dark:shadow-black/30">
-        <ProtectionRing progress={progress} minutes={formatMinutes(animatedScreen)} goal={today.goalMinutes} />
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 p-3.5 ring-1 ring-emerald-100 dark:from-emerald-500/10 dark:to-teal-500/10 dark:ring-emerald-500/20">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
-              <Sparkles size={13} /> Tejaldi
-            </div>
-            <p className="mt-1 text-xl font-extrabold text-emerald-700 dark:text-emerald-300">
-              {formatMinutes(today.savedMinutes)}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-gradient-to-br from-violet-50 to-fuchsia-50 p-3.5 ring-1 ring-violet-100 dark:from-violet-500/10 dark:to-fuchsia-500/10 dark:ring-violet-500/20">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-400">
-              <Timer size={13} /> Sessiyalar
-            </div>
-            <p className="mt-1 text-xl font-extrabold text-violet-700 dark:text-violet-300">{profile.totalSessions}</p>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      {activeSession ? (
-        <button
-          onClick={() => setTab('focus')}
-          className="w-full rounded-3xl bg-gradient-to-r from-[#3d5afe] to-[#7b61ff] p-[1.5px] shadow-lg shadow-indigo-500/25 transition-transform active:scale-[0.98]"
-        >
-          <span className="flex items-center justify-between rounded-[calc(1.5rem-1.5px)] bg-white px-5 py-4 dark:bg-[#22256a]">
-            <span className="text-left">
-              <span className="block text-[15px] font-bold text-slate-900 dark:text-slate-50">
-                {activeSession.emoji} {activeSession.label} davom etmoqda
-              </span>
-              <span className="block text-[12px] text-slate-400">Taymerni ko‘rish uchun bosing</span>
-            </span>
-            <ChevronRight size={20} className="text-[#3d5afe]" />
-          </span>
-        </button>
       ) : (
-        <button
-          onClick={async () => {
-            if (starting) return
-            setStarting(true)
-            try {
-              const { blockedCount } = await createAndStartSession({
-                type: 'DEEP_FOCUS',
-                label: 'Deep Focus',
-                emoji: '🧠',
-                durationMinutes: 45,
-              })
-              setTab('focus')
-              toast.success('🧠 45 daqiqa fokus boshlandi!', {
-                description: `${blockedCount} ilova bloklandi`,
-              })
-            } catch {
-              toast.error('Sessiyani boshlash bajarilmadi')
-            } finally {
-              setStarting(false)
-            }
-          }}
-          disabled={starting}
-          className={cn(
-            'group relative w-full overflow-hidden rounded-3xl bg-gradient-to-r from-[#3d5afe] via-[#7b61ff] to-[#e861ff] py-4 text-white shadow-xl shadow-indigo-500/30 transition-transform',
-            starting ? 'opacity-70' : 'active:scale-[0.98]'
-          )}
-        >
-          <span className="absolute inset-0 animate-shimmer" />
-          <span className="relative flex items-center justify-center gap-2 text-[16px] font-bold">
-            {starting ? 'Boshlanmoqda…' : 'Fokus sessiyasini boshlash'}
-          </span>
-        </button>
-      )}
-
-      {/* breathing quick action */}
-      <button
-        onClick={() => setBreathingOpen(true)}
-        className="flex w-full items-center justify-between rounded-3xl bg-white px-5 py-3.5 shadow-sm shadow-slate-200/60 ring-1 ring-slate-100 transition-transform active:scale-[0.98] dark:bg-[#181b42] dark:shadow-black/30 dark:ring-white/10"
-      >
-        <span className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-100 to-teal-100 text-lg dark:from-cyan-500/15 dark:to-teal-500/15">
-            🌬️
-          </span>
-          <span className="text-left">
-            <span className="block text-[13.5px] font-bold text-slate-800 dark:text-slate-100">1 daqiqa tinchlanish</span>
-            <span className="block text-[11px] text-slate-400">Nafas mashqi bilan diqqatni tiklang</span>
-          </span>
-        </span>
-        <ChevronRight size={17} className="text-slate-300" />
-      </button>
-
-      {/* blocked apps strip */}
-      {blockedApps.length > 0 && (
-        <section aria-label="Bloklangan ilovalar">
-          <div className="mb-2.5 flex items-center justify-between px-1">
-            <h3 className="text-[14px] font-bold text-slate-800 dark:text-slate-100">Bloklangan ilovalar</h3>
-            <button
-              onClick={() => setTab('apps')}
-              className="flex items-center gap-0.5 text-[12px] font-semibold text-[#3d5afe]"
+        <>
+          {/* ── Kristall qahramon ─────────────────────────── */}
+          <div className="relative mt-2 flex flex-col items-center">
+            {/* yulduzli glow */}
+            <div
+              className="pointer-events-none absolute left-1/2 top-2 h-64 w-64 -translate-x-1/2 rounded-full opacity-70"
+              style={{
+                background:
+                  'radial-gradient(circle, rgba(125,211,252,0.16) 0%, rgba(177,140,255,0.10) 45%, transparent 70%)',
+              }}
+              aria-hidden="true"
+            />
+            <motion.div
+              animate={{ y: [0, -10, 0], rotate: [0, 1.2, 0] }}
+              transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+              className="relative z-10 mt-3"
             >
-              Barchasi <ChevronRight size={14} />
-            </button>
-          </div>
-          <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
-            {blockedApps.slice(0, 8).map((a) => (
-              <div
-                key={a.id}
-                className="flex w-[76px] shrink-0 flex-col items-center gap-1.5 rounded-2xl bg-white p-3 shadow-sm shadow-slate-200/60 dark:bg-[#181b42] dark:shadow-black/30"
+              {/* kristal tasviri — qora fon screen blend bilan eriydi */}
+              <button
+                onClick={openTimer}
+                aria-label="Taymer sahifasini ochish"
+                className="block cursor-pointer rounded-full"
               >
-                <div
-                  className={cn(
-                    'flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br text-xl shadow-sm',
-                    a.gradient
-                  )}
+                <img
+                  src="/opal/crystal.png"
+                  alt=""
+                  className="h-[190px] w-[190px] rounded-full object-cover mix-blend-screen"
+                  style={{ filter: 'saturate(1.15) brightness(1.08) drop-shadow(0 0 34px rgba(140,120,255,0.35))' }}
+                  draggable={false}
+                />
+              </button>
+              {/* yon parilklar */}
+              {[
+                { left: '4%', top: '22%', size: 5, delay: 0 },
+                { right: '2%', top: '12%', size: 4, delay: 1.4 },
+                { right: '10%', bottom: '30%', size: 5, delay: 2.6 },
+                { left: '12%', bottom: '18%', size: 3.5, delay: 0.8 },
+              ].map((p, i) => (
+                <motion.span
+                  key={i}
+                  className="absolute rounded-full bg-[#bfe9ff]"
+                  style={{
+                    ...p,
+                    width: p.size,
+                    height: p.size,
+                    boxShadow: '0 0 6px rgba(191,233,255,0.9)',
+                  }}
+                  animate={{ opacity: [0.15, 0.95, 0.15], y: [0, -6, 0] }}
+                  transition={{ duration: 3.2, repeat: Infinity, delay: p.delay }}
+                  aria-hidden="true"
+                />
+              ))}
+            </motion.div>
+            {/* poydevor soya */}
+            <div
+              className="mt-1 h-4 w-40 rounded-[100%] bg-black/60 blur-md"
+              aria-hidden="true"
+            />
+
+            {/* Score */}
+            <div className="relative z-10 -mt-1 flex flex-col items-center">
+              <span className="text-[12px] font-medium tracking-wide text-white/55">Score</span>
+              <div className="flex items-start gap-1.5">
+                <motion.span
+                  key={scores.score}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-[52px] font-extrabold leading-none tracking-tight text-[#a5e3ff]"
+                  style={{ textShadow: '0 0 24px rgba(125,211,252,0.55)' }}
                 >
-                  {a.emoji}
-                </div>
-                <span className="w-full truncate text-center text-[10.5px] font-semibold text-slate-600 dark:text-slate-300">
-                  {a.name}
-                </span>
-                <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-bold text-rose-500 ring-1 ring-rose-100 dark:bg-rose-500/15 dark:ring-rose-500/30">
-                  BLOK
+                  {scores.score}
+                </motion.span>
+                <span
+                  className={cn(
+                    'mt-2 text-[15px] font-bold',
+                    scores.delta >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                  )}
+                  aria-label={scores.delta >= 0 ? 'yaxshilandi' : 'pasaydi'}
+                >
+                  {scores.delta >= 0 ? '▲' : '▼'}
                 </span>
               </div>
-            ))}
+            </div>
+
+            {/* Sub-metrik pilllar */}
+            <div className="relative z-10 mt-4 flex items-center gap-2.5">
+              {[
+                { icon: <Sigma size={13} />, label: 'Focus', value: scores.focus },
+                { icon: <TreePine size={13} />, label: 'Rest', value: scores.rest },
+                { icon: <Moon size={13} />, label: 'Sleep', value: scores.sleep },
+              ].map((m) => (
+                <button
+                  key={m.label}
+                  onClick={() => window.dispatchEvent(new CustomEvent('opal:open-today'))}
+                  className={cn(
+                    GLASS,
+                    'flex items-center gap-2 rounded-full py-1.5 pl-1.5 pr-3.5 transition-transform active:scale-95'
+                  )}
+                >
+                  <MiniRing value={m.value} icon={m.icon} />
+                  <span className="flex flex-col items-start leading-tight">
+                    <span className="text-[13px] font-bold text-white">{m.value}</span>
+                    <span className="text-[9.5px] font-semibold uppercase tracking-wide text-white/50">
+                      {m.label}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
-        </section>
+
+          {/* ── Tezkor holat kartasi ─────────────────────── */}
+          <section className={cn(GLASS, 'mt-5 p-4')} aria-label="Bugungi holat">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-white/45">
+                  Bugun
+                </p>
+                <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-[21px] font-extrabold text-white">
+                  {formatMinutes(today?.screenTimeMinutes ?? 0)}
+                  <span className="whitespace-nowrap text-[12.5px] font-semibold text-white/45">
+                    Screen Time
+                  </span>
+                </p>
+              </div>
+              {today && (
+                <span
+                  className={cn(
+                    'flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-bold ring-1',
+                    overGoal
+                      ? 'bg-rose-500/15 text-rose-300 ring-rose-400/30'
+                      : 'bg-emerald-500/15 text-emerald-300 ring-emerald-400/30'
+                  )}
+                >
+                  {overGoal
+                    ? '▲ oshdi'
+                    : `${screenDelta <= 0 ? '▼' : '▲'} ${formatMinutes(Math.abs(screenDelta))}`}
+                </span>
+              )}
+            </div>
+
+            {/* ekran vaqti mini-bar */}
+            <div className="mt-3">
+              <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{
+                    width: `${Math.min(((today?.screenTimeMinutes ?? 0) / (today?.goalMinutes || 240)) * 100, 100)}%`,
+                  }}
+                  transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+                  className={cn(
+                    'h-full rounded-full',
+                    overGoal
+                      ? 'bg-gradient-to-r from-rose-400 to-rose-500'
+                      : 'bg-gradient-to-r from-teal-300 to-emerald-400'
+                  )}
+                  style={{ boxShadow: '0 0 12px rgba(94,234,212,0.4)' }}
+                />
+              </div>
+              <div className="mt-1.5 flex justify-between text-[10px] font-semibold text-white/40">
+                <span>AVG</span>
+                <span>Maqsad {formatMinutes(stats?.goalMinutes ?? 240)}</span>
+              </div>
+            </div>
+
+            <div className="mt-3.5 flex items-center justify-between border-t border-white/8 pt-3">
+              <div className="flex items-center gap-2">
+                {profile?.protectionEnabled ? (
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30">
+                    🛡️
+                  </span>
+                ) : (
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/8 text-white/50 ring-1 ring-white/10">
+                    <ShieldOff size={13} />
+                  </span>
+                )}
+                <div className="leading-tight">
+                  <p className="text-[12.5px] font-bold text-white">Himoya</p>
+                  <p className="text-[10px] font-medium text-white/45">
+                    {profile?.protectionEnabled ? 'Chalg‘ituvchilar bloklangan' : 'O‘chirilgan'}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={profile?.protectionEnabled ?? false}
+                onCheckedChange={(v) => protectionMutation.mutate(v)}
+                aria-label="Himoyani yoqish/o'chirish"
+                className="data-[state=checked]:bg-emerald-500/80"
+              />
+            </div>
+          </section>
+
+          {/* ── Start Timer CTA ──────────────────────────── */}
+          <div className="mt-3.5 flex gap-2.5">
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={startFocus}
+              disabled={navigating}
+              className="relative flex flex-[1.4] items-center justify-center gap-2 overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-b from-[#cfe3f4]/25 via-[#9fb8d8]/20 to-[#5f7ba6]/25 py-3.5 text-[15px] font-bold text-white shadow-[0_10px_30px_rgba(60,90,140,0.35),inset_0_1px_0_0_rgba(255,255,255,0.25)] backdrop-blur-xl active:scale-[0.98]"
+            >
+              <Play size={15} className="fill-white" />
+              {activeSession ? 'Jonli taymer' : 'Start Timer'}
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setBreathingOpen(true)}
+              aria-label="1 daqiqalik nafas mashqi"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.05] py-3.5 text-[12.5px] font-bold text-white/75 backdrop-blur-xl active:scale-[0.98]"
+            >
+              🌿 1 daq
+            </motion.button>
+          </div>
+
+          {/* ── My Apps strip ────────────────────────────── */}
+          <section className="mt-5" aria-label="Ilovalarim">
+            <button
+              onClick={() => setTab('apps')}
+              className="mb-2.5 flex w-full items-center justify-between"
+              aria-label="Ilovalarni boshqarish"
+            >
+              <span className="text-[14.5px] font-bold text-white/90">My Apps</span>
+              <ChevronRight size={15} className="text-white/35" />
+            </button>
+            <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
+              {(blockedAppsQ.data ?? []).slice(0, 8).map((app) => (
+                <motion.button
+                  key={app.id}
+                  whileTap={{ scale: 0.92 }}
+                  onClick={() =>
+                    setBlockedView({ name: app.name, emoji: app.emoji, gradient: app.gradient })
+                  }
+                  className="flex w-[62px] shrink-0 flex-col items-center gap-1.5"
+                  aria-label={`${app.name} bloklangan`}
+                >
+                  <span
+                    className={cn(
+                      'relative flex h-[54px] w-[54px] items-center justify-center rounded-[18px] text-[24px] ring-1 ring-[#8fd9ff]/45',
+                      app.gradient
+                    )}
+                    style={{ boxShadow: '0 0 16px rgba(125,211,252,0.35)' }}
+                  >
+                    <span className="drop-shadow">{app.emoji}</span>
+                    <span className="absolute -bottom-1 -right-1 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#0c1120] text-[9px] ring-1 ring-[#8fd9ff]/50">
+                      🔒
+                    </span>
+                  </span>
+                  <span className="w-full truncate text-center text-[10px] font-semibold text-[#9fd8ff]">
+                    Unblock
+                  </span>
+                </motion.button>
+              ))}
+              {(blockedAppsQ.data ?? []).length === 0 && !blockedAppsQ.isLoading && (
+                <button
+                  onClick={() => setTab('apps')}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 py-5 text-[12.5px] font-semibold text-white/45"
+                >
+                  Hech narsa bloklangan emas — ilova qo‘shish
+                  <ChevronRight size={13} />
+                </button>
+              )}
+            </div>
+          </section>
+        </>
       )}
     </div>
   )

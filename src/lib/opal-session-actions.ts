@@ -14,6 +14,8 @@ export async function createAndStartSession(opts: {
   emoji: string
   durationMinutes: number
   strict?: boolean
+  /** false bo'lsa ilovalar bloklanmaydi (oddiy taymer) */
+  includeBlocked?: boolean
 }): Promise<{ ok: boolean; blockedCount: number }> {
   const { startSession } = useOpalStore.getState()
 
@@ -31,14 +33,16 @@ export async function createAndStartSession(opts: {
   const created = (await res.json()) as { id: string }
 
   let blockedApps: string[] = []
-  try {
-    const appsRes = await fetch('/api/apps?blocked=1')
-    if (appsRes.ok) {
-      const apps = (await appsRes.json()) as { name: string }[]
-      blockedApps = apps.map((a) => a.name)
+  if (opts.includeBlocked !== false) {
+    try {
+      const appsRes = await fetch('/api/apps?blocked=1')
+      if (appsRes.ok) {
+        const apps = (await appsRes.json()) as { name: string }[]
+        blockedApps = apps.map((a) => a.name)
+      }
+    } catch {
+      // bloklangan ilovalar ro'yxati ixtiyoriy
     }
-  } catch {
-    // bloklangan ilovalar ro'yxati ixtiyoriy
   }
 
   startSession({

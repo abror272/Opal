@@ -4,13 +4,28 @@ import { useEffect, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { formatMinutes, type UserProfile } from '@/lib/opal-types'
 import { useOpalStore } from '@/lib/opal-store'
+import { GLASS } from '@/lib/opal-ui'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { PinPad } from './pin-pad'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { Flame, Timer, Hourglass, Crown, ChevronRight, ShieldCheck, Lock, Bell, Gauge, LogOut, CircleHelp, Sparkles, Moon, Sun, KeyRound } from 'lucide-react'
+import {
+  Flame,
+  Timer,
+  Hourglass,
+  Crown,
+  ShieldCheck,
+  Lock,
+  Bell,
+  Gauge,
+  LogOut,
+  CircleHelp,
+  Sparkles,
+  KeyRound,
+  ChevronRight,
+} from 'lucide-react'
 
 function achievementsFor(profile: UserProfile) {
   return [
@@ -23,9 +38,8 @@ function achievementsFor(profile: UserProfile) {
   ]
 }
 
-export function ProfileTab() {
+export function ProfileView() {
   const qc = useQueryClient()
-  const setTab = useOpalStore((s) => s.setTab)
   const pinEnabled = useOpalStore((s) => s.pinEnabled)
   const setPin = useOpalStore((s) => s.setPin)
   const removePin = useOpalStore((s) => s.removePin)
@@ -37,8 +51,6 @@ export function ProfileTab() {
     queryKey: ['profile'],
     queryFn: async () => (await fetch('/api/profile')).json(),
   })
-  const isDark = useOpalStore((s) => s.theme === 'dark')
-  const toggleTheme = useOpalStore((s) => s.toggleTheme)
 
   const patchMutation = useMutation({
     mutationFn: async (patch: Partial<UserProfile>) => {
@@ -64,10 +76,10 @@ export function ProfileTab() {
 
   if (profileQ.isLoading) {
     return (
-      <div className="space-y-5 p-5 pt-3">
-        <Skeleton className="h-24 w-full rounded-3xl" />
-        <Skeleton className="h-36 w-full rounded-3xl" />
-        <Skeleton className="h-64 w-full rounded-3xl" />
+      <div className="space-y-5 px-5 pt-3">
+        <Skeleton className="h-28 w-full rounded-3xl bg-white/5" />
+        <Skeleton className="h-40 w-full rounded-3xl bg-white/5" />
+        <Skeleton className="h-64 w-full rounded-3xl bg-white/5" />
       </div>
     )
   }
@@ -79,22 +91,24 @@ export function ProfileTab() {
   const achievements = achievementsFor(profile)
 
   return (
-    <div className="animate-slide-up space-y-5 px-5 pb-6 pt-3">
-      <header>
-        <h2 className="text-[22px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">Profil</h2>
-      </header>
-
+    <div className="space-y-5 px-5 pb-6 pt-1">
       <AchievementWatcher
         achievements={achievements}
         seen={seenAchievements}
         onSeen={markAchievementsSeen}
       />
 
-      {/* identity card */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#10123f] via-[#1b1e5c] to-[#3d2f86] p-5 text-white shadow-lg shadow-indigo-900/25">
-        <div className="pointer-events-none absolute -left-8 -top-12 h-36 w-36 rounded-full bg-[#e861ff]/25 blur-2xl" />
+      {/* identifikatsiya kartasi */}
+      <section
+        className="relative overflow-hidden rounded-3xl border border-white/12 bg-gradient-to-br from-[#141b3a] via-[#151233] to-[#0d0a1e] p-5 text-white shadow-[0_14px_44px_rgba(0,0,0,0.5)]"
+        aria-label="Profil ma'lumotlari"
+      >
+        <div
+          className="pointer-events-none absolute -left-8 -top-12 h-36 w-36 rounded-full bg-[#8fd9ff]/15 blur-2xl"
+          aria-hidden="true"
+        />
         <div className="relative flex items-center gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-[#3d5afe] via-[#7b61ff] to-[#e861ff] text-2xl font-black shadow-lg shadow-indigo-500/40 ring-2 ring-white/20">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-[#5b7bff] via-[#8b7bff] to-[#c86bff] text-2xl font-black shadow-[0_0_22px_rgba(139,123,255,0.5)] ring-2 ring-white/25">
             {profile.name[0]}
           </div>
           <div className="min-w-0 flex-1">
@@ -106,7 +120,7 @@ export function ProfileTab() {
                 </span>
               )}
             </div>
-            <p className="text-[12.5px] text-white/55">{profile.handle}</p>
+            <p className="text-[12.5px] text-white/50">{profile.handle}</p>
             <div className="mt-1.5 flex items-center gap-1.5 text-[11.5px] font-semibold text-orange-300">
               <Flame size={13} /> {profile.streakDays} kunlik streak · {profile.totalSessions} sessiya
             </div>
@@ -114,64 +128,68 @@ export function ProfileTab() {
         </div>
 
         <div className="relative mt-4 grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-2xl bg-white/8 p-2.5 ring-1 ring-white/10">
+          <div className="rounded-2xl bg-white/[0.07] p-2.5 ring-1 ring-white/10">
             <p className="flex items-center justify-center gap-1 text-[15px] font-extrabold">
-              <Hourglass size={13} className="text-emerald-400" />
+              <Hourglass size={13} className="text-emerald-300" />
               {formatMinutes(profile.totalSavedMinutes)}
             </p>
-            <p className="text-[10px] text-white/55">Jami tejaldi</p>
+            <p className="text-[10px] text-white/50">Jami tejaldi</p>
           </div>
-          <div className="rounded-2xl bg-white/8 p-2.5 ring-1 ring-white/10">
+          <div className="rounded-2xl bg-white/[0.07] p-2.5 ring-1 ring-white/10">
             <p className="flex items-center justify-center gap-1 text-[15px] font-extrabold">
               <Timer size={13} className="text-violet-300" />
               {profile.totalSessions}
             </p>
-            <p className="text-[10px] text-white/55">Sessiyalar</p>
+            <p className="text-[10px] text-white/50">Sessiyalar</p>
           </div>
-          <div className="rounded-2xl bg-white/8 p-2.5 ring-1 ring-white/10">
+          <div className="rounded-2xl bg-white/[0.07] p-2.5 ring-1 ring-white/10">
             <p className="flex items-center justify-center gap-1 text-[15px] font-extrabold">
               <Gauge size={13} className="text-sky-300" />
               {Math.round(profile.totalSavedMinutes / 60)}
             </p>
-            <p className="text-[10px] text-white/55">Soat</p>
+            <p className="text-[10px] text-white/50">Soat</p>
           </div>
         </div>
       </section>
 
-      {/* Opal Plus banner */}
+      {/* Opal Plus */}
       {!isPlus ? (
         <button
           onClick={() => {
             patchMutation.mutate({ plan: 'PLUS' })
-            toast.success('Opal Plus faollashtirildi! 👑', { description: 'Barcha premium funksiyalar ochildi (demo)' })
+            toast.success('Opal Plus faollashtirildi! 👑', {
+              description: 'Barcha premium funksiyalar ochildi (demo)',
+            })
           }}
-          className="group relative w-full overflow-hidden rounded-3xl bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 p-[1.5px] text-left shadow-lg shadow-orange-400/25 transition-transform active:scale-[0.98]"
+          className="group relative block w-full overflow-hidden rounded-3xl bg-gradient-to-r from-amber-300 via-orange-300 to-rose-300 p-[1.5px] text-left shadow-[0_10px_36px_rgba(251,191,36,0.25)] transition-transform active:scale-[0.98]"
         >
-          <span className="relative flex items-center gap-3 rounded-[calc(1.5rem-1.5px)] bg-white px-4 py-4 dark:bg-[#22256a]">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white">
+          <span className="relative flex items-center gap-3 rounded-[calc(1.5rem-1.5px)] bg-[#0c0f1c] px-4 py-4">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 to-orange-400 text-[#0c0f1c]">
               <Crown size={20} />
             </span>
             <span className="flex-1">
-              <span className="block text-[14.5px] font-extrabold text-slate-900 dark:text-slate-50">Opal Plus’ga o‘tish</span>
-              <span className="block text-[11.5px] text-slate-400">Cheklovsriz bloklar, qattiq rejim, maxsus mavzular</span>
+              <span className="block text-[14.5px] font-extrabold text-white">Opal Plus’ga o‘tish</span>
+              <span className="block text-[11.5px] text-white/50">
+                Cheksiz bloklar, qattiq rejim, maxsus mavzular
+              </span>
             </span>
-            <ChevronRight size={18} className="text-slate-300 transition-transform group-hover:translate-x-0.5" />
+            <ChevronRight size={18} className="text-white/40 transition-transform group-hover:translate-x-0.5" />
           </span>
         </button>
       ) : (
-        <div className="flex items-center gap-3 rounded-3xl bg-gradient-to-r from-amber-400/15 to-orange-400/15 p-4 ring-1 ring-amber-400/30 dark:bg-amber-400/10">
-          <Crown size={22} className="text-amber-500 dark:text-amber-300" />
+        <div className="flex items-center gap-3 rounded-3xl border border-amber-400/30 bg-amber-400/10 p-4">
+          <Crown size={22} className="text-amber-300" />
           <div>
-            <p className="text-[14px] font-extrabold text-slate-900 dark:text-slate-50">Opal Plus faol 👑</p>
-            <p className="text-[11.5px] text-slate-500 dark:text-slate-400">Hamma premium funksiyalar ochiq</p>
+            <p className="text-[14px] font-extrabold text-white">Opal Plus faol 👑</p>
+            <p className="text-[11.5px] text-white/50">Hamma premium funksiyalar ochiq</p>
           </div>
         </div>
       )}
 
-      {/* achievements */}
-      <section aria-label="Yutuqlar" className="rounded-3xl bg-white p-5 shadow-sm shadow-slate-200/60 dark:bg-[#181b42] dark:shadow-black/30">
-        <h3 className="mb-3.5 flex items-center gap-2 text-[15px] font-bold text-slate-900 dark:text-slate-50">
-          <Sparkles size={16} className="text-violet-500" /> Yutuqlar
+      {/* yutuqlar */}
+      <section aria-label="Yutuqlar" className={GLASS + ' p-5'}>
+        <h3 className="mb-3.5 flex items-center gap-2 text-[15px] font-bold text-white">
+          <Sparkles size={16} className="text-[#b18cff]" /> Yutuqlar
         </h3>
         <div className="grid grid-cols-3 gap-3">
           {achievements.map((a) => (
@@ -180,121 +198,103 @@ export function ProfileTab() {
               className={cn(
                 'flex flex-col items-center gap-1 rounded-2xl p-3 text-center ring-1',
                 a.unlocked
-                  ? 'bg-gradient-to-b from-violet-50 to-fuchsia-50 ring-violet-100 dark:from-violet-500/10 dark:to-fuchsia-500/10 dark:ring-violet-500/20'
-                  : 'bg-slate-50 opacity-45 ring-slate-100 grayscale dark:bg-white/5 dark:ring-white/10'
+                  ? 'bg-gradient-to-b from-[#7dd3fc]/12 to-[#b18cff]/12 ring-[#8fd9ff]/25'
+                  : 'bg-white/[0.03] opacity-40 ring-white/8 grayscale'
               )}
             >
               <span className="text-[24px]">{a.emoji}</span>
-              <span className="text-[10.5px] font-bold leading-tight text-slate-700 dark:text-slate-200">{a.label}</span>
-              <span className="text-[9.5px] text-slate-400">{a.desc}</span>
+              <span className="text-[10.5px] font-bold leading-tight text-white/85">{a.label}</span>
+              <span className="text-[9.5px] text-white/40">{a.desc}</span>
             </div>
           ))}
         </div>
       </section>
 
-      {/* settings */}
-      <section aria-label="Sozlamalar" className="overflow-hidden rounded-3xl bg-white shadow-sm shadow-slate-200/60 dark:bg-[#181b42] dark:shadow-black/30">
-        <h3 className="px-5 pt-4 text-[15px] font-bold text-slate-900 dark:text-slate-50">Sozlamalar</h3>
+      {/* sozlamalar */}
+      <section aria-label="Sozlamalar" className={cn('overflow-hidden', GLASS)}>
+        <h3 className="px-5 pt-4 text-[15px] font-bold text-white">Sozlamalar</h3>
 
-        <div className="mt-1 divide-y divide-slate-100 dark:divide-white/10">
-          {/* theme */}
+        <div className="mt-1 divide-y divide-white/8">
           <div className="flex items-center justify-between px-5 py-3.5">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-500 dark:bg-white/10 dark:text-indigo-300">
-                {isDark ? <Sun size={16} /> : <Moon size={16} />}
-              </div>
-              <div>
-                <p className="text-[13.5px] font-bold text-slate-800 dark:text-slate-100">Mavzu</p>
-                <p className="text-[11px] text-slate-400">{isDark ? 'Tungi rejim yoniq' : 'Kunduzgi rejim'}</p>
-              </div>
-            </div>
-            <button
-              onClick={toggleTheme}
-              aria-label={isDark ? 'Kunduzgi rejimga o‘tish' : 'Tungi rejimga o‘tish'}
-              className={cn(
-                'relative flex h-8 w-[62px] items-center rounded-full px-1 transition-colors',
-                isDark ? 'bg-gradient-to-r from-[#3d2f86] to-[#7b61ff]' : 'bg-slate-200'
-              )}
-            >
-              <span
-                className={cn(
-                  'flex h-6 w-6 items-center justify-center rounded-full bg-white text-[12px] shadow transition-transform duration-300',
-                  isDark ? 'translate-x-[30px]' : 'translate-x-0'
-                )}
-              >
-                {isDark ? '🌙' : '☀️'}
-              </span>
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between px-5 py-3.5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-500 dark:bg-emerald-500/10 dark:text-emerald-300">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/12 text-emerald-300 ring-1 ring-emerald-400/20">
                 <ShieldCheck size={17} />
               </div>
               <div>
-                <p className="text-[13.5px] font-bold text-slate-800 dark:text-slate-100">Himoya</p>
-                <p className="text-[11px] text-slate-400">Doimiy blokdan chiqmaslik</p>
+                <p className="text-[13.5px] font-bold text-white">Himoya</p>
+                <p className="text-[11px] text-white/40">Doimiy blokdan chiqmaslik</p>
               </div>
             </div>
             <Switch
               checked={profile.protectionEnabled}
               onCheckedChange={(v) => patchMutation.mutate({ protectionEnabled: v })}
               aria-label="Himoya sozlamasi"
+              className="data-[state=checked]:bg-emerald-500/70"
             />
           </div>
 
           <div className="flex items-center justify-between px-5 py-3.5">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/8 text-white/70 ring-1 ring-white/10">
                 <Lock size={16} />
               </div>
               <div>
-                <p className="text-[13.5px] font-bold text-slate-800 dark:text-slate-100">Qattiq rejim</p>
-                <p className="text-[11px] text-slate-400">Erta chiqish taqiqlanadi</p>
+                <p className="text-[13.5px] font-bold text-white">Qattiq rejim</p>
+                <p className="text-[11px] text-white/40">Erta chiqish taqiqlanadi</p>
               </div>
             </div>
             <Switch
               checked={profile.strictMode}
               onCheckedChange={(v) => patchMutation.mutate({ strictMode: v })}
               aria-label="Qattiq rejim sozlamasi"
+              className="data-[state=checked]:bg-rose-500/70"
             />
           </div>
 
           <div className="flex items-center justify-between px-5 py-3.5">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-500 dark:bg-rose-500/10 dark:text-rose-300">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/12 text-rose-300 ring-1 ring-rose-400/20">
                 <Bell size={16} />
               </div>
               <div>
-                <p className="text-[13.5px] font-bold text-slate-800 dark:text-slate-100">Eslatmalar</p>
-                <p className="text-[11px] text-slate-400">Limit ogohlantirishlari</p>
+                <p className="text-[13.5px] font-bold text-white">Eslatmalar</p>
+                <p className="text-[11px] text-white/40">Limit ogohlantirishlari</p>
               </div>
             </div>
-            <Switch
-              defaultChecked
-              aria-label="Eslatmalar sozlamasi"
-            />
+            <Switch defaultChecked aria-label="Eslatmalar sozlamasi" />
           </div>
 
-          {/* daily goal */}
-          <button
-            onClick={() => setTab('stats')}
-            className="flex w-full items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-slate-50 dark:hover:bg-white/5"
-          >
+          {/* kunlik maqsad */}
+          <div className="flex items-center justify-between px-5 py-3.5">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-500 dark:bg-violet-500/10 dark:text-violet-300">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/12 text-violet-300 ring-1 ring-violet-400/20">
                 <Gauge size={16} />
               </div>
               <div>
-                <p className="text-[13.5px] font-bold text-slate-800 dark:text-slate-100">Kunlik ekran maqsadi</p>
-                <p className="text-[11px] text-slate-400">Hozir: {formatMinutes(profile.goalMinutes)}</p>
+                <p className="text-[13.5px] font-bold text-white">Kunlik ekran maqsadi</p>
+                <p className="text-[11px] text-white/40">Hozir: {formatMinutes(profile.goalMinutes)}</p>
               </div>
             </div>
-            <ChevronRight size={17} className="text-slate-300" />
-          </button>
+            <div className="flex gap-1.5">
+              {[180, 240, 300].map((g) => (
+                <button
+                  key={g}
+                  onClick={() => patchMutation.mutate({ goalMinutes: g })}
+                  aria-label={`Maqsad ${g} daqiqa`}
+                  className={cn(
+                    'rounded-full px-2.5 py-1 text-[10.5px] font-bold ring-1 transition-all active:scale-95',
+                    profile.goalMinutes === g
+                      ? 'bg-[#7dd3fc]/15 text-[#bfe9ff] ring-[#7dd3fc]/45'
+                      : 'bg-white/[0.05] text-white/50 ring-white/10'
+                  )}
+                >
+                  {g / 60}h
+                </button>
+              ))}
+            </div>
+          </div>
 
-          {/* PIN lock */}
+          {/* PIN qulfi */}
           <button
             onClick={() => {
               if (!pinEnabled) setPinDialogOpen(true)
@@ -303,25 +303,25 @@ export function ProfileTab() {
                 toast.info('PIN qulfi o‘chirildi 🔓')
               }
             }}
-            className="flex w-full items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-slate-50 dark:hover:bg-white/5"
+            className="flex w-full items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-white/[0.03]"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-500 dark:bg-amber-500/10 dark:text-amber-300">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/12 text-amber-300 ring-1 ring-amber-400/20">
                 <KeyRound size={16} />
               </div>
               <div>
-                <p className="text-[13.5px] font-bold text-slate-800 dark:text-slate-100">PIN qulfi</p>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[13.5px] font-bold text-white">PIN qulfi</p>
+                <p className="text-[11px] text-white/40">
                   {pinEnabled ? 'Ilova PIN bilan himoyalangan' : 'Ilovani PIN kod bilan himoyalang'}
                 </p>
               </div>
             </div>
             <span
               className={cn(
-                'rounded-full px-2.5 py-1 text-[10.5px] font-bold',
+                'rounded-full px-2.5 py-1 text-[10.5px] font-bold ring-1',
                 pinEnabled
-                  ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/20'
-                  : 'bg-slate-100 text-slate-500 ring-1 ring-slate-200 dark:bg-white/5 dark:text-slate-400 dark:ring-white/10'
+                  ? 'bg-emerald-500/10 text-emerald-300 ring-emerald-400/25'
+                  : 'bg-white/5 text-white/40 ring-white/10'
               )}
             >
               {pinEnabled ? 'YONIQ' : 'O‘CHIQ'}
@@ -330,31 +330,31 @@ export function ProfileTab() {
 
           <div className="flex items-center justify-between px-5 py-3.5">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-500 dark:bg-sky-500/10 dark:text-sky-300">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/12 text-sky-300 ring-1 ring-sky-400/20">
                 <CircleHelp size={16} />
               </div>
-              <p className="text-[13.5px] font-bold text-slate-800 dark:text-slate-100">Yordam</p>
+              <p className="text-[13.5px] font-bold text-white">Yordam</p>
             </div>
-            <ChevronRight size={17} className="text-slate-300" />
+            <ChevronRight size={17} className="text-white/25" />
           </div>
 
           <button
             onClick={() => toast.info('Bu demo — chiqish shart emas 😊')}
-            className="flex w-full items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-slate-50 dark:hover:bg-white/5"
+            className="flex w-full items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-white/[0.03]"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-500 dark:bg-rose-500/10 dark:text-rose-300">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/12 text-rose-300 ring-1 ring-rose-400/20">
                 <LogOut size={16} />
               </div>
-              <p className="text-[13.5px] font-bold text-rose-500">Chiqish</p>
+              <p className="text-[13.5px] font-bold text-rose-300">Chiqish</p>
             </div>
-            <ChevronRight size={17} className="text-slate-300" />
+            <ChevronRight size={17} className="text-white/25" />
           </button>
         </div>
       </section>
 
-      <p className="pb-1 text-center text-[11px] text-slate-300 dark:text-slate-600">
-        Opal Clone · v1.0 · Next.js bilan qurilgan
+      <p className="pb-1 text-center text-[10.5px] text-white/25">
+        Opal Clone · v2.0 · Apple Design Award ruhida
       </p>
 
       <PinSetupDialog open={pinDialogOpen} onOpenChange={setPinDialogOpen} onSaved={setPin} />
@@ -362,7 +362,7 @@ export function ProfileTab() {
   )
 }
 
-/** Fires a toast whenever a not-yet-seen achievement is unlocked */
+/** Yangi ochilgan yutuq uchun toast */
 function AchievementWatcher({
   achievements,
   seen,
@@ -376,7 +376,6 @@ function AchievementWatcher({
   useEffect(() => {
     const fresh = achievements.filter((a) => a.unlocked && !seen.includes(a.label))
     if (fresh.length > 0) {
-      // small delay so the tab transition finishes first
       timer.current = setTimeout(() => {
         for (const a of fresh) {
           toast.success(`${a.emoji} Yutuq ochildi!`, { description: `${a.label} — ${a.desc}` })
@@ -391,7 +390,7 @@ function AchievementWatcher({
   return null
 }
 
-/** Two-step PIN setup inside a dialog (enter → confirm) */
+/** Ikki qadamli PIN sozlash (kiritish → tasdiqlash) */
 function PinSetupDialog({
   open,
   onOpenChange,
@@ -405,7 +404,6 @@ function PinSetupDialog({
   const [first, setFirst] = useState('')
   const [errorPulse, setErrorPulse] = useState(0)
 
-  // dialog har ochilganda holatni tiklash (render-adjust pattern)
   const [lastOpen, setLastOpen] = useState(open)
   if (open !== lastOpen) {
     setLastOpen(open)
@@ -434,7 +432,10 @@ function PinSetupDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent aria-describedby={undefined} className="max-w-[320px] rounded-3xl border-0 bg-white p-6 shadow-2xl dark:bg-[#181b42]">
+      <DialogContent
+        aria-describedby={undefined}
+        className="max-w-[320px] rounded-3xl border border-white/12 bg-[#0c0f1c] p-6 shadow-2xl"
+      >
         <DialogTitle className="sr-only">PIN kod sozlash</DialogTitle>
         <PinPad
           key={step}
