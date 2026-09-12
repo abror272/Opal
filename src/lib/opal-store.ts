@@ -23,6 +23,11 @@ interface OpalState {
   activeSession: ActiveSession | null
   startSession: (s: ActiveSession) => void
   endSession: () => void
+  theme: 'light' | 'dark'
+  setTheme: (t: 'light' | 'dark') => void
+  toggleTheme: () => void
+  breathingOpen: boolean
+  setBreathingOpen: (v: boolean) => void
 }
 
 export const useOpalStore = create<OpalState>()(
@@ -33,6 +38,11 @@ export const useOpalStore = create<OpalState>()(
       activeSession: null,
       startSession: (activeSession) => set({ activeSession }),
       endSession: () => set({ activeSession: null }),
+      theme: 'light',
+      setTheme: (theme) => set({ theme }),
+      toggleTheme: () => set((s) => ({ theme: s.theme === 'light' ? 'dark' : 'light' })),
+      breathingOpen: false,
+      setBreathingOpen: (breathingOpen) => set({ breathingOpen }),
     }),
     { name: 'opal-session-store' }
   )

@@ -19,7 +19,7 @@ export function BottomTabBar() {
 
   return (
     <nav
-      className="relative z-30 shrink-0 border-t border-slate-200/70 bg-white/85 backdrop-blur-xl"
+      className="relative z-30 shrink-0 border-t border-slate-200/70 bg-white/85 backdrop-blur-xl dark:border-white/10 dark:bg-[#12143a]/90"
       aria-label="Asosiy navigatsiya"
     >
       {activeSession && (
@@ -48,13 +48,13 @@ export function BottomTabBar() {
               aria-current={active ? 'page' : undefined}
               className={cn(
                 'group flex flex-col items-center gap-0.5 rounded-xl py-1.5 transition-colors',
-                active ? 'text-[#3d5afe]' : 'text-slate-400 hover:text-slate-600'
+                active ? 'text-[#3d5afe] dark:text-[#8ea2ff]' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
               )}
             >
               <span
                 className={cn(
                   'relative flex h-8 w-12 items-center justify-center rounded-full transition-all',
-                  active && 'bg-[#3d5afe]/10'
+                  active && 'bg-[#3d5afe]/15'
                 )}
               >
                 <Icon

@@ -19,9 +19,9 @@ import { cn } from '@/lib/utils'
 import { Clock3, History, Lock, Play, Trophy } from 'lucide-react'
 
 function scoreColor(score: number) {
-  if (score >= 90) return 'text-emerald-600 bg-emerald-50 ring-emerald-200'
-  if (score >= 75) return 'text-violet-600 bg-violet-50 ring-violet-200'
-  return 'text-amber-600 bg-amber-50 ring-amber-200'
+  if (score >= 90) return 'text-emerald-600 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 ring-emerald-200 dark:ring-emerald-500/25'
+  if (score >= 75) return 'text-violet-600 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/10 ring-violet-200 dark:ring-violet-500/25'
+  return 'text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 ring-amber-200 dark:ring-amber-500/25'
 }
 
 export function FocusTab() {
@@ -63,7 +63,7 @@ export function FocusTab() {
   return (
     <div className="animate-slide-up space-y-5 px-5 pb-6 pt-3">
       <header>
-        <h2 className="text-[22px] font-extrabold tracking-tight text-slate-900">Fokus sessiyalari</h2>
+        <h2 className="text-[22px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">Fokus sessiyalari</h2>
         <p className="text-[13px] text-slate-400">O‘zingizga mos rejimni tanlang va boshlang</p>
       </header>
 
@@ -101,7 +101,7 @@ export function FocusTab() {
 
       {/* history */}
       <section aria-label="Sessiyalar tarixi">
-        <h3 className="mb-2.5 flex items-center gap-1.5 px-1 text-[14px] font-bold text-slate-800">
+        <h3 className="mb-2.5 flex items-center gap-1.5 px-1 text-[14px] font-bold text-slate-800 dark:text-slate-100">
           <History size={15} className="text-slate-400" /> So‘nggi sessiyalar
         </h3>
         {historyQ.isLoading ? (
@@ -115,14 +115,14 @@ export function FocusTab() {
             {(historyQ.data ?? []).slice(0, 6).map((s) => (
               <div
                 key={s.id}
-                className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-sm shadow-slate-200/60"
+                className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-sm shadow-slate-200/60 dark:bg-[#181b42] dark:shadow-black/30"
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 text-lg">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 text-lg dark:from-white/10 dark:to-white/15">
                   {s.emoji}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13.5px] font-bold text-slate-800">{s.label}</p>
-                  <p className="text-[11.5px] text-slate-400">
+                  <p className="truncate text-[13.5px] font-bold text-slate-800 dark:text-slate-100">{s.label}</p>
+                  <p className="text-[11.5px] text-slate-400 dark:text-slate-500">
                     {new Date(s.startedAt).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short' })}
                     {' · '}
                     {new Date(s.startedAt).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
@@ -146,11 +146,11 @@ export function FocusTab() {
 
       {/* duration picker dialog */}
       <Dialog open={!!picker} onOpenChange={(o) => !o && setPicker(null)}>
-        <DialogContent className="w-[calc(100%-2rem)] max-w-[350px] translate-y-[-70%] rounded-3xl border-0 bg-white p-5 shadow-2xl [top:50%]">
+        <DialogContent className="w-[calc(100%-2rem)] max-w-[350px] translate-y-[-70%] rounded-3xl border-0 bg-white p-5 shadow-2xl [top:50%] dark:bg-[#1c1f4e]">
           {picker && (
             <>
               <DialogHeader className="space-y-1 text-left">
-                <DialogTitle className="flex items-center gap-2 text-[18px] font-extrabold text-slate-900">
+                <DialogTitle className="flex items-center gap-2 text-[18px] font-extrabold text-slate-900 dark:text-slate-50">
                   <span className="text-2xl">{picker.emoji}</span> {picker.label}
                 </DialogTitle>
                 <DialogDescription className="text-[12.5px]">
@@ -167,7 +167,7 @@ export function FocusTab() {
                       'rounded-2xl py-2.5 text-[13.5px] font-bold transition-all',
                       duration === d
                         ? 'bg-gradient-to-r from-[#3d5afe] to-[#7b61ff] text-white shadow-md shadow-indigo-500/30'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/15'
                     )}
                   >
                     {d} daq
@@ -175,14 +175,14 @@ export function FocusTab() {
                 ))}
               </div>
 
-              <div className="mt-4 flex items-center justify-between rounded-2xl bg-slate-50 p-3.5 ring-1 ring-slate-100">
+              <div className="mt-4 flex items-center justify-between rounded-2xl bg-slate-50 p-3.5 ring-1 ring-slate-100 dark:bg-white/5 dark:ring-white/10">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800 text-white">
                     <Lock size={15} />
                   </div>
                   <div>
-                    <p className="text-[13px] font-bold text-slate-800">Qattiq rejim</p>
-                    <p className="text-[11px] text-slate-400">Erta chiqish imkonini berma</p>
+                    <p className="text-[13px] font-bold text-slate-800 dark:text-slate-100">Qattiq rejim</p>
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500">Erta chiqish imkonini berma</p>
                   </div>
                 </div>
                 <Switch checked={strict} onCheckedChange={setStrict} aria-label="Qattiq rejim" />

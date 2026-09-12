@@ -26,7 +26,7 @@ function ProtectionRing({ progress, minutes, goal }: { progress: number; minutes
             <stop offset="100%" stopColor="#e861ff" />
           </linearGradient>
         </defs>
-        <circle cx="100" cy="100" r={R} fill="none" stroke="#e9e9f7" strokeWidth="16" />
+        <circle cx="100" cy="100" r={R} fill="none" strokeWidth="16" className="stroke-[#e9e9f7] dark:stroke-[#272a55]" />
         <circle
           cx="100"
           cy="100"
@@ -44,7 +44,7 @@ function ProtectionRing({ progress, minutes, goal }: { progress: number; minutes
         <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
           Bugun
         </span>
-        <span className="mt-0.5 text-[34px] font-extrabold leading-none tracking-tight text-slate-900">
+        <span className="mt-0.5 text-[34px] font-extrabold leading-none tracking-tight text-slate-900 dark:text-slate-50">
           {minutes}
         </span>
         <span className="mt-1 text-[12px] font-medium text-slate-400">
@@ -59,6 +59,7 @@ export function HomeTab() {
   const qc = useQueryClient()
   const setTab = useOpalStore((s) => s.setTab)
   const activeSession = useOpalStore((s) => s.activeSession)
+  const setBreathingOpen = useOpalStore((s) => s.setBreathingOpen)
   const [starting, setStarting] = useState(false)
 
   const statsQ = useQuery<StatsResponse>({
@@ -128,7 +129,7 @@ export function HomeTab() {
           </div>
           <div>
             <p className="text-[12px] font-medium text-slate-400">{greeting} 👋</p>
-            <p className="text-[17px] font-bold leading-tight text-slate-900">{profile.name}</p>
+            <p className="text-[17px] font-bold leading-tight text-slate-900 dark:text-slate-50">{profile.name}</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-400/15 to-amber-400/15 px-3 py-1.5 ring-1 ring-orange-400/25">
@@ -183,22 +184,22 @@ export function HomeTab() {
       </div>
 
       {/* ring */}
-      <section aria-label="Bugungi ekran vaqti" className="rounded-[2rem] bg-white p-5 shadow-sm shadow-slate-200/60">
+      <section aria-label="Bugungi ekran vaqti" className="rounded-[2rem] bg-white p-5 shadow-sm shadow-slate-200/60 dark:bg-[#181b42] dark:shadow-black/30">
         <ProtectionRing progress={progress} minutes={formatMinutes(today.screenTimeMinutes)} goal={today.goalMinutes} />
         <div className="mt-4 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 p-3.5 ring-1 ring-emerald-100">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-600">
+          <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 p-3.5 ring-1 ring-emerald-100 dark:from-emerald-500/10 dark:to-teal-500/10 dark:ring-emerald-500/20">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
               <Sparkles size={13} /> Tejaldi
             </div>
-            <p className="mt-1 text-xl font-extrabold text-emerald-700">
+            <p className="mt-1 text-xl font-extrabold text-emerald-700 dark:text-emerald-300">
               {formatMinutes(today.savedMinutes)}
             </p>
           </div>
-          <div className="rounded-2xl bg-gradient-to-br from-violet-50 to-fuchsia-50 p-3.5 ring-1 ring-violet-100">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-violet-600">
+          <div className="rounded-2xl bg-gradient-to-br from-violet-50 to-fuchsia-50 p-3.5 ring-1 ring-violet-100 dark:from-violet-500/10 dark:to-fuchsia-500/10 dark:ring-violet-500/20">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-400">
               <Timer size={13} /> Sessiyalar
             </div>
-            <p className="mt-1 text-xl font-extrabold text-violet-700">{profile.totalSessions}</p>
+            <p className="mt-1 text-xl font-extrabold text-violet-700 dark:text-violet-300">{profile.totalSessions}</p>
           </div>
         </div>
       </section>
@@ -209,9 +210,9 @@ export function HomeTab() {
           onClick={() => setTab('focus')}
           className="w-full rounded-3xl bg-gradient-to-r from-[#3d5afe] to-[#7b61ff] p-[1.5px] shadow-lg shadow-indigo-500/25 transition-transform active:scale-[0.98]"
         >
-          <span className="flex items-center justify-between rounded-[calc(1.5rem-1.5px)] bg-white px-5 py-4">
+          <span className="flex items-center justify-between rounded-[calc(1.5rem-1.5px)] bg-white px-5 py-4 dark:bg-[#22256a]">
             <span className="text-left">
-              <span className="block text-[15px] font-bold text-slate-900">
+              <span className="block text-[15px] font-bold text-slate-900 dark:text-slate-50">
                 {activeSession.emoji} {activeSession.label} davom etmoqda
               </span>
               <span className="block text-[12px] text-slate-400">Taymerni ko‘rish uchun bosing</span>
@@ -254,11 +255,28 @@ export function HomeTab() {
         </button>
       )}
 
+      {/* breathing quick action */}
+      <button
+        onClick={() => setBreathingOpen(true)}
+        className="flex w-full items-center justify-between rounded-3xl bg-white px-5 py-3.5 shadow-sm shadow-slate-200/60 ring-1 ring-slate-100 transition-transform active:scale-[0.98] dark:bg-[#181b42] dark:shadow-black/30 dark:ring-white/10"
+      >
+        <span className="flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-100 to-teal-100 text-lg dark:from-cyan-500/15 dark:to-teal-500/15">
+            🌬️
+          </span>
+          <span className="text-left">
+            <span className="block text-[13.5px] font-bold text-slate-800 dark:text-slate-100">1 daqiqa tinchlanish</span>
+            <span className="block text-[11px] text-slate-400">Nafas mashqi bilan diqqatni tiklang</span>
+          </span>
+        </span>
+        <ChevronRight size={17} className="text-slate-300" />
+      </button>
+
       {/* blocked apps strip */}
       {blockedApps.length > 0 && (
         <section aria-label="Bloklangan ilovalar">
           <div className="mb-2.5 flex items-center justify-between px-1">
-            <h3 className="text-[14px] font-bold text-slate-800">Bloklangan ilovalar</h3>
+            <h3 className="text-[14px] font-bold text-slate-800 dark:text-slate-100">Bloklangan ilovalar</h3>
             <button
               onClick={() => setTab('apps')}
               className="flex items-center gap-0.5 text-[12px] font-semibold text-[#3d5afe]"
@@ -270,7 +288,7 @@ export function HomeTab() {
             {blockedApps.slice(0, 8).map((a) => (
               <div
                 key={a.id}
-                className="flex w-[76px] shrink-0 flex-col items-center gap-1.5 rounded-2xl bg-white p-3 shadow-sm shadow-slate-200/60"
+                className="flex w-[76px] shrink-0 flex-col items-center gap-1.5 rounded-2xl bg-white p-3 shadow-sm shadow-slate-200/60 dark:bg-[#181b42] dark:shadow-black/30"
               >
                 <div
                   className={cn(
@@ -280,10 +298,10 @@ export function HomeTab() {
                 >
                   {a.emoji}
                 </div>
-                <span className="w-full truncate text-center text-[10.5px] font-semibold text-slate-600">
+                <span className="w-full truncate text-center text-[10.5px] font-semibold text-slate-600 dark:text-slate-300">
                   {a.name}
                 </span>
-                <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-bold text-rose-500 ring-1 ring-rose-100">
+                <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-bold text-rose-500 ring-1 ring-rose-100 dark:bg-rose-500/15 dark:ring-rose-500/30">
                   BLOK
                 </span>
               </div>

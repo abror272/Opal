@@ -281,11 +281,11 @@ export function ActiveSessionOverlay() {
       {/* confirm end dialog */}
       {confirmEnd && (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm">
-          <div className="w-full max-w-[300px] animate-pop rounded-3xl bg-white p-5 text-center shadow-2xl">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-2xl">
+          <div className="w-full max-w-[300px] animate-pop rounded-3xl bg-white p-5 text-center shadow-2xl dark:bg-[#1c1f4e]">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-2xl dark:bg-rose-500/15">
               🫥
             </div>
-            <h3 className="mt-3 text-[17px] font-extrabold text-slate-900">Sessiyani tugatasizmi?</h3>
+            <h3 className="mt-3 text-[17px] font-extrabold text-slate-900 dark:text-slate-50">Sessiyani tugatasizmi?</h3>
             <p className="mt-1 text-[12.5px] leading-relaxed text-slate-400">
               {Math.round(progress * 100)}% bajarildi. Erta chiqish streakingizga ta&apos;sir qilishi mumkin.
             </p>
@@ -327,7 +327,7 @@ export function ActiveSessionOverlay() {
                 <button
                   onClick={() => finish(true)}
                   disabled={finishing}
-                  className="w-full rounded-2xl bg-slate-100 py-3 text-[14px] font-bold text-slate-600 active:scale-[0.98]"
+                  className="w-full rounded-2xl bg-slate-100 py-3 text-[14px] font-bold text-slate-600 active:scale-[0.98] dark:bg-white/10 dark:text-slate-200"
                 >
                   {finishing ? 'Yakunlanmoqda…' : 'Baribir tugatish'}
                 </button>

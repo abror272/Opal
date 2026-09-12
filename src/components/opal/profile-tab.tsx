@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { Flame, Timer, Hourglass, Crown, ChevronRight, ShieldCheck, Lock, Bell, Gauge, LogOut, CircleHelp, Sparkles } from 'lucide-react'
+import { Flame, Timer, Hourglass, Crown, ChevronRight, ShieldCheck, Lock, Bell, Gauge, LogOut, CircleHelp, Sparkles, Moon, Sun } from 'lucide-react'
 
 function achievementsFor(profile: UserProfile) {
   return [
@@ -28,6 +28,8 @@ export function ProfileTab() {
     queryKey: ['profile'],
     queryFn: async () => (await fetch('/api/profile')).json(),
   })
+  const isDark = useOpalStore((s) => s.theme === 'dark')
+  const toggleTheme = useOpalStore((s) => s.toggleTheme)
 
   const patchMutation = useMutation({
     mutationFn: async (patch: Partial<UserProfile>) => {
@@ -69,7 +71,7 @@ export function ProfileTab() {
   return (
     <div className="animate-slide-up space-y-5 px-5 pb-6 pt-3">
       <header>
-        <h2 className="text-[22px] font-extrabold tracking-tight text-slate-900">Profil</h2>
+        <h2 className="text-[22px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">Profil</h2>
       </header>
 
       {/* identity card */}
@@ -129,30 +131,30 @@ export function ProfileTab() {
           }}
           className="group relative w-full overflow-hidden rounded-3xl bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 p-[1.5px] text-left shadow-lg shadow-orange-400/25 transition-transform active:scale-[0.98]"
         >
-          <span className="relative flex items-center gap-3 rounded-[calc(1.5rem-1.5px)] bg-white px-4 py-4">
+          <span className="relative flex items-center gap-3 rounded-[calc(1.5rem-1.5px)] bg-white px-4 py-4 dark:bg-[#22256a]">
             <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white">
               <Crown size={20} />
             </span>
             <span className="flex-1">
-              <span className="block text-[14.5px] font-extrabold text-slate-900">Opal Plus’ga o‘tish</span>
+              <span className="block text-[14.5px] font-extrabold text-slate-900 dark:text-slate-50">Opal Plus’ga o‘tish</span>
               <span className="block text-[11.5px] text-slate-400">Cheklovsriz bloklar, qattiq rejim, maxsus mavzular</span>
             </span>
             <ChevronRight size={18} className="text-slate-300 transition-transform group-hover:translate-x-0.5" />
           </span>
         </button>
       ) : (
-        <div className="flex items-center gap-3 rounded-3xl bg-gradient-to-r from-amber-400/15 to-orange-400/15 p-4 ring-1 ring-amber-400/30">
-          <Crown size={22} className="text-amber-500" />
+        <div className="flex items-center gap-3 rounded-3xl bg-gradient-to-r from-amber-400/15 to-orange-400/15 p-4 ring-1 ring-amber-400/30 dark:bg-amber-400/10">
+          <Crown size={22} className="text-amber-500 dark:text-amber-300" />
           <div>
-            <p className="text-[14px] font-extrabold text-slate-900">Opal Plus faol 👑</p>
-            <p className="text-[11.5px] text-slate-500">Hamma premium funksiyalar ochiq</p>
+            <p className="text-[14px] font-extrabold text-slate-900 dark:text-slate-50">Opal Plus faol 👑</p>
+            <p className="text-[11.5px] text-slate-500 dark:text-slate-400">Hamma premium funksiyalar ochiq</p>
           </div>
         </div>
       )}
 
       {/* achievements */}
-      <section aria-label="Yutuqlar" className="rounded-3xl bg-white p-5 shadow-sm shadow-slate-200/60">
-        <h3 className="mb-3.5 flex items-center gap-2 text-[15px] font-bold text-slate-900">
+      <section aria-label="Yutuqlar" className="rounded-3xl bg-white p-5 shadow-sm shadow-slate-200/60 dark:bg-[#181b42] dark:shadow-black/30">
+        <h3 className="mb-3.5 flex items-center gap-2 text-[15px] font-bold text-slate-900 dark:text-slate-50">
           <Sparkles size={16} className="text-violet-500" /> Yutuqlar
         </h3>
         <div className="grid grid-cols-3 gap-3">
@@ -162,12 +164,12 @@ export function ProfileTab() {
               className={cn(
                 'flex flex-col items-center gap-1 rounded-2xl p-3 text-center ring-1',
                 a.unlocked
-                  ? 'bg-gradient-to-b from-violet-50 to-fuchsia-50 ring-violet-100'
-                  : 'bg-slate-50 opacity-45 ring-slate-100 grayscale'
+                  ? 'bg-gradient-to-b from-violet-50 to-fuchsia-50 ring-violet-100 dark:from-violet-500/10 dark:to-fuchsia-500/10 dark:ring-violet-500/20'
+                  : 'bg-slate-50 opacity-45 ring-slate-100 grayscale dark:bg-white/5 dark:ring-white/10'
               )}
             >
               <span className="text-[24px]">{a.emoji}</span>
-              <span className="text-[10.5px] font-bold leading-tight text-slate-700">{a.label}</span>
+              <span className="text-[10.5px] font-bold leading-tight text-slate-700 dark:text-slate-200">{a.label}</span>
               <span className="text-[9.5px] text-slate-400">{a.desc}</span>
             </div>
           ))}
@@ -175,17 +177,47 @@ export function ProfileTab() {
       </section>
 
       {/* settings */}
-      <section aria-label="Sozlamalar" className="overflow-hidden rounded-3xl bg-white shadow-sm shadow-slate-200/60">
-        <h3 className="px-5 pt-4 text-[15px] font-bold text-slate-900">Sozlamalar</h3>
+      <section aria-label="Sozlamalar" className="overflow-hidden rounded-3xl bg-white shadow-sm shadow-slate-200/60 dark:bg-[#181b42] dark:shadow-black/30">
+        <h3 className="px-5 pt-4 text-[15px] font-bold text-slate-900 dark:text-slate-50">Sozlamalar</h3>
 
-        <div className="mt-1 divide-y divide-slate-100">
+        <div className="mt-1 divide-y divide-slate-100 dark:divide-white/10">
+          {/* theme */}
           <div className="flex items-center justify-between px-5 py-3.5">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-500">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-500 dark:bg-white/10 dark:text-indigo-300">
+                {isDark ? <Sun size={16} /> : <Moon size={16} />}
+              </div>
+              <div>
+                <p className="text-[13.5px] font-bold text-slate-800 dark:text-slate-100">Mavzu</p>
+                <p className="text-[11px] text-slate-400">{isDark ? 'Tungi rejim yoniq' : 'Kunduzgi rejim'}</p>
+              </div>
+            </div>
+            <button
+              onClick={toggleTheme}
+              aria-label={isDark ? 'Kunduzgi rejimga o‘tish' : 'Tungi rejimga o‘tish'}
+              className={cn(
+                'relative flex h-8 w-[62px] items-center rounded-full px-1 transition-colors',
+                isDark ? 'bg-gradient-to-r from-[#3d2f86] to-[#7b61ff]' : 'bg-slate-200'
+              )}
+            >
+              <span
+                className={cn(
+                  'flex h-6 w-6 items-center justify-center rounded-full bg-white text-[12px] shadow transition-transform duration-300',
+                  isDark ? 'translate-x-[30px]' : 'translate-x-0'
+                )}
+              >
+                {isDark ? '🌙' : '☀️'}
+              </span>
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between px-5 py-3.5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-500 dark:bg-emerald-500/10 dark:text-emerald-300">
                 <ShieldCheck size={17} />
               </div>
               <div>
-                <p className="text-[13.5px] font-bold text-slate-800">Himoya</p>
+                <p className="text-[13.5px] font-bold text-slate-800 dark:text-slate-100">Himoya</p>
                 <p className="text-[11px] text-slate-400">Doimiy blokdan chiqmaslik</p>
               </div>
             </div>
@@ -198,11 +230,11 @@ export function ProfileTab() {
 
           <div className="flex items-center justify-between px-5 py-3.5">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300">
                 <Lock size={16} />
               </div>
               <div>
-                <p className="text-[13.5px] font-bold text-slate-800">Qattiq rejim</p>
+                <p className="text-[13.5px] font-bold text-slate-800 dark:text-slate-100">Qattiq rejim</p>
                 <p className="text-[11px] text-slate-400">Erta chiqish taqiqlanadi</p>
               </div>
             </div>
@@ -215,11 +247,11 @@ export function ProfileTab() {
 
           <div className="flex items-center justify-between px-5 py-3.5">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-500">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-500 dark:bg-rose-500/10 dark:text-rose-300">
                 <Bell size={16} />
               </div>
               <div>
-                <p className="text-[13.5px] font-bold text-slate-800">Eslatmalar</p>
+                <p className="text-[13.5px] font-bold text-slate-800 dark:text-slate-100">Eslatmalar</p>
                 <p className="text-[11px] text-slate-400">Limit ogohlantirishlari</p>
               </div>
             </div>
@@ -232,14 +264,14 @@ export function ProfileTab() {
           {/* daily goal */}
           <button
             onClick={() => setTab('stats')}
-            className="flex w-full items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-slate-50"
+            className="flex w-full items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-slate-50 dark:hover:bg-white/5"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-500">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-500 dark:bg-violet-500/10 dark:text-violet-300">
                 <Gauge size={16} />
               </div>
               <div>
-                <p className="text-[13.5px] font-bold text-slate-800">Kunlik ekran maqsadi</p>
+                <p className="text-[13.5px] font-bold text-slate-800 dark:text-slate-100">Kunlik ekran maqsadi</p>
                 <p className="text-[11px] text-slate-400">Hozir: {formatMinutes(profile.goalMinutes)}</p>
               </div>
             </div>
@@ -248,20 +280,20 @@ export function ProfileTab() {
 
           <div className="flex items-center justify-between px-5 py-3.5">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-500">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-500 dark:bg-sky-500/10 dark:text-sky-300">
                 <CircleHelp size={16} />
               </div>
-              <p className="text-[13.5px] font-bold text-slate-800">Yordam</p>
+              <p className="text-[13.5px] font-bold text-slate-800 dark:text-slate-100">Yordam</p>
             </div>
             <ChevronRight size={17} className="text-slate-300" />
           </div>
 
           <button
             onClick={() => toast.info('Bu demo — chiqish shart emas 😊')}
-            className="flex w-full items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-slate-50"
+            className="flex w-full items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-slate-50 dark:hover:bg-white/5"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-500">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-500 dark:bg-rose-500/10 dark:text-rose-300">
                 <LogOut size={16} />
               </div>
               <p className="text-[13.5px] font-bold text-rose-500">Chiqish</p>
@@ -271,7 +303,7 @@ export function ProfileTab() {
         </div>
       </section>
 
-      <p className="pb-1 text-center text-[11px] text-slate-300">
+      <p className="pb-1 text-center text-[11px] text-slate-300 dark:text-slate-600">
         Opal Clone · v1.0 · Next.js bilan qurilgan
       </p>
     </div>

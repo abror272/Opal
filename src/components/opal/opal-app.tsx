@@ -13,14 +13,19 @@ import { ProfileTab } from './profile-tab'
 import { ActiveSessionOverlay } from './active-session-overlay'
 import { Onboarding, useNeedsOnboarding } from './onboarding'
 import { NotificationBanner } from './notification-banner'
+import { BreathingOverlay } from './breathing-overlay'
+import { cn } from '@/lib/utils'
 
 export function OpalApp() {
   const tab = useOpalStore((s) => s.tab)
   const activeSession = useOpalStore((s) => s.activeSession)
   const endSession = useOpalStore((s) => s.endSession)
   const needsOnboarding = useNeedsOnboarding()
+  const theme = useOpalStore((s) => s.theme)
+  const breathingOpen = useOpalStore((s) => s.breathingOpen)
   const [obDone, setObDone] = useState(false)
   const showOnboarding = needsOnboarding === true && !obDone
+  const isDark = theme === 'dark'
 
   // stale session cleanup: legacy 'preview' sessions or sessions from a previous day
   useEffect(() => {
@@ -82,7 +87,13 @@ export function OpalApp() {
       </aside>
 
       {/* Phone */}
-      <div className="relative z-20 h-[100dvh] w-full overflow-hidden bg-[#f4f4fb] shadow-2xl shadow-black/60 md:h-[844px] md:max-h-[94vh] md:w-[392px] md:rounded-[3.4rem] md:border-[11px] md:border-[#131540] md:ring-1 md:ring-white/10">
+      <div
+        className={cn(
+          'relative z-20 h-[100dvh] w-full overflow-hidden shadow-2xl shadow-black/60 transition-colors duration-300 md:h-[844px] md:max-h-[94vh] md:w-[392px] md:rounded-[3.4rem] md:border-[11px] md:border-[#131540] md:ring-1 md:ring-white/10',
+          isDark ? 'bg-[#0d0e2b]' : 'bg-[#f4f4fb]',
+          isDark && 'dark'
+        )}
+      >
         <div className="relative flex h-full w-full flex-col">
           {/* notch (desktop only) */}
           <div className="pointer-events-none absolute left-1/2 top-2 z-40 hidden h-7 w-32 -translate-x-1/2 rounded-full bg-[#131540] md:block" aria-hidden="true" />
@@ -95,7 +106,7 @@ export function OpalApp() {
             <Onboarding onDone={() => setObDone(true)} />
           ) : (
             <>
-              <StatusBar />
+              <StatusBar dark={isDark} />
 
               <main className="thin-scrollbar relative flex-1 overflow-y-auto overflow-x-hidden">
                 <AnimatePresence mode="wait" initial={false}>
@@ -122,6 +133,7 @@ export function OpalApp() {
 
           {!showOnboarding && needsOnboarding === false && <NotificationBanner />}
           {activeSession && <ActiveSessionOverlay />}
+          {breathingOpen && !activeSession && <BreathingOverlay />}
         </div>
       </div>
     </div>

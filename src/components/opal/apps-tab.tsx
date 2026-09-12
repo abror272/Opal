@@ -22,7 +22,7 @@ export function AppsTab() {
     queryFn: async () => (await fetch('/api/apps')).json(),
   })
 
-  const toggleMutation = useMutation({
+  const toggleMutation = useMutation<BlockApp, Error, { id: string; blocked: boolean; name: string }>({
     mutationFn: async ({ id, blocked }: { id: string; blocked: boolean }) => {
       const res = await fetch('/api/apps', {
         method: 'PATCH',
@@ -37,13 +37,13 @@ export function AppsTab() {
       if (prev) qc.setQueryData<BlockApp[]>(['apps'], prev.map((a) => (a.id === id ? { ...a, blocked } : a)))
       return { prev }
     },
-    onError: (_e, _v, ctx) => {
-      if (ctx?.prev) qc.setQueryData(['apps'], ctx.prev)
+    onError: () => {
+      void qc.invalidateQueries({ queryKey: ['apps'] })
       toast.error('Blokni o‘zgartirish bajarilmadi')
     },
     onSuccess: (_d, vars) => {
-      if (vars.blocked) toast.success(`${vars.name ?? 'Ilova'} bloklandi 🛡️`)
-      else toast.info(`${vars.name ?? 'Ilova}'} blokdan chiqarildi`)
+      if (vars.blocked) toast.success(`${vars.name} bloklandi 🛡️`)
+      else toast.info(`${vars.name} blokdan chiqarildi`)
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ['apps'] })
@@ -82,7 +82,7 @@ export function AppsTab() {
     <div className="animate-slide-up space-y-4 px-5 pb-6 pt-3">
       <header className="flex items-start justify-between">
         <div>
-          <h2 className="text-[22px] font-extrabold tracking-tight text-slate-900">Ilovalar</h2>
+          <h2 className="text-[22px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">Ilovalar</h2>
           <p className="text-[13px] text-slate-400">
             {blockedCount} bloklangan · bugun {formatMinutes(totalTodayMinutes)}
           </p>
@@ -100,7 +100,7 @@ export function AppsTab() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Ilova izlash…"
           aria-label="Ilova izlash"
-          className="w-full rounded-2xl border-0 bg-white py-3 pl-11 pr-4 text-[14px] font-medium text-slate-700 shadow-sm shadow-slate-200/60 ring-1 ring-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#7b61ff]/40"
+          className="w-full rounded-2xl border-0 bg-white py-3 pl-11 pr-4 text-[14px] font-medium text-slate-700 shadow-sm shadow-slate-200/60 ring-1 ring-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#7b61ff]/40 dark:bg-[#181b42] dark:text-slate-200 dark:shadow-black/30 dark:ring-white/10"
         />
       </div>
 
@@ -114,7 +114,7 @@ export function AppsTab() {
               'shrink-0 rounded-full px-3.5 py-2 text-[12.5px] font-semibold transition-all',
               category === c
                 ? 'bg-gradient-to-r from-[#3d5afe] to-[#7b61ff] text-white shadow-md shadow-indigo-500/25'
-                : 'bg-white text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50'
+                : 'bg-white text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50 dark:bg-white/5 dark:text-slate-400 dark:ring-white/10 dark:hover:bg-white/10'
             )}
           >
             {c}
@@ -130,7 +130,7 @@ export function AppsTab() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-3xl bg-white py-10 text-slate-400 shadow-sm">
+        <div className="flex flex-col items-center gap-2 rounded-3xl bg-white py-10 text-slate-400 shadow-sm dark:bg-[#181b42] dark:shadow-black/30">
           <SearchX size={28} />
           <p className="text-[13px] font-medium">Hech narsa topilmadi</p>
         </div>
@@ -146,8 +146,8 @@ export function AppsTab() {
               <li
                 key={app.id}
                 className={cn(
-                  'rounded-3xl bg-white p-4 shadow-sm shadow-slate-200/60 transition-opacity',
-                  app.blocked && 'ring-1 ring-rose-100'
+                  'rounded-3xl bg-white p-4 shadow-sm shadow-slate-200/60 transition-opacity dark:bg-[#181b42] dark:shadow-black/30',
+                  app.blocked && 'ring-1 ring-rose-100 dark:ring-rose-500/20'
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -168,7 +168,7 @@ export function AppsTab() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="truncate text-[15px] font-bold text-slate-900">{app.name}</p>
+                      <p className="truncate text-[15px] font-bold text-slate-900 dark:text-slate-50">{app.name}</p>
                       {app.blocked && (
                         <span className="shrink-0 rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-bold text-rose-500 ring-1 ring-rose-100">
                           BLOK
@@ -182,7 +182,7 @@ export function AppsTab() {
                   <Switch
                     checked={app.blocked}
                     onCheckedChange={(v) =>
-                      toggleMutation.mutate({ id: app.id, blocked: v, name: app.name } as never)
+                      toggleMutation.mutate({ id: app.id, blocked: v, name: app.name })
                     }
                     aria-label={`${app.name} bloklash`}
                     className="data-[state=checked]:bg-rose-500"
@@ -190,8 +190,8 @@ export function AppsTab() {
                 </div>
 
                 {/* limit row */}
-                <div className="mt-3 flex items-center gap-3 border-t border-slate-100 pt-3">
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+                <div className="mt-3 flex items-center gap-3 border-t border-slate-100 pt-3 dark:border-white/10">
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
                     <div
                       className={cn(
                         'h-full rounded-full transition-all duration-500',
@@ -208,7 +208,7 @@ export function AppsTab() {
                       limitMutation.mutate({ id: app.id, dailyLimitMinutes: Number(e.target.value) })
                     }
                     aria-label={`${app.name} kunlik limit`}
-                    className="cursor-pointer rounded-xl bg-slate-100 px-2.5 py-1.5 text-[11.5px] font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#7b61ff]/40"
+                    className="cursor-pointer rounded-xl bg-slate-100 px-2.5 py-1.5 text-[11.5px] font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#7b61ff]/40 dark:bg-white/10 dark:text-slate-300"
                   >
                     <option value="0">Limit yo‘q</option>
                     {[5, 10, 15, 20, 30, 45, 60].map((m) => (
@@ -225,9 +225,9 @@ export function AppsTab() {
       )}
 
       {/* ios-style note */}
-      <div className="flex items-start gap-2.5 rounded-2xl bg-violet-50 p-3.5 ring-1 ring-violet-100">
-        <Lock size={15} className="mt-0.5 shrink-0 text-violet-500" />
-        <p className="text-[11.5px] leading-relaxed text-violet-700/80">
+      <div className="flex items-start gap-2.5 rounded-2xl bg-violet-50 p-3.5 ring-1 ring-violet-100 dark:bg-violet-500/10 dark:ring-violet-500/20">
+        <Lock size={15} className="mt-0.5 shrink-0 text-violet-500 dark:text-violet-300" />
+        <p className="text-[11.5px] leading-relaxed text-violet-700/80 dark:text-violet-300/80">
           Bu demo versiyada bloklash web ilova ichida simulyatsiya qilinadi. Haqiqiy iOS ilovada
           Screen Time API orqali tizim darajasida amalga oshiriladi.
         </p>

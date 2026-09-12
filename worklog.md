@@ -1,6 +1,40 @@
 # Worklog
 
 ---
+Task ID: 3
+Agent: Z.ai Code (main, cron webDevReview round 3)
+Task: Opal clone — Dark mode, nafas mashqi, haftalik hisobot + TypeScript xatolarini tuzatish
+
+Work Log:
+- QA: dev.log'da yangi runtime xato yo'q, barcha API 200 — loyiha barqaror, shuning uchun yangi funksiyalar raundi
+- YANGI — DARK MODE (to'liq):
+  - Store'ga theme ('light'|'dark'), toggleTheme qo'shildi (Zustand persist bilan saqlanadi)
+  - opal-app telefon konteyneriga shartli `dark` class + bg almashinuvi + StatusBar dark prop
+  - BARCHA tablarga (home/focus/stats/apps/profile) + bottom-tab-bar + notification-banner + active-session-overlay + confirm dialoglarga dark: variantlar (kartalar #181b42, matn slate-50/100/200/300, ringlar white/10, badges */500/15)
+  - SVG ring track stroke endi class orqali (dark:stroke-[#272a55])
+  - Profile'ga "Mavzu" qatori: ☀️/🌙 switch (gradient pill, silliq animatsiya)
+- YANGI — NAFAS MASHQI (breathing-overlay.tsx):
+  - 1 daqiqa, 5 sikl × (4s nafas oling / 4s ushlab turing / 4s chiqaring)
+  - framer-motion scale animatsiya, fazalararo rang gradienti, sikl progress nuqtalari, Pauza/Davom etish
+  - Home'da "1 daqiqa tinchlanish" tezkor tugmasi; sessiya aktiv bo'lsa ko'rinmaydi
+- YANGI — HAFTALIK HISOBOT KARTASI (Stats tepasida):
+  - A/B/C/D baho (maqsad ichida kunlar soniga qarab), eng yaxshi kun, "Natijani ulashish" (clipboard + timeout race fallback)
+- BUGFIX — "1 Issue" badge sababi topildi: stats-tab'da `toast` import qilinmagan edi (ReferenceError faqat klikda). Import qo'shildi, badge yo'qoldi
+- BUGFIX — clipboard headless'da abadiy pending: 1.5s Promise.race timeout + fallback toast
+- BUGFIX — emoji/matn ustma-ust tushishi (breathing markaz) olib tashlandi
+- TYPOFIX — apps-tab toggleMutation generik turi (useMutation<BlockApp, Error, {id,blocked,name}>) + onError invalidate strategiyasi; `as never` hack olib tashlandi
+- `bunx tsc --noEmit`: loyiha src toza (faqat skills/examples'dagi eski xatolar qoldi — tegishli emas)
+- E2E (agent-browser): onboarding skip ✓, dark toggle ✓ (Profile), dark Home/Stats chiroyli ✓, nafas mashqi fazalar + sikl hisoblagich ✓, hisobot kartasi C baho (3/7) ✓, share toast ✓, desktop ✓, Issue badge yo'q ✓, konsol toza ✓
+- ESLint 0/0, seed qayta tiklandi (toza demo)
+
+Stage Summary:
+- Ilova endi to'liq ikki rejimli (light/dark) — barcha ekranlar qamrab olindi
+- Wellness xususiyati (nafas mashqi) va ijtimoiy ulashish qo'shildi
+- Tip xavfsizligi mustahkamlandi (tsc 0 xato loyihada)
+- Risklar: headless clipboard cheklovi (real brauzerda OK); dark rejimda recharts tick ranglari hozircha och slate (o'qilishi OK)
+- Keyingi tavsiyalar: WebSocket jonli leaderboard, PIN qulfi, app usage timeline, eksport PDF hisobot, achievements unlock toastlari
+
+---
 Task ID: 2
 Agent: Z.ai Code (main, cron webDevReview round 2)
 Task: Opal clone — bugfix + yangi funksiyalar (onboarding, qattiq rejim, leaderboard, animatsiyalar)

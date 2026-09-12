@@ -1,11 +1,12 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LineChart, Line } from 'recharts'
 import { formatMinutes, dayLabel, type StatsResponse } from '@/lib/opal-types'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-import { TrendingDown, TrendingUp, Hourglass, MousePointerClick, Target, CalendarCheck2, Trophy } from 'lucide-react'
+import { TrendingDown, TrendingUp, Hourglass, MousePointerClick, Target, CalendarCheck2, Trophy, Share2, BadgeCheck } from 'lucide-react'
 
 interface LeaderboardEntry {
   name: string
@@ -31,6 +32,13 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
       <div>{formatMinutes(payload[0].value)}</div>
     </div>
   )
+}
+
+function weeklyGrade(goalHits: number): { grade: string; color: string; label: string } {
+  if (goalHits >= 6) return { grade: 'A', color: 'from-emerald-400 to-teal-500', label: 'Ajoyib nazorat!' }
+  if (goalHits >= 5) return { grade: 'B', color: 'from-[#3d5afe] to-[#7b61ff]', label: 'Yaxshi ketmoqda' }
+  if (goalHits >= 3) return { grade: 'C', color: 'from-amber-400 to-orange-500', label: 'Hali oldinda bor' }
+  return { grade: 'D', color: 'from-rose-400 to-rose-600', label: 'Ko‘proq fokus kerak' }
 }
 
 export function StatsTab() {
@@ -71,9 +79,69 @@ export function StatsTab() {
   return (
     <div className="animate-slide-up space-y-5 px-5 pb-6 pt-3">
       <header>
-        <h2 className="text-[22px] font-extrabold tracking-tight text-slate-900">Statistika</h2>
+        <h2 className="text-[22px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">Statistika</h2>
         <p className="text-[13px] text-slate-400">Shu haftalik natijalaringiz</p>
       </header>
+
+      {/* weekly report card */}
+      {(() => {
+        const goalHits = stats.days.filter((d) => d.screenTimeMinutes <= d.goalMinutes).length
+        const g = weeklyGrade(goalHits)
+        const bestDay = [...stats.days].sort((a, b) => a.screenTimeMinutes - b.screenTimeMinutes)[0]
+        return (
+          <section
+            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#181b42] via-[#232763] to-[#3a2d7d] p-5 text-white shadow-lg shadow-indigo-900/25 dark:shadow-black/40"
+            aria-label="Haftalik hisobot"
+          >
+            <div className="pointer-events-none absolute -left-10 -bottom-14 h-40 w-40 rounded-full bg-[#e861ff]/20 blur-2xl" />
+            <div className="relative flex items-center gap-4">
+              <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-gradient-to-br shadow-lg">
+                <span className={cn('flex h-16 w-16 flex-col items-center justify-center rounded-2xl bg-gradient-to-br text-white', g.color)}>
+                  <span className="text-[24px] font-black leading-none">{g.grade}</span>
+                  <span className="text-[8.5px] font-bold uppercase tracking-wider opacity-80">baho</span>
+                </span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="flex items-center gap-1.5 text-[15px] font-extrabold">
+                  <BadgeCheck size={15} className="text-emerald-300" /> Haftalik hisobot
+                </p>
+                <p className="mt-0.5 text-[12px] text-white/65">{g.label}</p>
+                <p className="mt-1 text-[11px] text-white/45">
+                  {goalHits}/7 kun maqsad ichida · eng yaxshi kun: {dayLabel(bestDay.date)}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                const text = `📊 Opal haftalik hisobotim:
+🛡️ Tejaldi: ${formatMinutes(stats.weekSavedMinutes)}
+📱 Ekran vaqti: ${formatMinutes(stats.weekScreenMinutes)}
+🎯 Maqsad ichida: ${goalHits}/7 kun
+🔥 Baho: ${g.grade} — ${g.label}`
+                if (navigator.clipboard) {
+                  const timeout = new Promise((_, rej) =>
+                    setTimeout(() => rej(new Error('timeout')), 1500)
+                  )
+                  Promise.race([navigator.clipboard.writeText(text), timeout])
+                    .then(() =>
+                      toast.success('Hisobot nusxalandi! 📋', { description: 'Do‘stlaringizga ulashing' })
+                    )
+                    .catch(() =>
+                      toast.info('Hisobot tayyor 📋', {
+                        description: 'Qurilmangizda avtomatik nusxalash cheklangan',
+                      })
+                    )
+                } else {
+                  toast.info('Bu brauzer nusxalashni qo‘llab-quvvatlamaydi')
+                }
+              }}
+              className="relative mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-white/10 py-3 text-[13px] font-bold text-white ring-1 ring-white/15 backdrop-blur-sm transition-all hover:bg-white/15 active:scale-[0.98]"
+            >
+              <Share2 size={15} /> Natijani ulashish
+            </button>
+          </section>
+        )
+      })()}
 
       {/* trend hero card */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#10123f] via-[#1b1e5c] to-[#3d2f86] p-5 text-white shadow-lg shadow-indigo-900/25">
@@ -112,10 +180,10 @@ export function StatsTab() {
       </div>
 
       {/* weekly screen time bar chart */}
-      <section className="rounded-3xl bg-white p-5 shadow-sm shadow-slate-200/60" aria-label="Haftalik ekran vaqti">
+      <section className="rounded-3xl bg-white p-5 shadow-sm shadow-slate-200/60 dark:bg-[#181b42] dark:shadow-black/30" aria-label="Haftalik ekran vaqti">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-[15px] font-bold text-slate-900">Ekran vaqti (hafta)</h3>
-          <span className="flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+          <h3 className="text-[15px] font-bold text-slate-900 dark:text-slate-50">Ekran vaqti (hafta)</h3>
+          <span className="flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500 dark:bg-white/10 dark:text-slate-400">
             <Target size={12} /> Maqsad {formatMinutes(stats.goalMinutes)}
           </span>
         </div>
@@ -146,7 +214,7 @@ export function StatsTab() {
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-[11px] font-medium text-slate-400">
+        <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-[11px] font-medium text-slate-400 dark:border-white/10">
           <span className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-[#c7c9f7]" /> Maqsad ichida
             <span className="ml-2 h-2.5 w-2.5 rounded-full bg-rose-400" /> Oshib ketdi
@@ -156,10 +224,10 @@ export function StatsTab() {
       </section>
 
       {/* saved line chart */}
-      <section className="rounded-3xl bg-white p-5 shadow-sm shadow-slate-200/60" aria-label="Tejalgan vaqt grafigi">
+      <section className="rounded-3xl bg-white p-5 shadow-sm shadow-slate-200/60 dark:bg-[#181b42] dark:shadow-black/30" aria-label="Tejalgan vaqt grafigi">
         <div className="mb-3 flex items-center gap-2">
           <Hourglass size={16} className="text-emerald-500" />
-          <h3 className="text-[15px] font-bold text-slate-900">Tejalgan vaqt</h3>
+          <h3 className="text-[15px] font-bold text-slate-900 dark:text-slate-50">Tejalgan vaqt</h3>
         </div>
         <div className="h-36">
           <ResponsiveContainer width="100%" height="100%">
@@ -182,11 +250,11 @@ export function StatsTab() {
 
       {/* today goal + pickups */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-3xl bg-white p-4 shadow-sm shadow-slate-200/60">
+        <div className="rounded-3xl bg-white p-4 shadow-sm shadow-slate-200/60 dark:bg-[#181b42] dark:shadow-black/30">
           <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
             <Target size={13} /> Kunlik maqsad
           </div>
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
             <div
               className={cn(
                 'h-full rounded-full transition-all duration-700',
@@ -195,16 +263,16 @@ export function StatsTab() {
               style={{ width: `${goalProgress * 100}%` }}
             />
           </div>
-          <p className="mt-2 text-[13px] font-bold text-slate-700">
+          <p className="mt-2 text-[13px] font-bold text-slate-700 dark:text-slate-200">
             {formatMinutes(stats.today.screenTimeMinutes)}{' '}
             <span className="font-medium text-slate-400">/ {formatMinutes(stats.goalMinutes)}</span>
           </p>
         </div>
-        <div className="rounded-3xl bg-white p-4 shadow-sm shadow-slate-200/60">
+        <div className="rounded-3xl bg-white p-4 shadow-sm shadow-slate-200/60 dark:bg-[#181b42] dark:shadow-black/30">
           <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
             <MousePointerClick size={13} /> Telefon olish
           </div>
-          <p className="mt-2.5 text-[26px] font-extrabold leading-none text-slate-900">
+          <p className="mt-2.5 text-[26px] font-extrabold leading-none text-slate-900 dark:text-slate-50">
             {stats.today.pickups}
           </p>
           <p className="mt-1.5 text-[11px] font-medium text-emerald-500">
@@ -215,7 +283,7 @@ export function StatsTab() {
 
       {/* streak strip */}
       <section className="rounded-3xl bg-gradient-to-br from-orange-400/10 to-amber-400/10 p-5 ring-1 ring-orange-400/20" aria-label="Ketma-ketlik kalendari">
-        <h3 className="mb-3 flex items-center gap-2 text-[15px] font-bold text-slate-900">
+        <h3 className="mb-3 flex items-center gap-2 text-[15px] font-bold text-slate-900 dark:text-slate-50">
           <CalendarCheck2 size={16} className="text-orange-500" /> Bu hafta streak
         </h3>
         <div className="flex justify-between">
@@ -228,7 +296,7 @@ export function StatsTab() {
                     'flex h-9 w-9 items-center justify-center rounded-full text-[13px] font-bold',
                     hit
                       ? 'bg-gradient-to-br from-orange-400 to-amber-400 text-white shadow-sm shadow-orange-300'
-                      : 'bg-slate-100 text-slate-400'
+                      : 'bg-slate-100 text-slate-400 dark:bg-white/10'
                   )}
                 >
                   {hit ? '🔥' : '·'}
@@ -244,9 +312,9 @@ export function StatsTab() {
       </section>
 
       {/* friends leaderboard */}
-      <section className="rounded-3xl bg-white p-5 shadow-sm shadow-slate-200/60" aria-label="Do'stlar reytingi">
+      <section className="rounded-3xl bg-white p-5 shadow-sm shadow-slate-200/60 dark:bg-[#181b42] dark:shadow-black/30" aria-label="Do'stlar reytingi">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="flex items-center gap-2 text-[15px] font-bold text-slate-900">
+          <h3 className="flex items-center gap-2 text-[15px] font-bold text-slate-900 dark:text-slate-50">
             <Trophy size={16} className="text-amber-500" /> Do‘stlar reytingi
           </h3>
           {boardQ.data && (
@@ -269,7 +337,7 @@ export function StatsTab() {
                 key={e.name + String(e.isMe)}
                 className={cn(
                   'flex items-center gap-3 rounded-2xl p-2.5 transition-colors',
-                  e.isMe ? 'bg-gradient-to-r from-[#3d5afe]/8 to-[#7b61ff]/8 ring-1 ring-[#3d5afe]/20' : 'hover:bg-slate-50'
+                  e.isMe ? 'bg-gradient-to-r from-[#3d5afe]/8 to-[#7b61ff]/8 ring-1 ring-[#3d5afe]/20 dark:ring-[#7b93ff]/25' : 'hover:bg-slate-50 dark:hover:bg-white/5'
                 )}
               >
                 <span
@@ -281,22 +349,22 @@ export function StatsTab() {
                         ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-white'
                         : e.rank === 3
                           ? 'bg-gradient-to-br from-orange-300 to-amber-600 text-white'
-                          : 'bg-slate-100 text-slate-500'
+                          : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400'
                   )}
                 >
                   {e.rank}
                 </span>
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-lg">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-lg dark:bg-white/10">
                   {e.avatar}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <p className={cn('truncate text-[13px] font-bold', e.isMe ? 'text-[#3d5afe]' : 'text-slate-800')}>
+                    <p className={cn('truncate text-[13px] font-bold', e.isMe ? 'text-[#3d5afe] dark:text-[#8ea2ff]' : 'text-slate-800 dark:text-slate-100')}>
                       {e.name}{e.isMe ? ' (siz)' : ''}
                     </p>
                     {e.streak >= 10 && <span className="shrink-0 text-[10px]">🔥</span>}
                   </div>
-                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
                     <div
                       className={cn(
                         'h-full rounded-full transition-all duration-700',
@@ -308,7 +376,7 @@ export function StatsTab() {
                     />
                   </div>
                 </div>
-                <span className="shrink-0 text-[12px] font-extrabold text-slate-600">
+                <span className="shrink-0 text-[12px] font-extrabold text-slate-600 dark:text-slate-300">
                   {formatMinutes(e.savedMinutes)}
                 </span>
               </li>
