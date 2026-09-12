@@ -14,6 +14,7 @@ interface ActiveSession {
   durationMinutes: number
   startedAt: number
   blockedApps: string[]
+  strict: boolean
 }
 
 interface OpalState {

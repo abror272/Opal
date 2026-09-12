@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
+import { createAndStartSession } from '@/lib/opal-session-actions'
 import { cn } from '@/lib/utils'
 import { Clock3, History, Lock, Play, Trophy } from 'lucide-react'
 
@@ -26,7 +27,6 @@ function scoreColor(score: number) {
 export function FocusTab() {
   const qc = useQueryClient()
   const activeSession = useOpalStore((s) => s.activeSession)
-  const startSession = useOpalStore((s) => s.startSession)
 
   const [picker, setPicker] = useState<(typeof SESSION_PRESETS)[number] | null>(null)
   const [duration, setDuration] = useState(45)
@@ -38,42 +38,20 @@ export function FocusTab() {
     queryFn: async () => (await fetch('/api/sessions')).json(),
   })
 
-  const startMutation = useMutation({
-    mutationFn: async (payload: { type: string; label: string; emoji: string; durationMinutes: number; strict: boolean }) => {
-      const res = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      return res.json()
-    },
-  })
-
   const handleStart = async () => {
-    if (!picker) return
+    if (!picker || starting) return
     setStarting(true)
     try {
-      const created = await startMutation.mutateAsync({
+      const { blockedCount } = await createAndStartSession({
         type: picker.type,
         label: picker.label,
         emoji: picker.emoji,
         durationMinutes: duration,
         strict,
       })
-      const appsQ = await fetch('/api/apps?blocked=1').then((r) => r.json())
-      const blockedApps: string[] = Array.isArray(appsQ) ? appsQ.map((a: { name: string }) => a.name) : []
-      startSession({
-        sessionId: created.id,
-        type: picker.type,
-        label: picker.label,
-        emoji: picker.emoji,
-        durationMinutes: duration,
-        startedAt: Date.now(),
-        blockedApps,
-      })
       setPicker(null)
       toast.success(`${picker.emoji} ${duration} daqiqa fokus boshlandi!`, {
-        description: `${blockedApps.length} ilova bloklandi`,
+        description: `${blockedCount} ilova bloklandi`,
       })
     } catch {
       toast.error('Sessiyani boshlash bajarilmadi')

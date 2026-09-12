@@ -1,6 +1,35 @@
 # Worklog
 
 ---
+Task ID: 2
+Agent: Z.ai Code (main, cron webDevReview round 2)
+Task: Opal clone — bugfix + yangi funksiyalar (onboarding, qattiq rejim, leaderboard, animatsiyalar)
+
+Work Log:
+- Dev log tahlilida KRITIK BUG topildi: `PATCH /api/sessions 404` — Home CTA `sessionId: 'preview'` bilan soxta sessiya yaratgan, DB'da yo'q bo'lgani uchun tugatish 404 berardi
+- BUGFIX: yangi `src/lib/opal-session-actions.ts` — `createAndStartSession()` umumiy helper: POST /api/sessions (real ID) → bloklangan ilovalar → store. Home CTA va FocusTab ikkalasi ham foydalanadi
+- BUGFIX: overlay `finish()` try/catch bilan — 404'da ham endSession() ishlaydi (foydalanuvchi qolib ketmaydi), mutation'da 404 graceful deb hisoblanadi
+- BUGFIX: opal-app stale session cleanup endi legacy `preview` sessiyalarni ham tozalaydi
+- YANGI: Onboarding oqimi (onboarding.tsx) — 3 slayd (framer-motion slide animatsiyalari, progress dots, skip), localStorage `opal-onboarded`, SSR-safe `useSyncExternalStore` hook
+- YANGI: Qattiq rejim hold-to-quit — strict sessiyada chiqish uchun tugmani 2.5s bosib turish kerak (qizil progress fill, mouse+touch, interval asosida), ActiveSession.strict store'ga qo'shildi
+- YANGI: Sessiya overlay'ga motivatsion iqtiboslar (5 ta, tasodifiy) + breathing halo animatsiyasi + QATTIQ badge
+- YANGI: Leaderboard — `/api/leaderboard` (6 demo do'st + foydalanuvchi weekSaved bo'yicha real o'rin), Stats tabda medal (🥇🥈🥉) ro'yxati, gradient barlar, "X-o'rin / Y" badge, 🔥 streak>=10
+- YANGI: iOS-uslubidagi bildirishnoma ruxsat banneri (notification-banner.tsx) — telefon ramka ICHIDA absolute (desktop illusion saqlanadi), bir marta ko'rsatiladi, localStorage'da tanlov
+- STYLING: tab o'tish animatsiyalari (AnimatePresence, fade+slide), Home CTA'da loading holati
+- FocusTab refactor: startMutation o'chirilib umumiy helper'ga o'tildi, strict flag uzatiladi
+- ESLint `react-hooks/set-state-in-effect` xatosi `useSyncExternalStore` bilan hal qilindi
+- E2E tekshiruv (agent-browser): onboarding 3 slayd ✓, banner ruxsat ✓, Home CTA → real sessiya (POST 201) ✓, hold-to-quit (2.5s bosib turish → qizil fill → erta tugatish) ✓, oddiy tugatish ✓, leaderboard render ✓, desktop 1440 ✓, konsolda xato yo'q ✓, dev.log'da barcha PATCH/POST 200/201 ✓
+- Yakunda lint 0/0, seed qayta ishga tushirildi (toza demo holat)
+
+Stage Summary:
+- 404 bug butunlay yo'q qilindi — sessiya hayotiy sikli endi har doim DB bilan mos
+- Ilova endi yangi foydalanuvchi uchun onboarding bilan ochiladi (birinchi tashrif)
+- Qattiq rejim endi haqiqiy himoya beradi (bosib turib chiqish)
+- Do'stlar reytingi ijtimoiy motivatsiya qo'shdi (keyingi qadam: WebSocket bilan jonli qilish)
+- Risklar: emoji'lar platformaga qarab farq qiladi; leaderboard hozircha mock do'stlar
+- Keyingi tavsiyalar: WebSocket jonli leaderboard, PIN qulfi, dark mode, eksport hisobot
+
+---
 Task ID: 1
 Agent: Z.ai Code (main)
 Task: Mobbin'dagi Opal iOS ilovasini o'rganib, web-clone qurish (Next.js 16 + Prisma + shadcn/ui)

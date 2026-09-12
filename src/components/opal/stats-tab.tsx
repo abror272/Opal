@@ -5,7 +5,23 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LineCh
 import { formatMinutes, dayLabel, type StatsResponse } from '@/lib/opal-types'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-import { TrendingDown, TrendingUp, Hourglass, MousePointerClick, Target, CalendarCheck2 } from 'lucide-react'
+import { TrendingDown, TrendingUp, Hourglass, MousePointerClick, Target, CalendarCheck2, Trophy } from 'lucide-react'
+
+interface LeaderboardEntry {
+  name: string
+  avatar: string
+  savedMinutes: number
+  streak: number
+  isMe: boolean
+  rank: number
+  barPercent: number
+}
+
+interface LeaderboardResponse {
+  entries: LeaderboardEntry[]
+  myRank: number
+  totalParticipants: number
+}
 
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
   if (!active || !payload?.length) return null
@@ -21,6 +37,10 @@ export function StatsTab() {
   const statsQ = useQuery<StatsResponse>({
     queryKey: ['stats'],
     queryFn: async () => (await fetch('/api/stats')).json(),
+  })
+  const boardQ = useQuery<LeaderboardResponse>({
+    queryKey: ['leaderboard'],
+    queryFn: async () => (await fetch('/api/leaderboard')).json(),
   })
 
   if (statsQ.isLoading) {
@@ -221,6 +241,80 @@ export function StatsTab() {
             )
           })}
         </div>
+      </section>
+
+      {/* friends leaderboard */}
+      <section className="rounded-3xl bg-white p-5 shadow-sm shadow-slate-200/60" aria-label="Do'stlar reytingi">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="flex items-center gap-2 text-[15px] font-bold text-slate-900">
+            <Trophy size={16} className="text-amber-500" /> Do‘stlar reytingi
+          </h3>
+          {boardQ.data && (
+            <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-600 ring-1 ring-violet-100">
+              {boardQ.data.myRank}-o‘rin / {boardQ.data.totalParticipants}
+            </span>
+          )}
+        </div>
+
+        {boardQ.isLoading ? (
+          <div className="space-y-2.5">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full rounded-2xl" />
+            ))}
+          </div>
+        ) : (
+          <ol className="space-y-2">
+            {(boardQ.data?.entries ?? []).map((e) => (
+              <li
+                key={e.name + String(e.isMe)}
+                className={cn(
+                  'flex items-center gap-3 rounded-2xl p-2.5 transition-colors',
+                  e.isMe ? 'bg-gradient-to-r from-[#3d5afe]/8 to-[#7b61ff]/8 ring-1 ring-[#3d5afe]/20' : 'hover:bg-slate-50'
+                )}
+              >
+                <span
+                  className={cn(
+                    'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11.5px] font-extrabold',
+                    e.rank === 1
+                      ? 'bg-gradient-to-br from-amber-300 to-yellow-500 text-white shadow-sm shadow-amber-300'
+                      : e.rank === 2
+                        ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-white'
+                        : e.rank === 3
+                          ? 'bg-gradient-to-br from-orange-300 to-amber-600 text-white'
+                          : 'bg-slate-100 text-slate-500'
+                  )}
+                >
+                  {e.rank}
+                </span>
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-lg">
+                  {e.avatar}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <p className={cn('truncate text-[13px] font-bold', e.isMe ? 'text-[#3d5afe]' : 'text-slate-800')}>
+                      {e.name}{e.isMe ? ' (siz)' : ''}
+                    </p>
+                    {e.streak >= 10 && <span className="shrink-0 text-[10px]">🔥</span>}
+                  </div>
+                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className={cn(
+                        'h-full rounded-full transition-all duration-700',
+                        e.isMe
+                          ? 'bg-gradient-to-r from-[#3d5afe] to-[#7b61ff]'
+                          : 'bg-gradient-to-r from-violet-300 to-fuchsia-300'
+                      )}
+                      style={{ width: `${e.barPercent}%` }}
+                    />
+                  </div>
+                </div>
+                <span className="shrink-0 text-[12px] font-extrabold text-slate-600">
+                  {formatMinutes(e.savedMinutes)}
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
       </section>
     </div>
   )

@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useOpalStore } from '@/lib/opal-store'
 import { StatusBar } from './status-bar'
 import { BottomTabBar } from './bottom-tab-bar'
@@ -10,17 +11,23 @@ import { StatsTab } from './stats-tab'
 import { AppsTab } from './apps-tab'
 import { ProfileTab } from './profile-tab'
 import { ActiveSessionOverlay } from './active-session-overlay'
+import { Onboarding, useNeedsOnboarding } from './onboarding'
+import { NotificationBanner } from './notification-banner'
 
 export function OpalApp() {
   const tab = useOpalStore((s) => s.tab)
   const activeSession = useOpalStore((s) => s.activeSession)
   const endSession = useOpalStore((s) => s.endSession)
+  const needsOnboarding = useNeedsOnboarding()
+  const [obDone, setObDone] = useState(false)
+  const showOnboarding = needsOnboarding === true && !obDone
 
-  // stale session cleanup: if session persisted from a previous day, drop it
+  // stale session cleanup: legacy 'preview' sessions or sessions from a previous day
   useEffect(() => {
     if (activeSession) {
       const elapsed = (Date.now() - activeSession.startedAt) / 1000
-      if (elapsed > activeSession.durationMinutes * 60 + 30) {
+      const legacy = !activeSession.sessionId || activeSession.sessionId === 'preview'
+      if (legacy || elapsed > activeSession.durationMinutes * 60 + 30) {
         endSession()
       }
     }
@@ -80,17 +87,40 @@ export function OpalApp() {
           {/* notch (desktop only) */}
           <div className="pointer-events-none absolute left-1/2 top-2 z-40 hidden h-7 w-32 -translate-x-1/2 rounded-full bg-[#131540] md:block" aria-hidden="true" />
 
-          <StatusBar />
+          {needsOnboarding === null ? (
+            <div className="flex h-full items-center justify-center">
+              <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-[#3d5afe]/20 border-t-[#3d5afe]" />
+            </div>
+          ) : showOnboarding ? (
+            <Onboarding onDone={() => setObDone(true)} />
+          ) : (
+            <>
+              <StatusBar />
 
-          <main className="thin-scrollbar relative flex-1 overflow-y-auto overflow-x-hidden">
-            {tab === 'home' && <HomeTab />}
-            {tab === 'focus' && <FocusTab />}
-            {tab === 'stats' && <StatsTab />}
-            {tab === 'apps' && <AppsTab />}
-            {tab === 'profile' && <ProfileTab />}
-          </main>
+              <main className="thin-scrollbar relative flex-1 overflow-y-auto overflow-x-hidden">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={tab}
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                    className="min-h-full"
+                  >
+                    {tab === 'home' && <HomeTab />}
+                    {tab === 'focus' && <FocusTab />}
+                    {tab === 'stats' && <StatsTab />}
+                    {tab === 'apps' && <AppsTab />}
+                    {tab === 'profile' && <ProfileTab />}
+                  </motion.div>
+                </AnimatePresence>
+              </main>
 
-          <BottomTabBar />
+              <BottomTabBar />
+            </>
+          )}
+
+          {!showOnboarding && needsOnboarding === false && <NotificationBanner />}
           {activeSession && <ActiveSessionOverlay />}
         </div>
       </div>

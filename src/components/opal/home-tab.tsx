@@ -1,10 +1,13 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useOpalStore } from '@/lib/opal-store'
+import { createAndStartSession } from '@/lib/opal-session-actions'
 import { formatMinutes, type StatsResponse, type UserProfile, type BlockApp } from '@/lib/opal-types'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
+import { toast } from 'sonner'
 import { Flame, ShieldCheck, ShieldOff, ChevronRight, Timer, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -55,8 +58,8 @@ function ProtectionRing({ progress, minutes, goal }: { progress: number; minutes
 export function HomeTab() {
   const qc = useQueryClient()
   const setTab = useOpalStore((s) => s.setTab)
-  const startSession = useOpalStore((s) => s.startSession)
   const activeSession = useOpalStore((s) => s.activeSession)
+  const [starting, setStarting] = useState(false)
 
   const statsQ = useQuery<StatsResponse>({
     queryKey: ['stats'],
@@ -218,23 +221,35 @@ export function HomeTab() {
         </button>
       ) : (
         <button
-          onClick={() => {
-            startSession({
-              sessionId: 'preview',
-              type: 'DEEP_FOCUS',
-              label: 'Deep Focus',
-              emoji: '🧠',
-              durationMinutes: 45,
-              startedAt: Date.now(),
-              blockedApps: [],
-            })
-            setTab('focus')
+          onClick={async () => {
+            if (starting) return
+            setStarting(true)
+            try {
+              const { blockedCount } = await createAndStartSession({
+                type: 'DEEP_FOCUS',
+                label: 'Deep Focus',
+                emoji: '🧠',
+                durationMinutes: 45,
+              })
+              setTab('focus')
+              toast.success('🧠 45 daqiqa fokus boshlandi!', {
+                description: `${blockedCount} ilova bloklandi`,
+              })
+            } catch {
+              toast.error('Sessiyani boshlash bajarilmadi')
+            } finally {
+              setStarting(false)
+            }
           }}
-          className="group relative w-full overflow-hidden rounded-3xl bg-gradient-to-r from-[#3d5afe] via-[#7b61ff] to-[#e861ff] py-4 text-white shadow-xl shadow-indigo-500/30 transition-transform active:scale-[0.98]"
+          disabled={starting}
+          className={cn(
+            'group relative w-full overflow-hidden rounded-3xl bg-gradient-to-r from-[#3d5afe] via-[#7b61ff] to-[#e861ff] py-4 text-white shadow-xl shadow-indigo-500/30 transition-transform',
+            starting ? 'opacity-70' : 'active:scale-[0.98]'
+          )}
         >
           <span className="absolute inset-0 animate-shimmer" />
           <span className="relative flex items-center justify-center gap-2 text-[16px] font-bold">
-            Fokus sessiyasini boshlash
+            {starting ? 'Boshlanmoqda…' : 'Fokus sessiyasini boshlash'}
           </span>
         </button>
       )}

@@ -1,12 +1,22 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useOpalStore } from '@/lib/opal-store'
 import { formatClock } from '@/lib/opal-types'
 import { toast } from 'sonner'
-import { X, Flame, ShieldCheck, Ban } from 'lucide-react'
+import { X, Flame, ShieldCheck, Ban, Lock } from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+const QUOTES = [
+  { text: 'Diqqat — yangi super qudratdir.', author: 'Cal Newport' },
+  { text: 'Sizni to‘xtatgan narsa — sizning istagingiz emas, odatiatingiz.', author: 'Opal' },
+  { text: 'Kichik qadamlar — katta o‘zgarishlar boshi.', author: 'Lao Tzu' },
+  { text: 'Har bir bloklangan ilova — ozod qilingan ong.', author: 'Opal' },
+  { text: 'Endi qilingan ish — kech qilingan ishdan yaxshiroq.', author: 'Franklin' },
+]
+
+const HOLD_MS = 2500
 
 export function ActiveSessionOverlay() {
   const qc = useQueryClient()
@@ -17,6 +27,12 @@ export function ActiveSessionOverlay() {
   const [confirmEnd, setConfirmEnd] = useState(false)
   const [finishing, setFinishing] = useState(false)
   const [celebrate, setCelebrate] = useState(false)
+  const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)])
+
+  // hold-to-quit (strict mode)
+  const [holdProgress, setHoldProgress] = useState(0)
+  const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+  const holdDone = useRef(false)
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000)
@@ -41,7 +57,11 @@ export function ActiveSessionOverlay() {
           focusScore,
         }),
       })
-      return res.json()
+      if (!res.ok && res.status !== 404) {
+        throw new Error('Sessiyani yakunlash bajarilmadi')
+      }
+      // 404 — sessiya DB'da yo'q (masalan, qayta seed qilingan): lokal ravishda yakunlaymiz
+      return { graceful: res.status === 404 }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['sessions'] })
@@ -57,24 +77,63 @@ export function ActiveSessionOverlay() {
     }
   }, [finished])
 
-  const finish = async (early: boolean) => {
-    setFinishing(true)
-    try {
-      const score = early
-        ? 55 + Math.floor((1 - progress) * 40)
-        : 88 + Math.floor(Math.random() * 11)
-      await completeMutation.mutateAsync({ focusScore: score, early })
-      endSession()
-      toast.success(early ? 'Sessiya yakunlandi' : '🎉 Ajoyib! Sessiya to‘liq yakunlandi', {
-        description: early
-          ? 'Keyingi safar oxirigacha davom eting!'
-          : 'Streak va statistika yangilandi',
+  const finish = useCallback(
+    async (early: boolean) => {
+      if (finishing) return
+      setFinishing(true)
+      try {
+        const score = early
+          ? 55 + Math.floor((1 - progress) * 40)
+          : 88 + Math.floor(Math.random() * 11)
+        await completeMutation.mutateAsync({ focusScore: score, early })
+        endSession()
+        toast.success(early ? 'Sessiya yakunlandi' : '🎉 Ajoyib! Sessiya to‘liq yakunlandi', {
+          description: early
+            ? 'Keyingi safar oxirigacha davom eting!'
+            : 'Streak va statistika yangilandi',
+        })
+      } catch {
+        // hatto server xatosida ham lokal sessiyani yopamiz — foydalanuvchi qolib ketmasin
+        endSession()
+        toast.error('Sessiya yakunlandi (saqlashda xatolik)')
+      } finally {
+        setFinishing(false)
+        setConfirmEnd(false)
+      }
+    },
+    [finishing, progress, completeMutation, endSession]
+  )
+
+  // ── hold-to-quit logic ────────────────────────────────
+  const startHold = useCallback(() => {
+    if (holdDone.current || finishing) return
+    holdTimer.current = setInterval(() => {
+      setHoldProgress((p) => {
+        const next = p + 60
+        if (next >= HOLD_MS) {
+          holdDone.current = true
+          if (holdTimer.current) clearInterval(holdTimer.current)
+          holdTimer.current = null
+          void finish(true)
+        }
+        return Math.min(next, HOLD_MS)
       })
-    } finally {
-      setFinishing(false)
-      setConfirmEnd(false)
+    }, 60)
+  }, [finishing, finish])
+
+  const stopHold = useCallback(() => {
+    if (holdTimer.current) {
+      clearInterval(holdTimer.current)
+      holdTimer.current = null
     }
-  }
+    if (!holdDone.current) setHoldProgress(0)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (holdTimer.current) clearInterval(holdTimer.current)
+    }
+  }, [])
 
   const R = 110
   const C = 2 * Math.PI * R
@@ -118,6 +177,11 @@ export function ActiveSessionOverlay() {
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
           </span>
           <span className="text-[12px] font-semibold">{activeSession.label}</span>
+          {activeSession.strict && (
+            <span className="flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold">
+              <Lock size={9} /> QATTIQ
+            </span>
+          )}
         </div>
         <button
           onClick={() => setConfirmEnd(true)}
@@ -132,7 +196,15 @@ export function ActiveSessionOverlay() {
       {/* timer ring */}
       <div className="relative z-20 flex flex-1 flex-col items-center justify-center px-6">
         <div className="relative h-[264px] w-[264px]">
-          <svg viewBox="0 0 260 260" className="h-full w-full -rotate-90">
+          {/* breathing halo */}
+          <div
+            className={cn(
+              'absolute inset-4 rounded-full bg-gradient-to-br from-[#5b7bff]/25 to-[#f472d0]/25 blur-xl',
+              finished ? 'opacity-100' : 'animate-float'
+            )}
+            aria-hidden="true"
+          />
+          <svg viewBox="0 0 260 260" className="relative h-full w-full -rotate-90">
             <defs>
               <linearGradient id="timerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#5b7bff" />
@@ -155,7 +227,7 @@ export function ActiveSessionOverlay() {
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-[44px]">{activeSession.emoji}</span>
+            <span className="animate-float text-[44px]">{activeSession.emoji}</span>
             <span className="mt-1 font-mono text-[40px] font-bold tabular-nums tracking-tight">
               {finished ? '00:00' : clock}
             </span>
@@ -165,8 +237,20 @@ export function ActiveSessionOverlay() {
           </div>
         </div>
 
+        {/* quote */}
+        {!finished && (
+          <figure className="mt-6 max-w-[260px] text-center">
+            <blockquote className="text-[13px] font-medium leading-relaxed text-white/75">
+              “{quote.text}”
+            </blockquote>
+            <figcaption className="mt-1 text-[11px] font-semibold text-white/40">
+              — {quote.author}
+            </figcaption>
+          </figure>
+        )}
+
         {/* blocked chips */}
-        <div className="mt-7 w-full">
+        <div className="mt-6 w-full">
           <p className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold text-white/50">
             <Ban size={13} /> Bloklangan ilovalar
           </p>
@@ -207,20 +291,53 @@ export function ActiveSessionOverlay() {
             </p>
             <div className="mt-4 space-y-2">
               <button
-                onClick={() => finish(false)}
+                onClick={() => setConfirmEnd(false)}
                 disabled={finishing}
                 className="w-full rounded-2xl bg-gradient-to-r from-[#3d5afe] to-[#7b61ff] py-3 text-[14px] font-bold text-white shadow-md shadow-indigo-500/30 active:scale-[0.98]"
               >
                 Davom etish (tugatmaslik)
               </button>
-              <button
-                onClick={() => finish(true)}
-                disabled={finishing}
-                className="w-full rounded-2xl bg-slate-100 py-3 text-[14px] font-bold text-slate-600 active:scale-[0.98]"
-              >
-                {finishing ? 'Yakunlanmoqda…' : 'Baribir tugatish'}
-              </button>
+
+              {activeSession.strict ? (
+                <button
+                  onMouseDown={startHold}
+                  onMouseUp={stopHold}
+                  onMouseLeave={stopHold}
+                  onTouchStart={startHold}
+                  onTouchEnd={stopHold}
+                  onTouchCancel={stopHold}
+                  disabled={finishing}
+                  aria-label="Bosib turib tugatish"
+                  className="relative w-full select-none overflow-hidden rounded-2xl bg-slate-900 py-3 text-[14px] font-bold text-white active:scale-[0.98]"
+                >
+                  <span
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-rose-500 to-rose-400 transition-none"
+                    style={{ width: `${(holdProgress / HOLD_MS) * 100}%` }}
+                    aria-hidden="true"
+                  />
+                  <span className="relative">
+                    {finishing
+                      ? 'Yakunlanmoqda…'
+                      : holdProgress > 0
+                        ? 'Davom eting…'
+                        : '⏳ 2.5s bosib turing'}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => finish(true)}
+                  disabled={finishing}
+                  className="w-full rounded-2xl bg-slate-100 py-3 text-[14px] font-bold text-slate-600 active:scale-[0.98]"
+                >
+                  {finishing ? 'Yakunlanmoqda…' : 'Baribir tugatish'}
+                </button>
+              )}
             </div>
+            {activeSession.strict && (
+              <p className="mt-2 text-[10.5px] text-slate-400">
+                Qattiq rejim: chiqish uchun tugmani bosib turish kerak
+              </p>
+            )}
           </div>
         </div>
       )}
