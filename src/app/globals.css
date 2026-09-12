@@ -120,3 +120,133 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ── Opal custom utilities ─────────────────────────────── */
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.thin-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(100, 100, 140, 0.25);
+  border-radius: 999px;
+}
+
+/* Opal brand palette */
+:root {
+  --opal-deep: #10123f;
+  --opal-deeper: #0a0b2a;
+  --opal-blue: #3d5afe;
+  --opal-violet: #7b61ff;
+  --opal-pink: #e861ff;
+  --opal-orange: #ff9f5a;
+  --opal-surface: #f4f4fb;
+}
+
+@keyframes opal-float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+.animate-float {
+  animation: opal-float 5s ease-in-out infinite;
+}
+
+@keyframes opal-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(123, 97, 255, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 18px rgba(123, 97, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(123, 97, 255, 0);
+  }
+}
+.animate-pulse-ring {
+  animation: opal-pulse-ring 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes opal-shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.25) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 800px 100%;
+  animation: opal-shimmer 2.4s infinite linear;
+}
+
+@keyframes opal-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-slide-up {
+  animation: opal-slide-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes opal-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  70% {
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-pop {
+  animation: opal-pop 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* aurora blobs for desktop backdrop */
+@keyframes opal-blob {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -40px) scale(1.08);
+  }
+  66% {
+    transform: translate(-25px, 25px) scale(0.95);
+  }
+}
+.animate-blob {
+  animation: opal-blob 14s ease-in-out infinite;
+}
+.animate-blob-delayed {
+  animation: opal-blob 18s ease-in-out infinite reverse;
+}
