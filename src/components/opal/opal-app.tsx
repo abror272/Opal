@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useOpalStore } from '@/lib/opal-store'
 import { StatusBar } from './status-bar'
@@ -14,7 +14,17 @@ import { ActiveSessionOverlay } from './active-session-overlay'
 import { Onboarding, useNeedsOnboarding } from './onboarding'
 import { NotificationBanner } from './notification-banner'
 import { BreathingOverlay } from './breathing-overlay'
+import { LockScreen } from './lock-screen'
 import { cn } from '@/lib/utils'
+
+/** PIN sozlamasi — SSR-safe (serverda null, keyin store'dan) */
+function usePinEnabled(): boolean | null {
+  return useSyncExternalStore(
+    (cb) => useOpalStore.subscribe(cb),
+    () => useOpalStore.getState().pinEnabled,
+    () => null
+  )
+}
 
 export function OpalApp() {
   const tab = useOpalStore((s) => s.tab)
@@ -26,6 +36,17 @@ export function OpalApp() {
   const [obDone, setObDone] = useState(false)
   const showOnboarding = needsOnboarding === true && !obDone
   const isDark = theme === 'dark'
+
+  // PIN lock — pinEnabled joriy sessiyada false→true o‘tsa (foydalanuvchi sozlaganda)
+  // darhol qulflanmaydi; faqat sahifa yuklanganda (boshlang‘ich true) qulflanadi
+  const pinEnabled = usePinEnabled()
+  const [unlocked, setUnlocked] = useState(false)
+  const [prevPin, setPrevPin] = useState<boolean | null>(pinEnabled)
+  if (prevPin !== pinEnabled) {
+    setPrevPin(pinEnabled)
+    if (prevPin === false && pinEnabled === true) setUnlocked(true)
+  }
+  const locked = pinEnabled === true && !unlocked
 
   // stale session cleanup: legacy 'preview' sessions or sessions from a previous day
   useEffect(() => {
@@ -134,6 +155,11 @@ export function OpalApp() {
           {!showOnboarding && needsOnboarding === false && <NotificationBanner />}
           {activeSession && <ActiveSessionOverlay />}
           {breathingOpen && !activeSession && <BreathingOverlay />}
+
+          {/* PIN lock — topmost overlay */}
+          <AnimatePresence>
+            {locked && <LockScreen key="lock" onUnlock={() => setUnlocked(true)} />}
+          </AnimatePresence>
         </div>
       </div>
     </div>

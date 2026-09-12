@@ -47,23 +47,31 @@ export function BottomTabBar() {
               aria-label={label}
               aria-current={active ? 'page' : undefined}
               className={cn(
-                'group flex flex-col items-center gap-0.5 rounded-xl py-1.5 transition-colors',
-                active ? 'text-[#3d5afe] dark:text-[#8ea2ff]' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+                'group flex flex-col items-center gap-0.5 rounded-xl py-1.5 transition-all duration-200',
+                active ? 'text-[#3d5afe] dark:text-[#8ea2ff]' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300',
+                !active && 'active:scale-90'
               )}
             >
               <span
+                key={active ? 'on' : 'off'}
                 className={cn(
                   'relative flex h-8 w-12 items-center justify-center rounded-full transition-all',
-                  active && 'bg-[#3d5afe]/15'
+                  active && 'animate-pop bg-gradient-to-br from-[#3d5afe]/20 to-[#e861ff]/15 shadow-sm shadow-indigo-300/40 dark:shadow-indigo-900/40'
                 )}
               >
                 <Icon
                   size={21}
                   strokeWidth={active ? 2.4 : 2}
-                  className="transition-transform group-active:scale-90"
+                  className="transition-transform duration-200 group-active:scale-90"
                 />
+                {active && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute -bottom-1 h-1 w-1 rounded-full bg-gradient-to-r from-[#3d5afe] to-[#e861ff]"
+                  />
+                )}
               </span>
-              <span className={cn('text-[10px]', active ? 'font-semibold' : 'font-medium')}>
+              <span className={cn('text-[10px] transition-all', active ? 'font-semibold' : 'font-medium')}>
                 {label}
               </span>
             </button>

@@ -28,6 +28,14 @@ interface OpalState {
   toggleTheme: () => void
   breathingOpen: boolean
   setBreathingOpen: (v: boolean) => void
+  // PIN lock
+  pinEnabled: boolean
+  pinCode: string | null
+  setPin: (code: string) => void
+  removePin: () => void
+  // achievements already celebrated (avoid duplicate toasts)
+  seenAchievements: string[]
+  markAchievementsSeen: (labels: string[]) => void
 }
 
 export const useOpalStore = create<OpalState>()(
@@ -43,6 +51,13 @@ export const useOpalStore = create<OpalState>()(
       toggleTheme: () => set((s) => ({ theme: s.theme === 'light' ? 'dark' : 'light' })),
       breathingOpen: false,
       setBreathingOpen: (breathingOpen) => set({ breathingOpen }),
+      pinEnabled: false,
+      pinCode: null,
+      setPin: (code) => set({ pinCode: code, pinEnabled: true }),
+      removePin: () => set({ pinCode: null, pinEnabled: false }),
+      seenAchievements: [],
+      markAchievementsSeen: (labels) =>
+        set((s) => ({ seenAchievements: [...s.seenAchievements, ...labels] })),
     }),
     { name: 'opal-session-store' }
   )

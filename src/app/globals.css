@@ -250,3 +250,36 @@
 .animate-blob-delayed {
   animation: opal-blob 18s ease-in-out infinite reverse;
 }
+
+/* celebration confetti — falls, drifts and tumbles */
+@keyframes opal-confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px) rotate(0deg);
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.9;
+    transform: translateY(85vh) rotate(540deg);
+  }
+}
+.animate-confetti-fall {
+  animation-name: opal-confetti-fall;
+  animation-timing-function: cubic-bezier(0.3, 0.6, 0.7, 1);
+  animation-fill-mode: both;
+}
+
+/* slow rotating conic highlight for the protection ring */
+@keyframes opal-ring-sweep {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+.animate-ring-sweep {
+  animation: opal-ring-sweep 9s linear infinite;
+}

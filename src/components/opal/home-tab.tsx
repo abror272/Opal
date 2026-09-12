@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
 import { Flame, ShieldCheck, ShieldOff, ChevronRight, Timer, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useCountUp } from '@/hooks/use-count-up'
 
 function ProtectionRing({ progress, minutes, goal }: { progress: number; minutes: string; goal: number }) {
   const R = 84
@@ -18,7 +19,16 @@ function ProtectionRing({ progress, minutes, goal }: { progress: number; minutes
 
   return (
     <div className="relative mx-auto h-[212px] w-[212px]">
-      <svg viewBox="0 0 200 200" className="h-full w-full -rotate-90">
+      {/* rotating conic highlight behind the ring */}
+      <div
+        aria-hidden="true"
+        className="animate-ring-sweep pointer-events-none absolute -inset-2 rounded-full opacity-50 blur-md"
+        style={{
+          background:
+            'conic-gradient(from 0deg, transparent 0deg, transparent 295deg, rgba(123,97,255,0.5) 325deg, rgba(232,97,255,0.55) 340deg, transparent 360deg)',
+        }}
+      />
+      <svg viewBox="0 0 200 200" className="relative h-full w-full -rotate-90">
         <defs>
           <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#3d5afe" />
@@ -74,6 +84,10 @@ export function HomeTab() {
     queryKey: ['apps'],
     queryFn: async () => (await fetch('/api/apps')).json(),
   })
+
+  // hooks must run unconditionally — animate as soon as data arrives
+  const animatedStreak = useCountUp(profileQ.data?.streakDays ?? 0, 800)
+  const animatedScreen = useCountUp(statsQ.data?.today.screenTimeMinutes ?? 0, 900)
 
   const protectionMutation = useMutation({
     mutationFn: async (enabled: boolean) => {
@@ -134,7 +148,7 @@ export function HomeTab() {
         </div>
         <div className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-400/15 to-amber-400/15 px-3 py-1.5 ring-1 ring-orange-400/25">
           <Flame size={15} className="text-orange-500" strokeWidth={2.4} />
-          <span className="text-[14px] font-bold text-orange-600">{profile.streakDays}</span>
+          <span className="text-[14px] font-bold tabular-nums text-orange-600">{animatedStreak}</span>
           <span className="text-[11px] font-medium text-orange-500/80">kun</span>
         </div>
       </header>
@@ -185,7 +199,7 @@ export function HomeTab() {
 
       {/* ring */}
       <section aria-label="Bugungi ekran vaqti" className="rounded-[2rem] bg-white p-5 shadow-sm shadow-slate-200/60 dark:bg-[#181b42] dark:shadow-black/30">
-        <ProtectionRing progress={progress} minutes={formatMinutes(today.screenTimeMinutes)} goal={today.goalMinutes} />
+        <ProtectionRing progress={progress} minutes={formatMinutes(animatedScreen)} goal={today.goalMinutes} />
         <div className="mt-4 grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 p-3.5 ring-1 ring-emerald-100 dark:from-emerald-500/10 dark:to-teal-500/10 dark:ring-emerald-500/20">
             <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">

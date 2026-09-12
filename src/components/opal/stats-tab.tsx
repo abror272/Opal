@@ -3,26 +3,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LineChart, Line } from 'recharts'
-import { formatMinutes, dayLabel, type StatsResponse } from '@/lib/opal-types'
+import { formatMinutes, dayLabel, type StatsResponse, type UserProfile } from '@/lib/opal-types'
+import { useOpalStore } from '@/lib/opal-store'
+import { useCountUp } from '@/hooks/use-count-up'
 import { Skeleton } from '@/components/ui/skeleton'
+import { LiveLeaderboard } from './live-leaderboard'
 import { cn } from '@/lib/utils'
-import { TrendingDown, TrendingUp, Hourglass, MousePointerClick, Target, CalendarCheck2, Trophy, Share2, BadgeCheck } from 'lucide-react'
-
-interface LeaderboardEntry {
-  name: string
-  avatar: string
-  savedMinutes: number
-  streak: number
-  isMe: boolean
-  rank: number
-  barPercent: number
-}
-
-interface LeaderboardResponse {
-  entries: LeaderboardEntry[]
-  myRank: number
-  totalParticipants: number
-}
+import { TrendingDown, TrendingUp, Hourglass, MousePointerClick, Target, CalendarCheck2, Share2, BadgeCheck } from 'lucide-react'
 
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
   if (!active || !payload?.length) return null
@@ -42,14 +29,18 @@ function weeklyGrade(goalHits: number): { grade: string; color: string; label: s
 }
 
 export function StatsTab() {
+  const isDark = useOpalStore((s) => s.theme === 'dark')
   const statsQ = useQuery<StatsResponse>({
     queryKey: ['stats'],
     queryFn: async () => (await fetch('/api/stats')).json(),
   })
-  const boardQ = useQuery<LeaderboardResponse>({
-    queryKey: ['leaderboard'],
-    queryFn: async () => (await fetch('/api/leaderboard')).json(),
+  const profileQ = useQuery<UserProfile>({
+    queryKey: ['profile'],
+    queryFn: async () => (await fetch('/api/profile')).json(),
   })
+
+  // hooks must run unconditionally — animate as soon as data arrives
+  const animatedSaved = useCountUp(statsQ.data?.weekSavedMinutes ?? 0, 1100)
 
   if (statsQ.isLoading) {
     return (
@@ -72,6 +63,9 @@ export function StatsTab() {
     goal: d.goalMinutes,
     isToday: d.date === stats.today.date,
   }))
+
+  const tickMain = isDark ? '#8e9ad0' : '#94a3b8'
+  const tickSub = isDark ? '#5f6aa8' : '#cbd5e1'
 
   const goalProgress = Math.min(stats.today.screenTimeMinutes / Math.max(stats.goalMinutes, 1), 1)
   const trendDown = stats.trendPercent <= 0
@@ -149,8 +143,8 @@ export function StatsTab() {
         <div className="relative flex items-start justify-between">
           <div>
             <p className="text-[12px] font-medium text-white/60">Haftada tejaldi</p>
-            <p className="mt-1 text-[30px] font-extrabold leading-none">
-              {formatMinutes(stats.weekSavedMinutes)}
+            <p className="mt-1 text-[30px] font-extrabold leading-none tabular-nums">
+              {formatMinutes(animatedSaved)}
             </p>
           </div>
           <div
@@ -194,10 +188,10 @@ export function StatsTab() {
                 dataKey="name"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }}
+                tick={{ fontSize: 11, fill: tickMain, fontWeight: 600 }}
               />
               <YAxis
-                tick={{ fontSize: 10, fill: '#cbd5e1' }}
+                tick={{ fontSize: 10, fill: tickSub }}
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={(v: number) => `${Math.round(v / 60)}s`}
@@ -232,8 +226,8 @@ export function StatsTab() {
         <div className="h-36">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 6, right: 6, bottom: 0, left: -26 }}>
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} />
-              <YAxis tick={{ fontSize: 10, fill: '#cbd5e1' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${Math.round(v / 60)}s`} />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: tickMain, fontWeight: 600 }} />
+              <YAxis tick={{ fontSize: 10, fill: tickSub }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${Math.round(v / 60)}s`} />
               <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'rgba(16,185,129,0.3)' }} />
               <Line
                 type="monotone"
@@ -311,79 +305,13 @@ export function StatsTab() {
         </div>
       </section>
 
-      {/* friends leaderboard */}
-      <section className="rounded-3xl bg-white p-5 shadow-sm shadow-slate-200/60 dark:bg-[#181b42] dark:shadow-black/30" aria-label="Do'stlar reytingi">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="flex items-center gap-2 text-[15px] font-bold text-slate-900 dark:text-slate-50">
-            <Trophy size={16} className="text-amber-500" /> Do‘stlar reytingi
-          </h3>
-          {boardQ.data && (
-            <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-600 ring-1 ring-violet-100">
-              {boardQ.data.myRank}-o‘rin / {boardQ.data.totalParticipants}
-            </span>
-          )}
-        </div>
-
-        {boardQ.isLoading ? (
-          <div className="space-y-2.5">
-            {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-12 w-full rounded-2xl" />
-            ))}
-          </div>
-        ) : (
-          <ol className="space-y-2">
-            {(boardQ.data?.entries ?? []).map((e) => (
-              <li
-                key={e.name + String(e.isMe)}
-                className={cn(
-                  'flex items-center gap-3 rounded-2xl p-2.5 transition-colors',
-                  e.isMe ? 'bg-gradient-to-r from-[#3d5afe]/8 to-[#7b61ff]/8 ring-1 ring-[#3d5afe]/20 dark:ring-[#7b93ff]/25' : 'hover:bg-slate-50 dark:hover:bg-white/5'
-                )}
-              >
-                <span
-                  className={cn(
-                    'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11.5px] font-extrabold',
-                    e.rank === 1
-                      ? 'bg-gradient-to-br from-amber-300 to-yellow-500 text-white shadow-sm shadow-amber-300'
-                      : e.rank === 2
-                        ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-white'
-                        : e.rank === 3
-                          ? 'bg-gradient-to-br from-orange-300 to-amber-600 text-white'
-                          : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400'
-                  )}
-                >
-                  {e.rank}
-                </span>
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-lg dark:bg-white/10">
-                  {e.avatar}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <p className={cn('truncate text-[13px] font-bold', e.isMe ? 'text-[#3d5afe] dark:text-[#8ea2ff]' : 'text-slate-800 dark:text-slate-100')}>
-                      {e.name}{e.isMe ? ' (siz)' : ''}
-                    </p>
-                    {e.streak >= 10 && <span className="shrink-0 text-[10px]">🔥</span>}
-                  </div>
-                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
-                    <div
-                      className={cn(
-                        'h-full rounded-full transition-all duration-700',
-                        e.isMe
-                          ? 'bg-gradient-to-r from-[#3d5afe] to-[#7b61ff]'
-                          : 'bg-gradient-to-r from-violet-300 to-fuchsia-300'
-                      )}
-                      style={{ width: `${e.barPercent}%` }}
-                    />
-                  </div>
-                </div>
-                <span className="shrink-0 text-[12px] font-extrabold text-slate-600 dark:text-slate-300">
-                  {formatMinutes(e.savedMinutes)}
-                </span>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
+      {/* friends leaderboard — live over WebSocket */}
+      <LiveLeaderboard
+        myName={profileQ.data?.name ?? 'Siz'}
+        mySavedMinutes={stats.weekSavedMinutes}
+        myStreak={profileQ.data?.streakDays ?? 0}
+        loading={profileQ.isLoading}
+      />
     </div>
   )
 }

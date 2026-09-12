@@ -96,3 +96,38 @@ Stage Summary:
 - Shu ishga qo'yilgan cron: webDevReview har 15 daqiqada (buglarni topish, qo'shimcha funksiyalar qo'shish uchun)
 - Muhim qaror: Mobbin login devori tufayli dizayn Opal brend tizimi bo'yicha qayta yaratildi (clone, pixel-copy emas)
 - Keyingi tavsiyalar: onboarding ekrani, dark mode, PIN qulfi, WebSocket bilan "do'stlar" leaderboard
+---
+Task ID: 4
+Agent: Z.ai Code (main, cron webDevReview round 4)
+Task: Opal clone — WebSocket jonli leaderboard, PIN qulfi, yutuq toastlari, ilova tafsiloti varag'i
+
+Work Log:
+- QA (agent-browser): barcha 5 tab render ✓, konsol toza ✓, dev.log'da faqat 200 ✓ — loyiha barqaror, shuning uchun yangi funksiyalar raundi
+- YANGI — JONLI LEADERBOARD (WebSocket mini-service):
+  - `mini-services/leaderboard-service/` — socket.io server, port 3003 (package.json + index.ts, `bun --hot`)
+  - 6 demo do'st har 7s da daqiqa jalb qiladi / fokus holatini o'zgartiradi / streak oshiradi; 75% ehtimol bilan `friend:activity` event
+  - `leaderboard:join` (ism + weekSaved + streak bilan), `leaderboard:sync`, `leaderboard:state` (barPercent, rank hisoblangan), `friend:activity`
+  - Frontend: `src/hooks/use-live-leaderboard.ts` (avtomatik reconnect, `io('/?XTransformPort=3003')`, path '/') + `src/components/opal/live-leaderboard.tsx`
+  - Stats tab: statik leaderboard o'chirilib jonli bilan almashtirildi — "JONLI" pulsli badge (ulanish holati), "Sizning o'rningiz / N online" kartasi, do'stlarda yashil fokus nuqtasi, sonner activity toastlari (6s throttle, birinchi burst skip)
+  - Test qilingan port 81 (Caddy) orqali — localhost:3000 to'g'ridan-to'g'ri XTransformPort yo'naltirmaydi
+- YANGI — PIN QULFI:
+  - Store: `pinEnabled`, `pinCode`, `setPin/removePin` (Zustand persist)
+  - `pin-pad.tsx` — umumiy iOS keypad (1-9, Face ID tugmasi, delete, framer-motion shake, gradient nuqtalar)
+  - `lock-screen.tsx` — to'liq ekran qulf (gradient fon, blob animatsiyalar, "Yuz skanerlanmoqda…" holati)
+  - opal-app: SSR-safe `usePinEnabled` (useSyncExternalStore, server null); joriy sessiyada PIN yoqilsa darhol qulflanmaydi, faqat reload'da
+  - Profile: "PIN qulfi" qatori + `PinSetupDialog` (2 qadam: kiritish → tasdiqlash; mos kelmasa shake + xato toast)
+  - BUGFIX o'zim topdim: 1-bosqichdan keyin PinPad ichki pin tozalanmagan — `key={step}` remount bilan hal qilindi (aks holda confirm avto-o'tardi)
+- YANGI — YUTUQ TOASTLARI: `AchievementWatcher` profile'da — yangi ochilgan yutuqlar uchun "🏆 Yutuq ochildi!" toast, `seenAchievements` store'da (takrorlanmaydi)
+- YANGI — ILAVA TAFSILTI VARAG'I (apps-tab): qatorga klik → Dialog: gradient hero, bugungi foydalanish + limit badge, 24-soatlik usage timeline (ismlardan deterministik hash, ijtimoiy ilovalar kechqurun cho'qqida, eng yuqori soat belgilangan), mini stats (bu hafta / bugun olish / eng uzun), limit select, bloklash tugmasi
+- STYLING: app qatorlarida hover lift + chevron animatsiyasi; recharts tick ranglari endi dark-rejimga mos (eski risk yopildi); jonli badge pulsli yashil nuqta
+- Lint boshida 4 xato chiqdi (react-hooks/set-state-in-effect ×3, refs ×1) — hammasi render-adjust pattern va useEffect ref-update bilan hal qilindi; yakunda 0/0; tsc src toza
+- E2E (agent-browser, port 81): PIN: yoqish→1234→confirm bosqichi→9876 mos kelmadi→xato→1234+1234→YONIQ ✓; reload→qulf ekrani chiroyli render ✓; 9999→qolf qoldi ✓; Face ID→ochildi ✓; Jonli board: "JONLI" badge ✓, "1-o'rin / 7" + "1 online" ✓, join log "Aziz" ✓, toast "💪 Malika TikTok'dan 15 daqiqa voz kechdi" ✓; ilova varag'i: TikTok 47d/15d "Limit oshdi", 23:00 cho'qqi ✓; 4 ta yutuq toasti ✓; desktop 1440 ✓; konsol/dan xato yo'q ✓
+
+Stage Summary:
+- Ilova endi real-time imkoniyatga ega: do'stlar reytingi WebSocket orqali jonli yangilanadi va faollik bildirishnomalari chiqadi
+- PIN qulfi + Face ID (demo) ilovaga iOS-darajadagi maxfiylik qatlami qo'shdi
+- Har bir bloklangan ilova chuqur tafsilotlar varag'iga ega bo'ldi (24h timeline)
+- Yutuqlar endi ochilganda nishonlanadi
+- Risklar/cheklovlar: PIN localStorage'da plain saqlanadi (demo — real ilovada Secure Enclave kerak); leaderboard do'stlari mock (lekin endi server simulyatsiyasi bilan jonli); localhost:3000 to'g'ridan-to'g'ri ochilsa socket ulanmaydi (Caddy 81 orqali kerak — preview panel allaqachon shu yo'lak)
+- Keyingi tavsiyalar: sessiya tugaganda jonli board'ga `leaderboard:sync` ulash (hoziroq tayyor hook'da `syncMinutes` bor lekin hali ulanmagan), do'st qo'shish oynasi, eksport PDF hisobot, App Store-style sessiya tarixi timeline'i
+

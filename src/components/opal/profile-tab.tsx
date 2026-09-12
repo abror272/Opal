@@ -1,13 +1,16 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { formatMinutes, type UserProfile } from '@/lib/opal-types'
 import { useOpalStore } from '@/lib/opal-store'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { PinPad } from './pin-pad'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { Flame, Timer, Hourglass, Crown, ChevronRight, ShieldCheck, Lock, Bell, Gauge, LogOut, CircleHelp, Sparkles, Moon, Sun } from 'lucide-react'
+import { Flame, Timer, Hourglass, Crown, ChevronRight, ShieldCheck, Lock, Bell, Gauge, LogOut, CircleHelp, Sparkles, Moon, Sun, KeyRound } from 'lucide-react'
 
 function achievementsFor(profile: UserProfile) {
   return [
@@ -23,6 +26,12 @@ function achievementsFor(profile: UserProfile) {
 export function ProfileTab() {
   const qc = useQueryClient()
   const setTab = useOpalStore((s) => s.setTab)
+  const pinEnabled = useOpalStore((s) => s.pinEnabled)
+  const setPin = useOpalStore((s) => s.setPin)
+  const removePin = useOpalStore((s) => s.removePin)
+  const seenAchievements = useOpalStore((s) => s.seenAchievements)
+  const markAchievementsSeen = useOpalStore((s) => s.markAchievementsSeen)
+  const [pinDialogOpen, setPinDialogOpen] = useState(false)
 
   const profileQ = useQuery<UserProfile>({
     queryKey: ['profile'],
@@ -67,12 +76,19 @@ export function ProfileTab() {
   if (!profile) return null
 
   const isPlus = profile.plan === 'PLUS'
+  const achievements = achievementsFor(profile)
 
   return (
     <div className="animate-slide-up space-y-5 px-5 pb-6 pt-3">
       <header>
         <h2 className="text-[22px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">Profil</h2>
       </header>
+
+      <AchievementWatcher
+        achievements={achievements}
+        seen={seenAchievements}
+        onSeen={markAchievementsSeen}
+      />
 
       {/* identity card */}
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#10123f] via-[#1b1e5c] to-[#3d2f86] p-5 text-white shadow-lg shadow-indigo-900/25">
@@ -158,7 +174,7 @@ export function ProfileTab() {
           <Sparkles size={16} className="text-violet-500" /> Yutuqlar
         </h3>
         <div className="grid grid-cols-3 gap-3">
-          {achievementsFor(profile).map((a) => (
+          {achievements.map((a) => (
             <div
               key={a.label}
               className={cn(
@@ -278,6 +294,40 @@ export function ProfileTab() {
             <ChevronRight size={17} className="text-slate-300" />
           </button>
 
+          {/* PIN lock */}
+          <button
+            onClick={() => {
+              if (!pinEnabled) setPinDialogOpen(true)
+              else {
+                removePin()
+                toast.info('PIN qulfi o‘chirildi 🔓')
+              }
+            }}
+            className="flex w-full items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-slate-50 dark:hover:bg-white/5"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-500 dark:bg-amber-500/10 dark:text-amber-300">
+                <KeyRound size={16} />
+              </div>
+              <div>
+                <p className="text-[13.5px] font-bold text-slate-800 dark:text-slate-100">PIN qulfi</p>
+                <p className="text-[11px] text-slate-400">
+                  {pinEnabled ? 'Ilova PIN bilan himoyalangan' : 'Ilovani PIN kod bilan himoyalang'}
+                </p>
+              </div>
+            </div>
+            <span
+              className={cn(
+                'rounded-full px-2.5 py-1 text-[10.5px] font-bold',
+                pinEnabled
+                  ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/20'
+                  : 'bg-slate-100 text-slate-500 ring-1 ring-slate-200 dark:bg-white/5 dark:text-slate-400 dark:ring-white/10'
+              )}
+            >
+              {pinEnabled ? 'YONIQ' : 'O‘CHIQ'}
+            </span>
+          </button>
+
           <div className="flex items-center justify-between px-5 py-3.5">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-500 dark:bg-sky-500/10 dark:text-sky-300">
@@ -306,6 +356,94 @@ export function ProfileTab() {
       <p className="pb-1 text-center text-[11px] text-slate-300 dark:text-slate-600">
         Opal Clone · v1.0 · Next.js bilan qurilgan
       </p>
+
+      <PinSetupDialog open={pinDialogOpen} onOpenChange={setPinDialogOpen} onSaved={setPin} />
     </div>
+  )
+}
+
+/** Fires a toast whenever a not-yet-seen achievement is unlocked */
+function AchievementWatcher({
+  achievements,
+  seen,
+  onSeen,
+}: {
+  achievements: { emoji: string; label: string; desc: string; unlocked: boolean }[]
+  seen: string[]
+  onSeen: (labels: string[]) => void
+}) {
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    const fresh = achievements.filter((a) => a.unlocked && !seen.includes(a.label))
+    if (fresh.length > 0) {
+      // small delay so the tab transition finishes first
+      timer.current = setTimeout(() => {
+        for (const a of fresh) {
+          toast.success(`${a.emoji} Yutuq ochildi!`, { description: `${a.label} — ${a.desc}` })
+        }
+        onSeen(fresh.map((a) => a.label))
+      }, 800)
+    }
+    return () => {
+      if (timer.current) clearTimeout(timer.current)
+    }
+  }, [achievements, seen, onSeen])
+  return null
+}
+
+/** Two-step PIN setup inside a dialog (enter → confirm) */
+function PinSetupDialog({
+  open,
+  onOpenChange,
+  onSaved,
+}: {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  onSaved: (code: string) => void
+}) {
+  const [step, setStep] = useState<'enter' | 'confirm'>('enter')
+  const [first, setFirst] = useState('')
+  const [errorPulse, setErrorPulse] = useState(0)
+
+  // dialog har ochilganda holatni tiklash (render-adjust pattern)
+  const [lastOpen, setLastOpen] = useState(open)
+  if (open !== lastOpen) {
+    setLastOpen(open)
+    if (open) {
+      setStep('enter')
+      setFirst('')
+      setErrorPulse(0)
+    }
+  }
+
+  const handle = (pin: string) => {
+    if (step === 'enter') {
+      setFirst(pin)
+      setStep('confirm')
+    } else if (pin === first) {
+      onSaved(pin)
+      onOpenChange(false)
+      toast.success('PIN qulfi yoqildi 🔐', { description: 'Ilova endi PIN bilan himoyalanadi' })
+    } else {
+      setErrorPulse((n) => n + 1)
+      toast.error('Kodlar mos kelmadi', { description: 'Qaytadan urinib ko‘ring' })
+      setStep('enter')
+      setFirst('')
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent aria-describedby={undefined} className="max-w-[320px] rounded-3xl border-0 bg-white p-6 shadow-2xl dark:bg-[#181b42]">
+        <DialogTitle className="sr-only">PIN kod sozlash</DialogTitle>
+        <PinPad
+          key={step}
+          onComplete={handle}
+          title={step === 'enter' ? 'Yangi PIN kod' : 'Kodni tasdiqlang'}
+          subtitle={step === 'enter' ? 'Esda qoladigan 4 raqam tanlang' : 'Bir xil kodni qayta tering'}
+          errorPulse={errorPulse}
+        />
+      </DialogContent>
+    </Dialog>
   )
 }

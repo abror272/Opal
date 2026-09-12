@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useOpalStore } from '@/lib/opal-store'
-import { formatClock } from '@/lib/opal-types'
+import { formatClock, type FocusSession, type StatsResponse } from '@/lib/opal-types'
+import { syncLiveMinutes } from '@/lib/opal-live-client'
 import { toast } from 'sonner'
 import { X, Flame, ShieldCheck, Ban, Lock } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -16,6 +17,7 @@ const QUOTES = [
   { text: 'Endi qilingan ish — kech qilingan ishdan yaxshiroq.', author: 'Franklin' },
 ]
 
+const CONFETTI_COLORS = ['#3d5afe', '#7b61ff', '#e861ff', '#ff9f5a', '#10b981', '#f43f5e']
 const HOLD_MS = 2500
 
 export function ActiveSessionOverlay() {
@@ -61,9 +63,17 @@ export function ActiveSessionOverlay() {
         throw new Error('Sessiyani yakunlash bajarilmadi')
       }
       // 404 — sessiya DB'da yo'q (masalan, qayta seed qilingan): lokal ravishda yakunlaymiz
-      return { graceful: res.status === 404 }
+      const session: FocusSession | null = res.ok ? await res.json() : null
+      return { graceful: res.status === 404, session }
     },
-    onSuccess: () => {
+    onSuccess: ({ graceful, session }) => {
+      // jonli do'stlar reytingiga yangi natijani darhol yuboramiz
+      if (!graceful && session && activeSession) {
+        const cached = qc.getQueryData<StatsResponse>(['stats'])
+        if (cached) {
+          syncLiveMinutes(cached.weekSavedMinutes + session.savedMinutes)
+        }
+      }
       qc.invalidateQueries({ queryKey: ['sessions'] })
       qc.invalidateQueries({ queryKey: ['stats'] })
       qc.invalidateQueries({ queryKey: ['profile'] })
@@ -149,18 +159,36 @@ export function ActiveSessionOverlay() {
       </div>
 
       {celebrate && (
-        <div className="pointer-events-none absolute inset-0 z-10 animate-pop overflow-hidden" aria-hidden="true">
-          {Array.from({ length: 24 }).map((_, i) => (
+        <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden" aria-hidden="true">
+          {/* falling confetti pieces */}
+          {Array.from({ length: 42 }).map((_, i) => {
+            const isRound = i % 4 === 3
+            return (
+              <span
+                key={i}
+                className={cn('absolute top-[-16px] animate-confetti-fall', isRound ? 'h-2 w-2 rounded-full' : 'h-2.5 w-1.5 rounded-[1px]')}
+                style={{
+                  left: `${(i * 23.7) % 100}%`,
+                  backgroundColor: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+                  animationDelay: `${(i % 12) * 0.22}s`,
+                  animationDuration: `${2.6 + (i % 5) * 0.5}s`,
+                  transform: `rotate(${(i * 47) % 360}deg)`,
+                }}
+              />
+            )
+          })}
+          {/* celebratory emoji sparkles */}
+          {Array.from({ length: 10 }).map((_, i) => (
             <span
-              key={i}
+              key={`e${i}`}
               className={cn(
                 'absolute text-xl',
                 i % 3 === 0 ? 'animate-float' : i % 3 === 1 ? 'animate-bounce' : 'animate-pulse'
               )}
               style={{
-                left: `${(i * 37) % 92}%`,
-                top: `${(i * 53) % 80}%`,
-                animationDelay: `${(i % 8) * 0.18}s`,
+                left: `${(i * 41) % 88}%`,
+                top: `${(i * 57) % 72}%`,
+                animationDelay: `${(i % 6) * 0.25}s`,
               }}
             >
               {['🎉', '✨', '🌟', '💜', '🔮'][i % 5]}
