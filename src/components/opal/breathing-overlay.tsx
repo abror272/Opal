@@ -40,9 +40,9 @@ export function BreathingOverlay() {
 
   const phaseInfo = useMemo(() => {
     const inCycle = elapsed % CYCLE_MS
-    if (inCycle < 4000) return { label: PHASES[0], scale: 1.38, color: 'from-[#4d9fd6] to-[#5eead4]' }
-    if (inCycle < 8000) return { label: PHASES[1], scale: 1.38, color: 'from-[#5eead4] to-[#b18cff]' }
-    return { label: PHASES[2], scale: 1, color: 'from-[#3a6ea8] to-[#5eead4]' }
+    if (inCycle < 4000) return { label: PHASES[0], scale: 1.38, color: 'from-[#86efac] to-[#5eead4]' }
+    if (inCycle < 8000) return { label: PHASES[1], scale: 1.38, color: 'from-[#b7f5cd] to-[#5eead4]' }
+    return { label: PHASES[2], scale: 1, color: 'from-[#3d9970] to-[#5eead4]' }
   }, [elapsed])
 
   const secondsLeft = Math.ceil((TOTAL_MS - elapsed) / 1000)
@@ -151,7 +151,7 @@ export function BreathingOverlay() {
         ) : (
           <button
             onClick={() => setBreathingOpen(false)}
-            className="rounded-full bg-gradient-to-r from-[#5b9bd5] to-[#b18cff] px-7 py-2.5 text-[13px] font-bold text-white shadow-lg transition-transform active:scale-95"
+            className="rounded-full bg-gradient-to-r from-[#86efac] to-[#5eead4] px-7 py-2.5 text-[13px] font-extrabold text-[#052e16] shadow-[0_8px_26px_rgba(134,239,172,0.3)] transition-transform active:scale-95"
           >
             Yopish
           </button>

@@ -26,6 +26,7 @@ import {
   Sparkles,
   KeyRound,
   History,
+  BarChart3,
   ChevronRight,
 } from 'lucide-react'
 
@@ -474,6 +475,23 @@ export function ProfileView() {
             >
               {pinEnabled ? 'YONIQ' : 'O‘CHIQ'}
             </span>
+          </button>
+
+          {/* Haftalik hisobot (shareable weekly report) */}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('opal:open-report'))}
+            className="flex w-full items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-white/[0.03]"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-400/12 text-amber-300 ring-1 ring-amber-300/25">
+                <BarChart3 size={16} />
+              </div>
+              <div>
+                <p className="text-[13.5px] font-bold text-white">Haftalik hisobot</p>
+                <p className="text-[11px] text-white/40">7 kunlik natija — ulashish bilan</p>
+              </div>
+            </div>
+            <ChevronRight size={17} className="text-white/25" />
           </button>
 
           {/* Sessiyalar tarixi (App Store uslubidagi timeline) */}

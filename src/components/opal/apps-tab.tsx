@@ -12,6 +12,7 @@ import {
   CUSTOM_RULES_KEY,
   parseRuleWindow,
   liveRuleStatus,
+  ruleAppsLabel,
   type RuleCard,
 } from '@/lib/opal-ui'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -136,7 +137,7 @@ function AppDetailSheet({
                 'h-full rounded-full transition-all',
                 overLimit
                   ? 'bg-gradient-to-r from-rose-400 to-rose-500'
-                  : 'bg-gradient-to-r from-[#5eead4] to-[#b18cff]'
+                  : 'bg-gradient-to-r from-[#5eead4] to-[#86efac]'
               )}
               style={{ width: `${Math.max(limitProgress * 100, 4)}%` }}
             />
@@ -189,7 +190,7 @@ function AppDetailSheet({
               className={cn(
                 'shrink-0 rounded-full px-4 py-2 text-[12px] font-bold ring-1 transition-all active:scale-95',
                 app.dailyLimitMinutes === m
-                  ? 'bg-[#5eead4]/15 text-[#bfe9ff] ring-[#5eead4]/45'
+                  ? 'bg-[#86efac]/12 text-[#c9fbdc] ring-[#86efac]/45'
                   : 'bg-white/[0.05] text-white/60 ring-white/10 hover:text-white'
               )}
             >
@@ -201,7 +202,7 @@ function AppDetailSheet({
         {/* Block tugmasi */}
         <button
           onClick={() => onBlock(app)}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#5eead4]/20 to-[#b18cff]/20 py-3.5 text-[14px] font-bold text-white ring-1 ring-[#5eead4]/30 active:scale-[0.98]"
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#86efac]/22 to-[#5eead4]/18 py-3.5 text-[14px] font-bold text-white ring-1 ring-[#86efac]/30 active:scale-[0.98]"
         >
           <Lock size={14} /> {app.name}ni bloklash
         </button>
@@ -230,6 +231,7 @@ export function AppsTab() {
   const [customRules, setCustomRules] = useState<RuleCard[]>([])
   const [newRuleName, setNewRuleName] = useState('')
   const [newRuleTime, setNewRuleTime] = useState('9AM — 5PM')
+  const [newRuleApps, setNewRuleApps] = useState<string[]>([])
 
   // jonli scheduler — 30s da bir yangilanadi
   const [nowTick, setNowTick] = useState(() => new Date())
@@ -307,7 +309,7 @@ export function AppsTab() {
       id: `custom-${Date.now()}`,
       title: name,
       time: timeStr,
-      sub: 'Block distracting apps',
+      sub: newRuleApps.length ? newRuleApps.join(', ') : 'Block distracting apps',
       gradient: 'from-[#2d2a4e] to-[#12101f]',
       icon: '🛡️',
       duration: 60,
@@ -315,9 +317,12 @@ export function AppsTab() {
       label: name,
       emoji: '🛡️',
       ...(win ? { startMin: win.startMin, endMin: win.endMin } : {}),
+      ...(newRuleApps.length ? { apps: [...newRuleApps] } : {}),
     }
     saveCustomRules([...customRules, rule])
     setNewRuleName('')
+    setNewRuleTime('9AM — 5PM')
+    setNewRuleApps([])
     setAddRuleOpen(false)
     toast.success('✅ Qo‘shildi', {
       description: win
@@ -419,6 +424,39 @@ export function AppsTab() {
                     <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/75" aria-hidden="true" />
                   </>
                 )}
+                {rule.apps && rule.apps.length > 0 && (
+                  <span
+                    className={cn(
+                      'absolute top-3 flex justify-end',
+                      isCustom ? 'inset-x-10' : 'inset-x-3'
+                    )}
+                    aria-hidden="true"
+                  >
+                    <span className="flex -space-x-1.5">
+                      {rule.apps.slice(0, 3).map((name) => {
+                        const app = (appsQ.data ?? []).find((a) => a.name === name)
+                        if (!app) return null
+                        return (
+                          <span
+                            key={name}
+                            className={cn(
+                              'flex h-5 w-5 items-center justify-center rounded-full text-[9px] ring-1 ring-white/25',
+                              app.gradient
+                            )}
+                            title={name}
+                          >
+                            {app.emoji}
+                          </span>
+                        )
+                      })}
+                      {rule.apps.length > 3 && (
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-[8px] font-bold text-white/80 ring-1 ring-white/25">
+                          +{rule.apps.length - 3}
+                        </span>
+                      )}
+                    </span>
+                  </span>
+                )}
                 <span className="relative mb-auto text-[20px]">{rule.icon}</span>
                 {st?.state === 'active' ? (
                   <span className="relative mb-2 inline-flex w-fit items-center gap-1 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[9.5px] font-bold text-emerald-200 ring-1 ring-emerald-400/40">
@@ -434,7 +472,7 @@ export function AppsTab() {
                   </span>
                 ) : (
                   rule.left && (
-                    <span className="relative mb-2 inline-flex w-fit items-center rounded-full bg-[#5eead4]/15 px-2.5 py-0.5 text-[9.5px] font-bold text-[#bfe9ff] ring-1 ring-[#5eead4]/40">
+                    <span className="relative mb-2 inline-flex w-fit items-center rounded-full bg-[#86efac]/12 px-2.5 py-0.5 text-[9.5px] font-bold text-[#c9fbdc] ring-1 ring-[#86efac]/35">
                       {rule.left}
                     </span>
                   )
@@ -446,7 +484,7 @@ export function AppsTab() {
                   {rule.time}
                 </span>
                 <span className="relative truncate text-[9.5px] font-medium text-white/55 drop-shadow">
-                  {rule.sub}
+                  {ruleAppsLabel(rule)}
                 </span>
                 {isCustom && (
                   <span
@@ -594,7 +632,7 @@ export function AppsTab() {
                   className={cn(
                     'shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold ring-1 transition-all active:scale-95',
                     newRuleTime === p.time
-                      ? 'bg-[#5eead4]/15 text-[#bfe9ff] ring-[#5eead4]/45'
+                      ? 'bg-[#86efac]/12 text-[#c9fbdc] ring-[#86efac]/45'
                       : 'bg-white/[0.05] text-white/55 ring-white/10'
                   )}
                 >
@@ -602,9 +640,43 @@ export function AppsTab() {
                 </button>
               ))}
             </div>
+            {/* qaysi ilovalarga taalluqli (ixtiyoriy) */}
+            <div>
+              <p className="mb-1.5 flex items-center justify-between text-[10.5px] font-bold uppercase tracking-widest text-white/40">
+                <span>Ilovalar</span>
+                <span className="font-semibold normal-case tracking-normal text-white/30">
+                  {newRuleApps.length ? `${newRuleApps.length} tanlandi` : 'hech narsa = hammasi'}
+                </span>
+              </p>
+              <div className="no-scrollbar flex max-h-[74px] flex-wrap gap-1.5 overflow-y-auto thin-scrollbar">
+                {(appsQ.data ?? []).map((app) => {
+                  const on = newRuleApps.includes(app.name)
+                  return (
+                    <button
+                      key={app.id}
+                      onClick={() =>
+                        setNewRuleApps((cur) =>
+                          on ? cur.filter((n) => n !== app.name) : [...cur, app.name]
+                        )
+                      }
+                      aria-pressed={on}
+                      className={cn(
+                        'flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-[11px] font-bold ring-1 transition-all active:scale-95',
+                        on
+                          ? 'bg-[#86efac]/15 text-[#c9fbdc] ring-[#86efac]/45'
+                          : 'bg-white/[0.05] text-white/55 ring-white/10'
+                      )}
+                    >
+                      <span aria-hidden="true">{app.emoji}</span>
+                      {app.name.split(' ')[0]}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
             <button
               onClick={addRule}
-              className="w-full rounded-2xl bg-gradient-to-r from-[#5b7bff] to-[#8b5cf6] py-3 text-[14px] font-bold text-white shadow-lg active:scale-[0.98]"
+              className="w-full rounded-2xl bg-gradient-to-r from-[#86efac] to-[#5eead4] py-3 text-[14px] font-extrabold text-[#052e16] shadow-[0_8px_24px_rgba(134,239,172,0.3)] transition-transform active:scale-[0.98]"
             >
               Qoidani qo‘shish
             </button>

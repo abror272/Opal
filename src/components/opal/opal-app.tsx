@@ -11,6 +11,8 @@ import { TimerTab } from './timer-tab'
 import { TodayView } from './today-view'
 import { ProfileView } from './profile-view'
 import { HistoryView } from './history-view'
+import { WeeklyReport } from './weekly-report'
+import { RuleWatcher } from './rule-watcher'
 import { SessionPill } from './session-pill'
 import { BlockScreen } from './block-screen'
 import { Onboarding, useNeedsOnboarding } from './onboarding'
@@ -53,7 +55,7 @@ function OpalShards() {
   )
 }
 
-type OverlayView = 'today' | 'profile' | 'history' | null
+type OverlayView = 'today' | 'profile' | 'history' | 'report' | null
 
 export function OpalApp() {
   const tab = useOpalStore((s) => s.tab)
@@ -97,19 +99,32 @@ export function OpalApp() {
     const openToday = () => setView('today')
     const openProfile = () => setView('profile')
     const openHistory = () => setView('history')
+    const openReport = () => setView('report')
     window.addEventListener('opal:open-today', openToday)
     window.addEventListener('opal:open-profile', openProfile)
     window.addEventListener('opal:open-history', openHistory)
+    window.addEventListener('opal:open-report', openReport)
     return () => {
       window.removeEventListener('opal:open-today', openToday)
       window.removeEventListener('opal:open-profile', openProfile)
       window.removeEventListener('opal:open-history', openHistory)
+      window.removeEventListener('opal:open-report', openReport)
     }
   }, [])
 
-  // PWA service worker (offline shell)
+  // Escape — ochiq drill-in viewni yopadi (klaviatura qulayligi)
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setView(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  // PWA service worker (offline shell) — FAQAT production build'da.
+  // Dev'da SW cache-first statik keshi yangi kodni qoplaydigan stale bug tug'diradi.
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {
         // SW mavjud bo'lmasa — e'tiborsiz (muhim emas)
       })
@@ -205,6 +220,7 @@ export function OpalApp() {
 
               <BottomTabBar />
               <SessionPill />
+              <RuleWatcher />
 
               {/* drill-in: Bugun (stats) */}
               <AnimatePresence>
@@ -291,6 +307,34 @@ export function OpalApp() {
                     </div>
                     <div className="thin-scrollbar flex-1 overflow-y-auto">
                       <HistoryView />
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* drill-in: Haftalik hisobot */}
+                {view === 'report' && (
+                  <motion.div
+                    key="report-view"
+                    initial={{ x: '100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: '100%' }}
+                    transition={{ type: 'spring', stiffness: 340, damping: 34 }}
+                    className="absolute inset-0 z-40 flex flex-col bg-[#05060f]"
+                  >
+                    <StatusBar />
+                    <div className="flex items-center justify-between px-4 pb-1 pt-1">
+                      <button
+                        onClick={() => setView(null)}
+                        aria-label="Orqaga"
+                        className="flex h-10 w-10 items-center justify-center rounded-full bg-white/8 text-white/80 ring-1 ring-white/12 backdrop-blur transition-transform active:scale-90"
+                      >
+                        <ChevronLeft size={19} />
+                      </button>
+                      <span className="text-[16px] font-bold text-white">Hisobot</span>
+                      <span className="h-10 w-10" aria-hidden="true" />
+                    </div>
+                    <div className="thin-scrollbar flex-1 overflow-y-auto">
+                      <WeeklyReport />
                     </div>
                   </motion.div>
                 )}

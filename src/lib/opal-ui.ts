@@ -346,6 +346,25 @@ export interface RuleCard {
   /** parse qilingan oyna (custom qoidalar uchun saqlanadi) */
   startMin?: number
   endMin?: number
+  /** qoida qaysi ilovalarga taalluqli (yo'q = hammasi / sub'dagi matn) */
+  apps?: string[]
+}
+
+/**
+ * Qoida ilovalari yorlig'i: "Block All" yoki "TikTok, IG +2" ko'rinishida.
+ * Kartaning `sub` qatorida ko'rsatiladi.
+ */
+export function ruleAppsLabel(rule: Pick<RuleCard, 'apps' | 'sub'>): string {
+  const apps = rule.apps
+  if (!apps || apps.length === 0) return rule.sub
+  if (apps.length === 1) return apps[0]
+  if (apps.length === 2) return apps.join(', ')
+  return `${apps[0]}, ${shortAppName(apps[1])} +${apps.length - 2}`
+}
+
+/** uzun ilova nomini qisqartirish ("X (Twitter)" → "X") */
+function shortAppName(name: string): string {
+  return name.split(' ')[0]
 }
 
 export const DEFAULT_RULES: RuleCard[] = [
@@ -361,6 +380,7 @@ export const DEFAULT_RULES: RuleCard[] = [
     label: 'Unblock Daily',
     emoji: '🔓',
     left: '7 left',
+    apps: ['TikTok', 'Instagram', 'X (Twitter)', 'Reddit', 'Whisper'],
   },
   {
     id: 'sleep-time',
@@ -387,6 +407,7 @@ export const DEFAULT_RULES: RuleCard[] = [
     type: 'WORK',
     label: 'Ish rejimi',
     emoji: '💼',
+    apps: ['TikTok', 'Instagram', 'X (Twitter)', 'Reddit', 'Whisper', 'Netflix'],
   },
   {
     id: 'lunch-break',
@@ -400,6 +421,7 @@ export const DEFAULT_RULES: RuleCard[] = [
     type: 'STUDY',
     label: 'O‘qish',
     emoji: '📚',
+    apps: ['Snapchat'],
   },
   {
     id: 'evening-off',
@@ -413,8 +435,68 @@ export const DEFAULT_RULES: RuleCard[] = [
     label: 'Tungi tinchlik',
     emoji: '🛡️',
     left: '7 left',
+    apps: ['TikTok', 'Instagram', 'X (Twitter)', 'Reddit'],
   },
 ]
+
+/* ────────────────────────────────────────────────────────────
+   HAFTALIK HISOBOT — haqiqiy Opal "Weekly Report" kartasi
+   ──────────────────────────────────────────────────────────── */
+
+/** "8–14 Sentabr" ko'rinishida hafta oraliqi (oxirgi 7 kun) */
+export function weekRangeLabel(now: Date = new Date()): string {
+  const months = [
+    'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
+    'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr',
+  ]
+  const end = new Date(now)
+  const start = new Date(now)
+  start.setDate(start.getDate() - 6)
+  const sameMonth = start.getMonth() === end.getMonth()
+  return sameMonth
+    ? `${start.getDate()}–${end.getDate()} ${months[end.getMonth()]}`
+    : `${start.getDate()} ${months[start.getMonth()]} – ${end.getDate()} ${months[end.getMonth()]}`
+}
+
+export interface WeekDayBar {
+  /** "Du", "Se"... */
+  label: string
+  /** to'liq kun nomi ("Dushanba") */
+  full: string
+  saved: number
+  screen: number
+  /** bugunmi? */
+  isToday: boolean
+  dateISO: string
+}
+
+/** stats.days'dan oxirgi 7 kun bar ma'lumotlari (eng chapda eng eski) */
+export function weekSavedSeries(days: DailyStatLike[] | undefined, now: Date = new Date()): WeekDayBar[] {
+  const shorts = ['Ya', 'Du', 'Se', 'Cho', 'Pa', 'Ju', 'Sha']
+  const fulls = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba']
+  const byDate = new Map((days ?? []).map((d) => [d.date, d]))
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(now)
+    d.setDate(d.getDate() - (6 - i))
+    const iso = d.toISOString().slice(0, 10)
+    const stat = byDate.get(iso)
+    return {
+      label: shorts[d.getDay()],
+      full: fulls[d.getDay()],
+      saved: stat?.savedMinutes ?? 0,
+      screen: stat?.screenTimeMinutes ?? 0,
+      isToday: i === 6,
+      dateISO: iso,
+    }
+  })
+}
+
+/** stats.days'ga minimal interfeys (import tsiklini oldini olish uchun) */
+export interface DailyStatLike {
+  date: string
+  savedMinutes: number
+  screenTimeMinutes: number
+}
 
 export const CUSTOM_RULES_KEY = 'opal-custom-rules'
 

@@ -27,22 +27,22 @@ export function LockScreen({ onUnlock }: { onUnlock: () => void }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-[70] flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#10123f] via-[#1b1e5c] to-[#3a2d7d] px-6"
+      className="absolute inset-0 z-[70] flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#07121c] via-[#0a1d24] to-[#0c2620] px-6"
       role="dialog"
       aria-label="Ilova qulflangan"
     >
-      {/* ambient blobs */}
-      <div className="pointer-events-none absolute -left-16 top-16 h-52 w-52 animate-blob rounded-full bg-[#3d5afe]/25 blur-3xl" />
-      <div className="pointer-events-none absolute -right-12 bottom-24 h-48 w-48 animate-blob-delayed rounded-full bg-[#e861ff]/20 blur-3xl" />
+      {/* ambient blobs — mint nur */}
+      <div className="pointer-events-none absolute -left-16 top-16 h-52 w-52 animate-blob rounded-full bg-[#5eead4]/18 blur-3xl" />
+      <div className="pointer-events-none absolute -right-12 bottom-24 h-48 w-48 animate-blob-delayed rounded-full bg-[#86efac]/14 blur-3xl" />
 
       <div className="relative flex flex-col items-center">
         <motion.div
           initial={{ scale: 0.7, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.1, type: 'spring', stiffness: 220, damping: 16 }}
-          className="flex h-20 w-20 items-center justify-center rounded-[1.6rem] bg-gradient-to-br from-[#3d5afe] via-[#7b61ff] to-[#e861ff] shadow-xl shadow-indigo-500/40 ring-1 ring-white/20"
+          className="flex h-20 w-20 items-center justify-center rounded-[1.6rem] bg-gradient-to-br from-[#b7f5cd] via-[#86efac] to-[#5eead4] shadow-[0_16px_44px_rgba(134,239,172,0.35)] ring-1 ring-white/25"
         >
-          <ShieldCheck size={34} className="text-white" strokeWidth={2.2} />
+          <ShieldCheck size={34} className="text-[#052e16]" strokeWidth={2.2} />
         </motion.div>
 
         <p className="mt-5 text-[26px] font-black tracking-tight text-white">Opal qulflangan</p>

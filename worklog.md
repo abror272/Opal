@@ -283,3 +283,37 @@ Stage Summary:
 - Offline'da ham ilova ochiladi (PWA) — API ma'lumotlari onlaynga qaytganda sinxronlanadi
 - Risklar: custom qoidalar localStorage'da (DB emas — atayin, schema o'zgartirish web serverni qayta ishga tushirishni talab qilardi); gem rasmlari qora fonda mix-blend-screen (fon o'zarsa soylanadi); SW statik keshi 'opal-v1' versiyasi bilan — precache asset o'zgarsa versiyani oshirish kerak
 - Keyingi tavsiyalar: (1) qoida boshlanishi/tugashiga bildirishnoma (scheduler ma'lumotlari tayyor), (2) KMP mobil ilovaga mint dizayn + gemstones ko'chirish, (3) qoidalarga ilova tanlash (hozircha global), (4) eksport PDF hisobot, (5) do'stlar xonasi (WebSocket'ga qo'shilish oynasi allaqachon bor)
+
+---
+Task ID: 9
+Agent: Z.ai Code (main, cron webDevReview round 8)
+Task: Holat bahosi + agent-browser QA + bugfix + yangi funksiyalar (Haftalik hisobot, qoidaga ilova tanlash, qoida o'tish jonli bildirishnomalari) + mint styling unifikatsiyasi
+
+Work Log:
+- QA (agent-browser, port 81): barcha tablar ✓, sessiya hayotiy sikli (POST 201 → LCD hisobladi → hold-to-stop → PATCH 200) ✓, Today/Profil/History ✓, konsol toza, dev.log faqat 200 — avvalgi "Fast Refresh full reload" ogohlantirishlari eski HMR qoldiq (joriy fayllar toza). Muhim topilmalar: (1) Escape drill-in viewlarni yopmaydi, (2) DEV REJIMIDA STALE-SW BUGI (pastda)
+- REAL BUGFIX — PWA SERVICE WORKER DEV'DA STALE KOD BERARDI: SW statik `_next/static` ni cache-first keshlaydi; dev'da chunk nomlari o'zgarmagani uchun HMR/reload'dan keyin ham ESKI JS qaytarardi (bar chart yangi kodi DOMga tushmadi — eski formula 100% balandlik bilan ishlardi). YECHIM: `opal-app.tsx`da SW ro'yxatdan o'tkazish `process.env.NODE_ENV === 'production'` shartiga bog'landi; brauzerdagi eski SW + caches unregister/qilingan. Risk (Task 8'da yozilgan edi) endi yopildi
+- BUGFIX — Escape klaviaturasi endi ochiq drill-in viewni (Today/Profil/Tarix/Hisobot) yopadi (klaviatura qulayligi)
+- YANGI — HAFTALIK HISOBOT (`weekly-report.tsx`, haqiqiy Opal "Weekly Report" imzosi):
+  - Profil → "Haftalik hisobot" qatori → `opal:open-report` event → spring drill-in (opal-app'ga 'report' OverlayView qo'shildi)
+  - Hero karta: "14s 24d tejaldi" katta mint glow raqam + hafta oraliqi badge (`weekRangeLabel()` — "7–13 Sentabr") + o'tgan haftaga nisbatan trend (▼36% kamaydi / ▲ oshdi)
+  - 7 kunlik stagger bar chart (`weekSavedSeries()`): mint barlar, eng yaxshi kun OLTIN + glow, bugun cyan-mint; animatsiya 0.25s+0.055s delay
+  - 4 stat kartasi: Sessiyalar (7/8, 88% oxirigacha), Ekran vaqti (hafta + o'rtacha), O'rtacha uyqu (SLEEP sessiyalardan, "Yaxshi rejim ✓"), Worldwide (Top %)
+  - Eng yaxshi kun (Trophy, amber) + Eng ko'p bloklangan ilova (TikTok, bugungi blok daqiqasi) + Joriy streak qatorlari
+  - ULASHISH: `navigator.share` (mobil) → fallback `navigator.clipboard` matn hisobot; toast tasdiq. E2E: toast "Hisobot nusxalandi 📋" ✓
+  - BAR CHART BUGI O'ZIM TOPDIM-TUZATTIM: % height flex kolonnada resolvlanmasdi (kolonna auto-height) → kolonnaga `h-full justify-end`, bar balandligi 6+80% ga cap landi
+- YANGI — QOIDAGA ILOVA TANLASH (per-rule apps):
+  - `RuleCard.apps?: string[]` + `ruleAppsLabel()` ("TikTok, Instagram +3" format, "X (Twitter)"→"X" qisqartirish)
+  - DEFAULT_RULES endi ilovalar bilan (Unblock Daily=social 5, Deep Work=distracting 6, Lunch Break=Snapchat, Tungi himoya=social 4; Sleep Time=Block All — apps yo'q)
+  - Add Rule dialogida ILOVALAR bo'limi: barcha DB ilovalar multi-select chip (emoji + nom, aria-pressed), "hech narsa = hammasi" hint, N tanlandi hisoblagich
+  - Rule kartasi o'ng yuqorisida ilova chip-stack (3 emoji + "+N", custom qoidalarda X tugma bilan usteshmaslik uchun inset-x-10), sub qatori apps label
+  - Dialog UX: qo'shgandan keyin vaqt/app maydonlari resetlanadi (avval eski qiymat qolardi)
+- YANGI — RULE WATCHER (`rule-watcher.tsx`): ilova ochiq turganda qoida oynasi boshlanganida/tugagaida jonli sonner toast; 15s tick, birinchi sikl faqat snapshot (spam yo'q), faqat parse qilinadigan oynalar kuzatiladi. E2E: "7:34AM" da boshlanadigan test qoida yaratilib, REAL O'TISH KUZATILDI — "🛡️ Test Jonli 2 boshlandi · Block distracting apps · 16s 25d qoldi" toast ✓ (dastlabki 20s poll 6s toast oynasini o'tkazib yuborgan, 4s poll bilan tasdiqlandi)
+- STYLING — MINT UNIFIKATSIYA (binafsha/ko'k qoldiqlar yo'q qilindi): Add Rule tugmasi `from-[#5b7bff] to-[#8b5cf6]` → `from-[#86efac] to-[#5eead4]` + qora matn; LockScreen (qulflangan ekran) ko'k/binafsha blob+qalqon → mint nur + mint qalqon; Breathing overlay fazalar va Yopish tugmasi ko'k→mint; AppDetailSheet limit bar `to-[#b18cff]`→`to-[#86efac]`, bloklash tugmasi, limit chiplar va rule 'left' chip `#bfe9ff`→`#c9fbdc` mint; preset chip selected holatlar mint
+- E2E yakuniy: hisobot bar chart render (mint/oltin/cyan barlar ko'rindi) ✓, share toast ✓, Escape×2 (hisobot→profil→apps) ✓, qoida kartalarida chip-stack + label ✓, custom qoida 3 ilova bilan yaratildi (chips + "TikTok, Instagram +1", X bilan o'chirildi) ✓, watcher toast ✓, Home/Score 99 ✓, konsol toza ✓, lint 0/0, tsc src 0 xato, dev.log 200 ✓
+
+Stage Summary:
+- Ilova Opal'ning imzo "Weekly Report"iga ega bo'ldi — stats.dan real hisoblanadi va bir bosishda ulashiladi
+- Qoidalar endi to'liq konfiguratsiyalashuvchan: qaysi ilovalar bloklanishi tanlanadi va oynalar REAL vaqtda kuzatiladi (boshlanish/tugash toastlari)
+- Muhim dars: dev rejimida PWA service worker stale-chunk bugiga olib keladi — endi faqat production'da register bo'ladi (prev Round 8 risk yopildi)
+- Risklar: hisobotdagi "Eng ko'p bloklangan" hozircha bugungi todayMinutes bo'yicha (24h timeline tarixi DBda yo'q); watcher faqat ilova ochiq turganda ishlaydi (fon rejimi uchun real push kerak); ultramax custom qoidalar localStorage'da (DB emas)
+- Keyingi tavsiyalar: (1) hisobot PNG rasm sifatida yuklab olish (html-to-image), (2) qoida oynasi boshlanishiga countdown bildirishnomasi (5 daqiqa oldin), (3) KMP mobilga mint dizayn + haftalik hisobot ko'chirish, (4) streak hisobini DB bilan normalizatsiya qilish (Home 12 vs Profil 11 farqi), (5) do'stlar xonasi (WebSocket join oynasi)
