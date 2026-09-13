@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { PinPad } from './pin-pad'
+import { GemImage } from './gem-image'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import {
@@ -24,6 +25,7 @@ import {
   CircleHelp,
   Sparkles,
   KeyRound,
+  History,
   ChevronRight,
 } from 'lucide-react'
 
@@ -257,24 +259,8 @@ export function ProfileView() {
                     aria-hidden="true"
                   />
                 )}
-                {/* tosh shakli — qirrali blob */}
-                <div
-                  className={cn(
-                    'relative h-[58px] w-[58px] transition-all',
-                    !g.unlocked && 'opacity-30 grayscale'
-                  )}
-                  style={{
-                    borderRadius: '42% 58% 55% 45% / 48% 44% 56% 52%',
-                    background: `radial-gradient(circle at 32% 28%, ${g.colors[0]} 0%, ${g.colors[1]} 48%, ${g.colors[2]} 100%)`,
-                    boxShadow: g.unlocked
-                      ? `0 0 22px ${g.colors[1]}77, inset 0 -4px 10px rgba(0,0,0,0.35), inset 0 3px 6px rgba(255,255,255,0.25)`
-                      : 'inset 0 -4px 10px rgba(0,0,0,0.4)',
-                  }}
-                  aria-hidden="true"
-                >
-                  <span className="absolute left-[22%] top-[16%] h-2.5 w-3 rounded-full bg-white/55 blur-[3px]" />
-                  <span className="absolute bottom-[20%] right-[24%] h-1.5 w-1.5 rounded-full bg-white/25 blur-[1px]" />
-                </div>
+                {/* AI generatsiya qilingan haqiqiy tosh rasmi */}
+                <GemImage gem={g} size={62} unlocked={g.unlocked} />
                 {!g.unlocked && (
                   <span className="absolute text-[13px] drop-shadow" aria-label="Bloklangan">
                     🔒
@@ -488,6 +474,23 @@ export function ProfileView() {
             >
               {pinEnabled ? 'YONIQ' : 'O‘CHIQ'}
             </span>
+          </button>
+
+          {/* Sessiyalar tarixi (App Store uslubidagi timeline) */}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('opal:open-history'))}
+            className="flex w-full items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-white/[0.03]"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#5eead4]/12 text-[#9fe8b5] ring-1 ring-[#5eead4]/20">
+                <History size={16} />
+              </div>
+              <div>
+                <p className="text-[13.5px] font-bold text-white">Sessiyalar tarixi</p>
+                <p className="text-[11px] text-white/40">Barcha fokus/uyqu sessiyalari</p>
+              </div>
+            </div>
+            <ChevronRight size={17} className="text-white/25" />
           </button>
 
           <div className="flex items-center justify-between px-5 py-3.5">

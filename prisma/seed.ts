@@ -45,12 +45,26 @@ async function main() {
 
   // Past sessions
   const now = Date.now()
+
+  // REAL UYQU DEMO: oxirgi kechagi uyqu (bugun ertalab tugagan) + avvalgi kecha
+  const sleepEnd = new Date()
+  sleepEnd.setHours(7, 10, 0, 0)
+  if (sleepEnd.getTime() > now) sleepEnd.setDate(sleepEnd.getDate() - 1)
+  const sleepStart = new Date(sleepEnd.getTime() - 450 * 60_000) // 7h 30m uyqu
+  const prevSleepEnd = new Date(sleepEnd.getTime() - 24 * 3600_000)
+  const prevSleepStart = new Date(prevSleepEnd.getTime() - 480 * 60_000) // 8h uyqu
+
   const sessions = [
     { type: 'DEEP_FOCUS', label: 'Deep Focus', emoji: '🧠', durationMinutes: 45, startedAt: new Date(now - 5 * 3600_000), endedAt: new Date(now - 5 * 3600_000 + 45 * 60_000), completed: true, savedMinutes: 45, focusScore: 92, blockedApps: JSON.stringify(['TikTok', 'Instagram', 'X (Twitter)']) },
     { type: 'WORK', label: 'Ish rejimi', emoji: '💼', durationMinutes: 90, startedAt: new Date(now - 9 * 3600_000), endedAt: new Date(now - 9 * 3600_000 + 90 * 60_000), completed: true, savedMinutes: 90, focusScore: 87, blockedApps: JSON.stringify(['TikTok', 'Instagram', 'Reddit']) },
+    // oxirgi kechagi uyqu (23:40 → 07:10)
+    { type: 'SLEEP', label: 'Uyqu rejimi', emoji: '🌙', durationMinutes: 480, startedAt: sleepStart, endedAt: sleepEnd, completed: true, savedMinutes: 60, focusScore: 100, blockedApps: JSON.stringify(['TikTok', 'Instagram', 'YouTube', 'Reddit']) },
     { type: 'STUDY', label: 'O‘qish', emoji: '📚', durationMinutes: 60, startedAt: new Date(now - 26 * 3600_000), endedAt: new Date(now - 26 * 3600_000 + 60 * 60_000), completed: true, savedMinutes: 60, focusScore: 95, blockedApps: JSON.stringify(['TikTok', 'Whisper', 'Instagram']) },
     { type: 'DEEP_FOCUS', label: 'Deep Focus', emoji: '🧠', durationMinutes: 25, startedAt: new Date(now - 30 * 3600_000), endedAt: new Date(now - 30 * 3600_000 + 25 * 60_000), completed: true, savedMinutes: 25, focusScore: 78, blockedApps: JSON.stringify(['TikTok', 'X (Twitter)']) },
-    { type: 'SLEEP', label: 'Uyqu rejimi', emoji: '🌙', durationMinutes: 480, startedAt: new Date(now - 52 * 3600_000), endedAt: new Date(now - 52 * 3600_000 + 480 * 60_000), completed: true, savedMinutes: 120, focusScore: 100, blockedApps: JSON.stringify(['TikTok', 'Instagram', 'YouTube', 'Reddit']) },
+    // avvalgi kechagi uyqu
+    { type: 'SLEEP', label: 'Uyqu rejimi', emoji: '🌙', durationMinutes: 480, startedAt: prevSleepStart, endedAt: prevSleepEnd, completed: true, savedMinutes: 60, focusScore: 100, blockedApps: JSON.stringify(['TikTok', 'Instagram', 'YouTube', 'Reddit']) },
+    // bitta erta chiqilgan sessiya (tarixda ko'rinadi)
+    { type: 'CUSTOM', label: 'Dam olish', emoji: '🌳', durationMinutes: 30, startedAt: new Date(now - 50 * 3600_000), endedAt: new Date(now - 50 * 3600_000 + 14 * 60_000), completed: false, savedMinutes: 0, focusScore: 55, blockedApps: JSON.stringify(['TikTok', 'Instagram']) },
   ]
   await prisma.focusSession.createMany({ data: sessions })
 

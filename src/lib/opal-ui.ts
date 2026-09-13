@@ -3,6 +3,55 @@
 
 import type { FocusSession, StatsResponse, SessionType } from '@/lib/opal-types'
 
+/* ────────────────────────────────────────────────────────────
+   UYQU KUZATUVI — haqiqiy SLEEP sessiyalaridan oxirgi kechagi
+   uyquni chiqarib oladi (Sleep Score endi real ma'lumot)
+   ──────────────────────────────────────────────────────────── */
+
+export interface SleepRecord {
+  /** uyqu davomiyligi (daqiqada, 12 soatga kesilgan) */
+  minutes: number
+  startedAt: Date
+  endedAt: Date
+  completed: boolean
+}
+
+/**
+ * Oxirgi kechagi uyqu: 32 soat ichida tugagan SLEEP sessiyasi.
+ * sort: endedAt bo'yicha eng yangisi.
+ */
+export function lastSleep(
+  sessions: FocusSession[] | undefined,
+  now: Date = new Date()
+): SleepRecord | null {
+  const cands = (sessions ?? [])
+    .filter((s) => s.type === 'SLEEP' && s.endedAt)
+    .sort((a, b) => new Date(b.endedAt!).getTime() - new Date(a.endedAt!).getTime())
+  for (const s of cands) {
+    const end = new Date(s.endedAt!).getTime()
+    if (now.getTime() - end <= 32 * 3600_000) {
+      const start = new Date(s.startedAt).getTime()
+      return {
+        minutes: clamp(Math.round((end - start) / 60_000), 0, 12 * 60),
+        startedAt: new Date(s.startedAt),
+        endedAt: new Date(end),
+        completed: s.completed,
+      }
+    }
+  }
+  return null
+}
+
+/** Uyqu davomiyligidan Sleep Score (7h30 ≈ 89, 8h ≈ 92) */
+export function sleepScoreFromMinutes(minutes: number): number {
+  return clamp(Math.round(40 + minutes * 0.108), 40, 97)
+}
+
+/** HH:mm ko'rinishi (yotish/uyg'onish vaqtlari uchun) */
+export function clockTime(d: Date): string {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
 /** Opal glassmorphism asosiy klassi */
 export const GLASS =
   'rounded-3xl border border-white/10 bg-white/[0.055] backdrop-blur-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_8px_32px_rgba(0,0,0,0.35)]'
@@ -61,8 +110,10 @@ export function computeScores(
   const score = Math.round(clamp(88 - over * 0.1 + saved * 0.18, 42, 99))
   const focus = Math.round(clamp(52 + completed.length * 11 + saved * 0.09, 38, 98))
   const rest = Math.round(clamp(95 - screen * 0.1, 44, 97))
-  const hadSleep = todaysSessions.some((s) => s.type === 'SLEEP')
-  const sleep = hadSleep ? 88 : Math.round(clamp(80 - screen * 0.04, 55, 82))
+  const sleepRec = lastSleep(sessions)
+  const sleep = sleepRec
+    ? sleepScoreFromMinutes(sleepRec.minutes)
+    : Math.round(clamp(80 - screen * 0.04, 55, 82))
 
   // trend: ijobiy trendPercent (screen time o'sishi) → ball pasayishi
   const trend = stats?.trendPercent ?? 0
@@ -199,6 +250,197 @@ export function pickSuggestion(
 ): OpalSuggestion {
   const list = suggestionsFor(stats, now)
   return list[offset % list.length]
+}
+
+/* ────────────────────────────────────────────────────────────
+   RULES REAL-TIME SCHEDULER — qoidalar endi jonli baholanadi:
+   "9AM — 5PM" kabi oynalar parse qilinadi, aktiv/qolgan vaqt
+   hisoblanadi va ilova bo'ylab ko'rsatiladi.
+   ──────────────────────────────────────────────────────────── */
+
+/** Parse qilingan kunlik vaqt oynasi (daqiqalar, 0..1440) */
+export interface RuleWindow {
+  startMin: number
+  endMin: number
+}
+
+/**
+ * "9AM — 5PM" / "10PM—8AM" / "12—1PM" / "6pm - 8pm" / "9:00-17:00"
+ * formatlarini kunlik daqiqalar oynasiga aylantiradi.
+ * Mos kelmasa (masalan "Har kuni") null qaytaradi.
+ */
+export function parseRuleWindow(time: string): RuleWindow | null {
+  if (!time) return null
+  const t = time.toLowerCase().replace(/[–—−]/g, '-')
+  if (!/\d/.test(t)) return null
+
+  const re = /(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/g
+  const tokens: { hour: number; min: number; suffix: boolean }[] = []
+  let m: RegExpExecArray | null
+  while ((m = re.exec(t)) !== null) {
+    const hour = parseInt(m[1], 10)
+    const min = m[2] ? parseInt(m[2], 10) : 0
+    if (min > 59) return null
+    const suffix = m[3]
+    let h = hour
+    if (suffix === 'pm' && h !== 12) h += 12
+    if (suffix === 'am' && h === 12) h = 0
+    if (h > 23) return null
+    tokens.push({ hour: h, min, suffix: !!suffix })
+  }
+  if (tokens.length < 2) return null
+  // koeffitsiyentsiz 24-soat format ham bo'lishi mumkin (9:00-17:00)
+  const [a, b] = tokens
+  return { startMin: a.hour * 60 + a.min, endMin: b.hour * 60 + b.min }
+}
+
+export type RuleState = 'active' | 'upcoming'
+
+export interface RuleStatusInfo {
+  state: RuleState
+  /** "4s 32d" ko'rinishida qolgan/keladigan vaqt */
+  label: string
+}
+
+/** Qoida oynasining hozirgi holati: aktiv (qolgan vaqt) yoki kutilmoqda (boshlanishiga) */
+export function ruleWindowStatus(win: RuleWindow, now: Date = new Date()): RuleStatusInfo | null {
+  const nowMin = now.getHours() * 60 + now.getMinutes()
+  const crosses = win.endMin <= win.startMin
+  const isActive = crosses
+    ? nowMin >= win.startMin || nowMin < win.endMin
+    : nowMin >= win.startMin && nowMin < win.endMin
+
+  if (isActive) {
+    const endAbs = crosses && nowMin < win.endMin ? win.endMin : win.endMin + (crosses ? 1440 : 0)
+    const left = Math.max(endAbs - nowMin, 1)
+    return { state: 'active', label: formatMinutesShort(left) }
+  }
+  // boshlanishigacha (keyingi sikl)
+  const until = nowMin < win.startMin ? win.startMin - nowMin : win.startMin + 1440 - nowMin
+  return { state: 'upcoming', label: formatMinutesShort(until) }
+}
+
+/** "4s 32d" uslubidagi qisqa vaqt (formatMinutes bilan bir xil, aniqroq nom) */
+function formatMinutesShort(min: number): string {
+  const h = Math.floor(min / 60)
+  const m = Math.round(min % 60)
+  if (h <= 0) return `${m}d`
+  if (m === 0) return `${h}s`
+  return `${h}s ${m}d`
+}
+
+/* ── RuleCard (Apps tab bento) — endi opal-ui'da, Home ham o'qiydi ── */
+export interface RuleCard {
+  id: string
+  title: string
+  time: string
+  sub: string
+  photo?: string
+  gradient: string
+  icon: string
+  duration: number
+  type: SessionType
+  label: string
+  emoji: string
+  left?: string
+  /** parse qilingan oyna (custom qoidalar uchun saqlanadi) */
+  startMin?: number
+  endMin?: number
+}
+
+export const DEFAULT_RULES: RuleCard[] = [
+  {
+    id: 'unblock-daily',
+    title: '10 Unblock Daily',
+    time: 'Har kuni',
+    sub: 'Ijtimoiy ilovalar uchun',
+    gradient: 'from-[#2a3b5c] to-[#141c30]',
+    icon: '🔓',
+    duration: 30,
+    type: 'CUSTOM',
+    label: 'Unblock Daily',
+    emoji: '🔓',
+    left: '7 left',
+  },
+  {
+    id: 'sleep-time',
+    title: 'Sleep Time',
+    time: '10PM — 8AM',
+    sub: 'Block All',
+    photo: '/opal/routine-sleep.jpg',
+    gradient: 'from-[#1a1f3d] to-[#0a0d20]',
+    icon: '🌙',
+    duration: 480,
+    type: 'SLEEP',
+    label: 'Uyqu rejimi',
+    emoji: '🌙',
+  },
+  {
+    id: 'deep-work',
+    title: 'Deep Work',
+    time: '9AM — 5PM',
+    sub: 'Block All, Except Productivity',
+    photo: '/opal/routine-deepwork.jpg',
+    gradient: 'from-[#26221c] to-[#0f0d0a]',
+    icon: '💻',
+    duration: 90,
+    type: 'WORK',
+    label: 'Ish rejimi',
+    emoji: '💼',
+  },
+  {
+    id: 'lunch-break',
+    title: 'Lunch Break',
+    time: '12—1PM',
+    sub: 'Unblock Snapchat if blocked',
+    photo: '/opal/routine-family.jpg',
+    gradient: 'from-[#1c2626] to-[#0a1010]',
+    icon: '🍽️',
+    duration: 60,
+    type: 'STUDY',
+    label: 'O‘qish',
+    emoji: '📚',
+  },
+  {
+    id: 'evening-off',
+    title: '10PM—8AM',
+    time: 'Tungi himoya',
+    sub: 'Block Social',
+    gradient: 'from-[#241c33] to-[#0d0a14]',
+    icon: '🛡️',
+    duration: 120,
+    type: 'CUSTOM',
+    label: 'Tungi tinchlik',
+    emoji: '🛡️',
+    left: '7 left',
+  },
+]
+
+export const CUSTOM_RULES_KEY = 'opal-custom-rules'
+
+/** localStorage'dagi custom qoidalarni o'qish (SSR-safe, xatosiz) */
+export function readCustomRules(): RuleCard[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = window.localStorage.getItem(CUSTOM_RULES_KEY)
+    return raw ? (JSON.parse(raw) as RuleCard[]) : []
+  } catch {
+    return []
+  }
+}
+
+/** Barcha qoidalar (standart + custom) */
+export function allRules(): RuleCard[] {
+  return [...DEFAULT_RULES, ...readCustomRules()]
+}
+
+/** Qoidaning jonli holati: oyna bo'lmasa null (statik `left` ishlatiladi) */
+export function liveRuleStatus(rule: RuleCard, now: Date = new Date()): RuleStatusInfo | null {
+  const win =
+    rule.startMin !== undefined && rule.endMin !== undefined
+      ? { startMin: rule.startMin, endMin: rule.endMin }
+      : parseRuleWindow(rule.time)
+  return win ? ruleWindowStatus(win, now) : null
 }
 
 /* ────────────────────────────────────────────────────────────

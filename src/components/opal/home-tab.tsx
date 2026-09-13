@@ -1,14 +1,15 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOpalStore } from '@/lib/opal-store'
-import { computeScores, pickSuggestion, gemsFor, GLASS, OPAL } from '@/lib/opal-ui'
+import { computeScores, pickSuggestion, gemsFor, allRules, liveRuleStatus, GLASS, OPAL } from '@/lib/opal-ui'
 import { formatMinutes, type FocusSession, type StatsResponse, type UserProfile, type BlockApp } from '@/lib/opal-types'
 import { cn } from '@/lib/utils'
+import { GemImage } from './gem-image'
 import {
   ChevronRight,
   Play,
@@ -45,6 +46,17 @@ export function HomeTab() {
   const setTimerDraft = useOpalStore((s) => s.setTimerDraft)
   const setBreathingOpen = useOpalStore((s) => s.setBreathingOpen)
   const setBlockedView = useOpalStore((s) => s.setBlockedView)
+
+  // jonli qoida holati uchun 30s tik (scheduler)
+  const [nowTick, setNowTick] = useState(() => new Date())
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(new Date()), 30_000)
+    return () => clearInterval(id)
+  }, [])
+  const activeRule = useMemo(
+    () => allRules().map((r) => ({ rule: r, st: liveRuleStatus(r, nowTick) })).find((x) => x.st?.state === 'active') ?? null,
+    [nowTick]
+  )
 
   const profile = profileQ.data
   const stats = statsQ.data
@@ -394,7 +406,23 @@ export function HomeTab() {
                 )}
                 <p className="text-[12.5px] font-bold text-white">Himoya</p>
               </div>
-              <div className="mt-2 flex items-center justify-between gap-2">
+              {activeRule && (
+                <button
+                  onClick={() => setTab('apps')}
+                  className="mt-2 flex w-full items-center gap-1.5 rounded-full bg-emerald-500/12 px-2 py-1 ring-1 ring-emerald-400/25 transition-transform active:scale-[0.97]"
+                  aria-label={`${activeRule.rule.title} qoidasi aktiv`}
+                >
+                  <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-70" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-left text-[10px] font-bold text-emerald-200">
+                    {activeRule.rule.icon} {activeRule.rule.title}
+                  </span>
+                  <span className="text-[9.5px] font-extrabold text-emerald-300/90">{activeRule.st!.label}</span>
+                </button>
+              )}
+              <div className={cn('flex items-center justify-between gap-2', activeRule && 'mt-1.5')}>
                 <p className="text-[9.5px] font-medium leading-tight text-white/40">
                   {profile?.protectionEnabled ? 'Bloklangan' : 'O‘chirilgan'}
                 </p>
@@ -493,19 +521,21 @@ export function HomeTab() {
             <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
               {gems.slice(0, 5).map((g) => (
                 <div key={g.key} className="flex w-[64px] shrink-0 flex-col items-center gap-1">
-                  <span
-                    className={cn(
-                      'relative flex h-[46px] w-[46px] items-center justify-center rounded-[16px]',
-                      !g.unlocked && 'opacity-35 grayscale'
+                  <div className="relative flex h-[46px] w-[46px] items-center justify-center">
+                    {g.unlocked && (
+                      <span
+                        className="absolute inset-0 rounded-full"
+                        style={{ background: `radial-gradient(circle, ${g.colors[1]}44 0%, transparent 72%)` }}
+                        aria-hidden="true"
+                      />
                     )}
-                    style={{
-                      background: `radial-gradient(circle at 35% 30%, ${g.colors[0]} 0%, ${g.colors[1]} 45%, ${g.colors[2]} 100%)`,
-                      boxShadow: g.unlocked ? `0 0 16px ${g.colors[1]}66` : 'none',
-                    }}
-                    aria-hidden="true"
-                  >
-                    <span className="absolute left-[22%] top-[18%] h-2 w-2.5 rounded-full bg-white/50 blur-[2px]" />
-                  </span>
+                    <GemImage gem={g} size={44} unlocked={g.unlocked} />
+                    {!g.unlocked && (
+                      <span className="absolute text-[10px]" aria-hidden="true">
+                        🔒
+                      </span>
+                    )}
+                  </div>
                   <span className="text-[9.5px] font-semibold text-white/55">{g.name}</span>
                 </div>
               ))}

@@ -10,6 +10,7 @@ import { AppsTab } from './apps-tab'
 import { TimerTab } from './timer-tab'
 import { TodayView } from './today-view'
 import { ProfileView } from './profile-view'
+import { HistoryView } from './history-view'
 import { SessionPill } from './session-pill'
 import { BlockScreen } from './block-screen'
 import { Onboarding, useNeedsOnboarding } from './onboarding'
@@ -52,7 +53,7 @@ function OpalShards() {
   )
 }
 
-type OverlayView = 'today' | 'profile' | null
+type OverlayView = 'today' | 'profile' | 'history' | null
 
 export function OpalApp() {
   const tab = useOpalStore((s) => s.tab)
@@ -95,11 +96,23 @@ export function OpalApp() {
   useEffect(() => {
     const openToday = () => setView('today')
     const openProfile = () => setView('profile')
+    const openHistory = () => setView('history')
     window.addEventListener('opal:open-today', openToday)
     window.addEventListener('opal:open-profile', openProfile)
+    window.addEventListener('opal:open-history', openHistory)
     return () => {
       window.removeEventListener('opal:open-today', openToday)
       window.removeEventListener('opal:open-profile', openProfile)
+      window.removeEventListener('opal:open-history', openHistory)
+    }
+  }, [])
+
+  // PWA service worker (offline shell)
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {
+        // SW mavjud bo'lmasa — e'tiborsiz (muhim emas)
+      })
     }
   }, [])
 
@@ -250,6 +263,34 @@ export function OpalApp() {
                     </div>
                     <div className="thin-scrollbar flex-1 overflow-y-auto">
                       <ProfileView />
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* drill-in: Sessiyalar tarixi */}
+                {view === 'history' && (
+                  <motion.div
+                    key="history-view"
+                    initial={{ x: '100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: '100%' }}
+                    transition={{ type: 'spring', stiffness: 340, damping: 34 }}
+                    className="absolute inset-0 z-40 flex flex-col bg-[#05060f]"
+                  >
+                    <StatusBar />
+                    <div className="flex items-center justify-between px-4 pb-1 pt-1">
+                      <button
+                        onClick={() => setView(null)}
+                        aria-label="Orqaga"
+                        className="flex h-10 w-10 items-center justify-center rounded-full bg-white/8 text-white/80 ring-1 ring-white/12 backdrop-blur transition-transform active:scale-90"
+                      >
+                        <ChevronLeft size={19} />
+                      </button>
+                      <span className="text-[16px] font-bold text-white">Tarix</span>
+                      <span className="h-10 w-10" aria-hidden="true" />
+                    </div>
+                    <div className="thin-scrollbar flex-1 overflow-y-auto">
+                      <HistoryView />
                     </div>
                   </motion.div>
                 )}

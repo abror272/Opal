@@ -243,3 +243,43 @@ Stage Summary:
 - 4 yangi funksiya: kontekstli tavsiya dvigateli (vaqt+statistika), Gemstones to'plami (8 tosh, unlock shartlari), jahon foizi, Today metrik tafsilotlari (What is X Score? + AVG slayderlar)
 - Risklar: toshlar CSS blob (rasmlar emas — keyin AI rasm bilan almashtirish mumkin); metrik slayderlarning ba'zi qiymatlari statistikadan derivatsiya (uyqu davomiyligi DBda yo'q); 'N allowed' faqat ruxsat etilganlar soni
 - Keyingi tavsiyalar: (1) gemstone rasmlari AI generatsiya, (2) Uyqu tracking (SLEEP sessiyasi davomiyligi bilan Bugun metrikini real qilish), (3) Rules real vaqt scheduleri, (4) PWA service worker, (5) mobil KMP ilovaga ham shu mint dizayn+gemstones ko'chirish
+
+---
+Task ID: 8
+Agent: Z.ai Code (main, cron webDevReview round 7)
+Task: Holat bahosi + QA + majburiy detallashtrilgan styling + yangi funksiyalar (real uyqu kuzatuvi, Rules jonli scheduleri, sessiyalar tarixi, AI gemstone rasmlari, PWA service worker)
+
+Work Log:
+- QA (agent-browser, port 81): barcha tablar ✓, sessiya hayotiy sikli (start → LCD 44:58 hisobladi → hold-to-stop 1.8s → PATCH 200) ✓, Today ✓, Profil ✓, konsol toza ✓ — avvalgi "Ecmascript error" console yozuvi eski uzilgan HMR edit'idan qoldiq (joriy fayllar toza, yangi reload'da yo'q)
+- YANGI — REAL UYQU KUZATUVI:
+  - opal-ui: lastSleep() — 32 soat ichida tugagan oxirgi SLEEP sessiyasidan uyqu chiqaradi (davomiylik 12s ga kesiladi), sleepScoreFromMinutes() (7h30≈89, 8h≈92), clockTime()
+  - computeScores: Sleep ball endi REAL uyqu sessiyasidan (avval "hadSleep ? 88 : derived" soxta qiymat edi)
+  - Today → Sleep bo'limi: real davomiylik ("7s 30d — Great") + YOTISH/UYG'ONISH vaqt tilelari (23:40 → 07:10, sessiyadan)
+  - Seed: oxirgi kechagi uyqu (23:40→07:10, 7h30m) + avvalgi kecha (8h) + bitta erta chiqilgan sessiya (tarix uchun)
+- YANGI — RULES REAL-TIME SCHEDULER:
+  - parseRuleWindow(): "9AM — 5PM" / "10PM—8AM" / "12—1PM" / "6pm - 8pm" / "9:00-17:00" formatlari → kunlik daqiqalar oynasi; ruleWindowStatus(): active (qolgan vaqt) / upcoming (boshlanishiga) hisoblaydi, tunni kesib o'tuvchi oynalar to'g'ri
+  - Apps tab: har qoida kartasida JONLI chip — aktiv: yashil pulsli "● 58d qoldi" + yashil border, kutilmoqda: "1s 58dan boshlanadi"; 30s tick bilan yangilanadi (07:01→07:10'da 59d→49d e2e kuzatildi)
+  - Home: Himoya kartasida aktiv qoida chipi ("🌙 Sleep Time 49d", pulsli nuqta, bosilsa Apps ochiladi) — Switch ham ko'rinib turadi (funksiya yo'qolmadi)
+  - Custom qoidalar endi vaqtni parse qilib startMin/endMin saqlaydi (localStorage format orqaga mos), Add Rule dialogida tezkor preset chiplar (Ish 9—5, Uyqu 10—8, Tushlik, Kechki 6—8) va "jonli jadval" hinti, custom qoidani o'chirish × tugmasi (keyboard accessible)
+  - RuleCard/DEFAULT_RULES/allRules() opal-ui'ga ko'chirildi — Home va Apps bir xil manbadan o'qiydi
+- YANGI — SESSIYALAR TARIXI (App Store timeline uslubi):
+  - history-view.tsx: kunlar bo'yicha guruh (Bugun/Kecha/"13 Sentabr"), xulosa kartasi (7 sessiya / 86% to'liq / 2 uyqu kechasi / jami 5s 40d), har sessiya: emoji tile, vaqt oraliqlari, holat badge (✓ To'liq / ↩ Erta chiqildi / amber), davomiylik + "+Xs saqlandi", stagger animatsiya
+  - Profil → "Sessiyalar tarixi" qatori (History icon) → opal-app'ga 'opal:open-history' event → spring drill-in (boshqa viewlar bilan bir xil)
+- YANGI — AI GEMSTONE RASMLARI:
+  - 8 ta tosh AI generatsiya (z-ai image, macro jewelry photography, qora fon): first (aqua brilliant), motivated (pink sapphire), night-owl (indigo iolite), pride (orange citrine), iron-will (silver diamond), opal-plus (oltin fire opal), time-lord (zumrad), century (yakut)
+  - sharp bilan 192px'ga kichraytirildi (16-28KB har biri, public/opal/gems/)
+  - gem-image.tsx: mix-blend-screen + radial mask (qora fon yo'qoladi), onError → eski CSS gradient blob'ga graceful fallback; Profil karuseli (62px) + Home teaser (44px) ikkalasida
+- YANGI — PWA SERVICE WORKER:
+  - public/sw.js: navigatsiyalar network-first (offline → cache yoki /offline.html), statik (_next/static, /icons, /opal, rasmlar) cache-first, /api/ hech qachon kesilmaydi, websocket/HMR tegilmaydi, versiyalangan cache + eski tozalash
+  - public/offline.html: brend uslubidagi offline sahifa (float animatsiyali kristall, "Qayta urinish" tugmasi)
+  - opal-app'da ro'yxatdan o'tkazish; E2E: SW active ✓, offline rejimda reload → ilova to'liq render bo'ldi (keshdan), API fallback "0 allowed" ✓
+- STYLING DETALLAR: qoida chip pulse animatsiyalari, uyqu tilelari, tarix stagger, gem glow halo — hammasi mint dizayn tilida
+- Lint 0/0, tsc src 0 xato, seed qayta tiklandi (streak 12, 7 sessiya — 2 uyqu kechasi bilan), konsol/dev.log toza
+
+Stage Summary:
+- 5 yangi funksiya: real uyqu kuzatuvi, Rules jonli scheduleri (countdown bilan), sessiyalar tarixi timeline'i, AI gemstone rasmlari, PWA offline shell
+- Sleep/Focus/Rest ballari endi imkon qadar real DB ma'lumotidan — "soxta metrika" davri tugadi
+- Qoidalar endi jonli: "4h 32m left" statik yorliq o'rniga real countdown, Home'da ham ko'rinadi
+- Offline'da ham ilova ochiladi (PWA) — API ma'lumotlari onlaynga qaytganda sinxronlanadi
+- Risklar: custom qoidalar localStorage'da (DB emas — atayin, schema o'zgartirish web serverni qayta ishga tushirishni talab qilardi); gem rasmlari qora fonda mix-blend-screen (fon o'zarsa soylanadi); SW statik keshi 'opal-v1' versiyasi bilan — precache asset o'zgarsa versiyani oshirish kerak
+- Keyingi tavsiyalar: (1) qoida boshlanishi/tugashiga bildirishnoma (scheduler ma'lumotlari tayyor), (2) KMP mobil ilovaga mint dizayn + gemstones ko'chirish, (3) qoidalarga ilova tanlash (hozircha global), (4) eksport PDF hisobot, (5) do'stlar xonasi (WebSocket'ga qo'shilish oynasi allaqachon bor)

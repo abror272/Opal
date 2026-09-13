@@ -16,7 +16,7 @@ import {
   YAxis,
 } from 'recharts'
 import type { BlockApp, DailyStat, FocusSession, StatsResponse, UserProfile } from '@/lib/opal-types'
-import { computeScores, GLASS, OPAL, clamp } from '@/lib/opal-ui'
+import { computeScores, GLASS, OPAL, clamp, lastSleep, clockTime } from '@/lib/opal-ui'
 import { dayLabel, formatMinutes } from '@/lib/opal-types'
 import { LiveLeaderboard } from './live-leaderboard'
 import { Moon, TreePine, Hourglass, ChevronLeft, ChevronRight, ScreenShare } from 'lucide-react'
@@ -199,7 +199,6 @@ export function TodayView() {
     (s) => (s.endedAt ?? s.startedAt).slice(0, 10) === todayIso
   )
   const completedToday = todaysSessions.filter((s) => s.completed)
-  const hadSleep = todaysSessions.some((s) => s.type === 'SLEEP')
 
   // chalg'ituvchi ilovalar daqiqasi
   const distracting = (appsQ.data ?? [])
@@ -209,7 +208,9 @@ export function TodayView() {
   const today = stats?.today
   const screenDelta = stats ? today!.screenTimeMinutes - stats.avgDailyScreenMinutes : 0
   const distractingDelta = Math.round(distracting * 0.18)
-  const sleepMinutes = hadSleep ? 450 : 0
+  // REAL UYQU: oxirgi kechagi SLEEP sessiyasidan (web demo seed'i bilan ham ishlaydi)
+  const sleepRec = lastSleep(sessionsQ.data)
+  const sleepMinutes = sleepRec?.minutes ?? 0
   const pickups = today?.pickups ?? 0
 
   const chartData: (DailyStat & { label: string })[] =
@@ -306,11 +307,34 @@ export function TodayView() {
               <>
                 <MetricRow
                   title="Sleep"
-                  value={hadSleep ? '7h 30m' : '0m'}
+                  value={sleepRec ? formatMinutes(sleepRec.minutes) : '0m'}
                   rating={sleepMinutes >= 420 ? 'Great' : sleepMinutes >= 360 ? 'OK' : 'Short'}
                   position={clamp((sleepMinutes / 480) * 100, 4, 100)}
                   avgAt={78}
                 />
+                {/* yotish / uyg'onish vaqtlari — real sessiyadan */}
+                {sleepRec && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex items-center gap-2 rounded-2xl bg-white/[0.05] p-2.5 ring-1 ring-white/8">
+                      <span className="text-[16px]" aria-hidden="true">
+                        🌙
+                      </span>
+                      <div>
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-white/40">Yotish</p>
+                        <p className="text-[13px] font-extrabold text-white">{clockTime(sleepRec.startedAt)}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-2xl bg-white/[0.05] p-2.5 ring-1 ring-white/8">
+                      <span className="text-[16px]" aria-hidden="true">
+                        ☀️
+                      </span>
+                      <div>
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-white/40">Uyg‘onish</p>
+                        <p className="text-[13px] font-extrabold text-white">{clockTime(sleepRec.endedAt)}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <MetricRow
                   title="Pickups"
                   value={`${pickups} marta`}

@@ -6,102 +6,23 @@ import { AnimatePresence, motion } from 'framer-motion'
 import type { BlockApp } from '@/lib/opal-types'
 import { formatMinutes } from '@/lib/opal-types'
 import { useOpalStore } from '@/lib/opal-store'
-import { GLASS } from '@/lib/opal-ui'
+import {
+  GLASS,
+  DEFAULT_RULES,
+  CUSTOM_RULES_KEY,
+  parseRuleWindow,
+  liveRuleStatus,
+  type RuleCard,
+} from '@/lib/opal-ui'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { ChevronRight, Lock, Plus, ShieldCheck, Clock3, Zap, MousePointerClick, CalendarDays } from 'lucide-react'
+import { ChevronRight, Lock, Plus, ShieldCheck, Clock3, Zap, MousePointerClick, CalendarDays, X } from 'lucide-react'
 import { UnblockChallenge } from './unblock-challenge'
 import { HexAvatarButton } from './brand'
-import type { SessionType } from '@/lib/opal-types'
 
-/* ── Rutinlar (haqiqiy Opal "Routines" bento) ─────────────── */
-interface RuleCard {
-  id: string
-  title: string
-  time: string
-  sub: string
-  photo?: string
-  gradient: string
-  icon: string
-  duration: number
-  type: SessionType
-  label: string
-  emoji: string
-  left?: string
-}
-
-const DEFAULT_RULES: RuleCard[] = [
-  {
-    id: 'unblock-daily',
-    title: '10 Unblock Daily',
-    time: 'Har kuni',
-    sub: 'Ijtimoiy ilovalar uchun',
-    gradient: 'from-[#2a3b5c] to-[#141c30]',
-    icon: '🔓',
-    duration: 30,
-    type: 'CUSTOM',
-    label: 'Unblock Daily',
-    emoji: '🔓',
-    left: '7 left',
-  },
-  {
-    id: 'sleep-time',
-    title: 'Sleep Time',
-    time: '10PM — 8AM',
-    sub: 'Block All',
-    photo: '/opal/routine-sleep.jpg',
-    gradient: 'from-[#1a1f3d] to-[#0a0d20]',
-    icon: '🌙',
-    duration: 480,
-    type: 'SLEEP',
-    label: 'Uyqu rejimi',
-    emoji: '🌙',
-  },
-  {
-    id: 'deep-work',
-    title: 'Deep Work',
-    time: '9AM — 5PM',
-    sub: 'Block All, Except Productivity',
-    photo: '/opal/routine-deepwork.jpg',
-    gradient: 'from-[#26221c] to-[#0f0d0a]',
-    icon: '💻',
-    duration: 90,
-    type: 'WORK',
-    label: 'Ish rejimi',
-    emoji: '💼',
-    left: '4h 32m left',
-  },
-  {
-    id: 'lunch-break',
-    title: 'Lunch Break',
-    time: '12—1PM',
-    sub: 'Unblock Snapchat if blocked',
-    photo: '/opal/routine-family.jpg',
-    gradient: 'from-[#1c2626] to-[#0a1010]',
-    icon: '🍽️',
-    duration: 60,
-    type: 'STUDY',
-    label: 'O‘qish',
-    emoji: '📚',
-  },
-  {
-    id: 'evening-off',
-    title: '10PM—8AM',
-    time: 'Tungi himoya',
-    sub: 'Block Social',
-    gradient: 'from-[#241c33] to-[#0d0a14]',
-    icon: '🛡️',
-    duration: 120,
-    type: 'CUSTOM',
-    label: 'Tungi tinchlik',
-    emoji: '🛡️',
-    left: '7 left',
-  },
-]
-
-const CUSTOM_RULES_KEY = 'opal-custom-rules'
+/* ── Rutinlar: RuleCard/DEFAULT_RULES endi opal-ui'da (Home ham o'qiydi) ── */
 
 /** deterministic 0..1 pseudo-random */
 function seededRand(seed: string, i: number): number {
@@ -310,6 +231,13 @@ export function AppsTab() {
   const [newRuleName, setNewRuleName] = useState('')
   const [newRuleTime, setNewRuleTime] = useState('9AM — 5PM')
 
+  // jonli scheduler — 30s da bir yangilanadi
+  const [nowTick, setNowTick] = useState(() => new Date())
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(new Date()), 30_000)
+    return () => clearInterval(id)
+  }, [])
+
   // localStorage'dan bir marta yuklash (render-adjust pattern)
   const [rulesLoaded, setRulesLoaded] = useState(false)
   if (!rulesLoaded) {
@@ -331,6 +259,11 @@ export function AppsTab() {
     } catch {
       // e'tiborsiz
     }
+  }
+
+  const removeCustomRule = (id: string) => {
+    saveCustomRules(customRules.filter((r) => r.id !== id))
+    toast.info('Qoida o‘chirildi')
   }
 
   const patchApp = useMutation({
@@ -368,10 +301,12 @@ export function AppsTab() {
       toast.error('Qoida nomini kiriting')
       return
     }
+    const timeStr = newRuleTime.trim() || 'Har kuni'
+    const win = parseRuleWindow(timeStr)
     const rule: RuleCard = {
       id: `custom-${Date.now()}`,
       title: name,
-      time: newRuleTime.trim() || 'Har kuni',
+      time: timeStr,
       sub: 'Block distracting apps',
       gradient: 'from-[#2d2a4e] to-[#12101f]',
       icon: '🛡️',
@@ -379,11 +314,16 @@ export function AppsTab() {
       type: 'CUSTOM',
       label: name,
       emoji: '🛡️',
+      ...(win ? { startMin: win.startMin, endMin: win.endMin } : {}),
     }
     saveCustomRules([...customRules, rule])
     setNewRuleName('')
     setAddRuleOpen(false)
-    toast.success('✅ Qo‘shildi', { description: `${name} rutini tayyor` })
+    toast.success('✅ Qo‘shildi', {
+      description: win
+        ? `${name} — jonli jadval bilan kuzatiladi`
+        : `${name} rutini tayyor`,
+    })
   }
 
   if (appsQ.isLoading) {
@@ -451,47 +391,86 @@ export function AppsTab() {
           Rules <ChevronRight size={14} className="text-white/35" />
         </p>
         <div className="grid grid-cols-2 gap-3">
-          {rules.map((rule, i) => (
-            <motion.button
-              key={rule.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => startRule(rule)}
-              className={cn(
-                'relative flex min-h-[148px] flex-col justify-end overflow-hidden rounded-[22px] border border-white/10 bg-gradient-to-b p-3.5 text-left shadow-[0_10px_28px_rgba(0,0,0,0.4)]',
-                rule.gradient
-              )}
-            >
-              {rule.photo && (
-                <>
-                  <img
-                    src={rule.photo}
-                    alt=""
-                    className="absolute inset-0 h-full w-full object-cover opacity-80"
-                    draggable={false}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/75" aria-hidden="true" />
-                </>
-              )}
-              <span className="relative mb-auto text-[20px]">{rule.icon}</span>
-              {rule.left && (
-                <span className="relative mb-2 inline-flex w-fit items-center rounded-full bg-[#5eead4]/15 px-2.5 py-0.5 text-[9.5px] font-bold text-[#bfe9ff] ring-1 ring-[#5eead4]/40">
-                  {rule.left}
+          {rules.map((rule, i) => {
+            const st = liveRuleStatus(rule, nowTick)
+            const isCustom = rule.id.startsWith('custom-')
+            return (
+              <motion.button
+                key={rule.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => startRule(rule)}
+                className={cn(
+                  'relative flex min-h-[148px] flex-col justify-end overflow-hidden rounded-[22px] border border-white/10 bg-gradient-to-b p-3.5 text-left shadow-[0_10px_28px_rgba(0,0,0,0.4)]',
+                  rule.gradient,
+                  st?.state === 'active' && 'border-[#86efac]/40'
+                )}
+              >
+                {rule.photo && (
+                  <>
+                    <img
+                      src={rule.photo}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover opacity-80"
+                      draggable={false}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/75" aria-hidden="true" />
+                  </>
+                )}
+                <span className="relative mb-auto text-[20px]">{rule.icon}</span>
+                {st?.state === 'active' ? (
+                  <span className="relative mb-2 inline-flex w-fit items-center gap-1 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[9.5px] font-bold text-emerald-200 ring-1 ring-emerald-400/40">
+                    <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    </span>
+                    {st.label} qoldi
+                  </span>
+                ) : st?.state === 'upcoming' ? (
+                  <span className="relative mb-2 inline-flex w-fit items-center rounded-full bg-white/10 px-2.5 py-0.5 text-[9.5px] font-bold text-white/70 ring-1 ring-white/15">
+                    {st.label}dan boshlanadi
+                  </span>
+                ) : (
+                  rule.left && (
+                    <span className="relative mb-2 inline-flex w-fit items-center rounded-full bg-[#5eead4]/15 px-2.5 py-0.5 text-[9.5px] font-bold text-[#bfe9ff] ring-1 ring-[#5eead4]/40">
+                      {rule.left}
+                    </span>
+                  )
+                )}
+                <span className="relative text-[14.5px] font-extrabold leading-tight text-white drop-shadow">
+                  {rule.title}
                 </span>
-              )}
-              <span className="relative text-[14.5px] font-extrabold leading-tight text-white drop-shadow">
-                {rule.title}
-              </span>
-              <span className="relative mt-0.5 text-[10.5px] font-semibold text-white/70 drop-shadow">
-                {rule.time}
-              </span>
-              <span className="relative truncate text-[9.5px] font-medium text-white/55 drop-shadow">
-                {rule.sub}
-              </span>
-            </motion.button>
-          ))}
+                <span className="relative mt-0.5 text-[10.5px] font-semibold text-white/70 drop-shadow">
+                  {rule.time}
+                </span>
+                <span className="relative truncate text-[9.5px] font-medium text-white/55 drop-shadow">
+                  {rule.sub}
+                </span>
+                {isCustom && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${rule.title} qoidasini o‘chirish`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      removeCustomRule(rule.id)
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.stopPropagation()
+                        removeCustomRule(rule.id)
+                      }
+                    }}
+                    className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/50 text-white/60 ring-1 ring-white/15 backdrop-blur transition-colors hover:text-rose-300"
+                  >
+                    <X size={12} />
+                  </span>
+                )}
+              </motion.button>
+            )
+          })}
 
           {/* Add Rule */}
           <motion.button
@@ -601,6 +580,28 @@ export function AppsTab() {
               aria-label="Qoida vaqti"
               className="h-11 w-full rounded-2xl border border-white/12 bg-white/[0.06] px-3.5 text-[13.5px] font-semibold text-white outline-none placeholder:text-white/30 focus:border-[#5eead4]/50"
             />
+            {/* tezkor vaqt presetlari */}
+            <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
+              {[
+                { label: 'Ish 9—5', time: '9AM — 5PM' },
+                { label: 'Uyqu 10—8', time: '10PM — 8AM' },
+                { label: 'Tushlik', time: '12—1PM' },
+                { label: 'Kechki 6—8', time: '6PM — 8PM' },
+              ].map((p) => (
+                <button
+                  key={p.label}
+                  onClick={() => setNewRuleTime(p.time)}
+                  className={cn(
+                    'shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold ring-1 transition-all active:scale-95',
+                    newRuleTime === p.time
+                      ? 'bg-[#5eead4]/15 text-[#bfe9ff] ring-[#5eead4]/45'
+                      : 'bg-white/[0.05] text-white/55 ring-white/10'
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
             <button
               onClick={addRule}
               className="w-full rounded-2xl bg-gradient-to-r from-[#5b7bff] to-[#8b5cf6] py-3 text-[14px] font-bold text-white shadow-lg active:scale-[0.98]"
@@ -608,7 +609,9 @@ export function AppsTab() {
               Qoidani qo‘shish
             </button>
             <p className="text-center text-[10.5px] text-white/35">
-              Qoidani bosganda taymer mos davomiylik bilan ochiladi
+              {parseRuleWindow(newRuleTime)
+                ? '⏱ Jonli jadval: aktiv/qolgan vaqt avtomatik hisoblanadi'
+                : 'Qoidani bosganda taymer mos davomiylik bilan ochiladi'}
             </p>
           </div>
         </DialogContent>
