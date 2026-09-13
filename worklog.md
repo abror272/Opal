@@ -366,3 +366,27 @@ Stage Summary:
 - KMP mobil endi web'ning 3 imzo funksiyasini oladi (mint palette → gemstones → weekly report) — 3 platforma bitta dizayn tili
 - Risklar: SessionExpiryWatcher faqat ilova OCHIQ turganda ishlaydi (fon uchun push kerak — avvalgi risk saqlanadi); floating karta Home'da ScorePill'lar ustini bosadi (overlay sifatida qabul qilingan, dismiss bor); KMP kompilyatsiya sandbox'da tekshirilmagan; heatmap tafsilotlari faqat DB'dagi kunlarga ega
 - Keyingi tavsiyalar: (1) KMP'ni real mashinada build + skrinshot, (2) floating kartani today/profile drill-in'larda ham ko'rsatish (hozir faqat tab context), (3) /api/export'ni import qilish (zaxiradan tiklash) funksiyasi, (4) heatmap'ga haftalik/oylik switch (60/90 kun), (5) qoida tierlarini sozlamalardan sozlash (15/5/1 o'rniga custom)
+
+---
+Task ID: 6
+Agent: Z.ai Code (main) — iOS UI/UX / SwiftUI specialist role
+Task: Telegram-style native glass effect (glassmorphism) for iOS — production-ready SwiftUI/UIKit implementation, iOS ONLY, with #if os(iOS) conditional compilation, hardware-accelerated blur, vibrancy, thin inner border, and fine-tuning documentation.
+
+Work Log:
+- Worklog va loyiha holati o'qildi: web barqaror, KMP mobile-app (Compose) mavjud, iosApp shell XcodeGen bilan (project.yml `sources: path: iosApp` — yangi .swift fayllar avtomatik target'ga qo'shiladi)
+- Sandbox'da Swift toolchain YO'Q (which swift bo'sh) — kompilyatsiya Xcode'da bo'lishi kerak; brace/paren balance tekshiruvi o'tdi (5/5 OK)
+- YARATILDI: mobile-app/iosApp/iosApp/Glass/ — 5 Swift fayl + README:
+  (1) GlassStyle.swift — barcha tuning tokenlar BIR joyda: material (.ultraThinMaterial default), tintLight/DarkOpacity (0.06/0.12), borderWidth 0.5pt, borderOpacity 0.18, borderTopBoost/borderBottomFade (1.0/0.30 top-lit qirra), sheenOpacity 0.07, shadow (0.14/18/8y), cornerRadius 20/28, spring (0.38/0.84) + springSnappy (0.32/0.72)
+  (2) GlassEffect.swift — `.glassEffect()` ViewModifier: GPU backdrop Material + tint lift + diagonal specular sheen + gradient hairline border (yuqori yorug') + shadow; `GlassButtonStyle` (0.97 press scale) — hammasi `#if os(iOS)` ichida, .blur(radius:) ishlatilmagan (raster filter — frame drop sababi) deb hujjatlashtirilgan
+  (3) BlurEffectView.swift — UIKit escape hatch: `BlurEffectView(Variant)` (ultraThin/thin/regular/thick/fixedDarkUltraThin/fixedLightUltraThin — Telegram side-panel triki) + `VibrancyEffectView` (haqiqiy UIVibrancyEffect + UIHostingController ichida SwiftUI content, Auto Layout pin); updateUIView'da effect nil-assign flicker ogohlantirishi
+  (4) GlassTabBar.swift — Telegram-uslubi floating glass tab bar: 5 tab (Home/Focus/Stats/Apps/Profile, SF Symbols), aktiv pill BITTA view `matchedGeometryEffect` bilan slotlardan UCHADI, icon 1.08x micro-bounce, label fade (fixed height — layout reflow yo'q), UIImpactFeedbackGenerator(.light) haptic, `.isSelected` a11y, dark/light pill opacity moslashuvi
+  (5) GlassDemoView.swift — ishlaydigan demo: drift radial-gradient backdrop (glass ko'rinishi uchun rangli kontent), glass header + 5 sahifa crossfade (`.id` + `.transition(.opacity)` + GlassStyle.spring — Telegram fast-crossfade, push emas), fixed-dark blur chip namunasi, PreviewProvider (light+dark); shared-code uchun `#if os(iOS)` pattern hujjati
+  (6) README.md — tuning jadvallari (blur ladder, border opacity 0.08/0.18/0.30), 5 performance qoida (Material vs .blur(), ≤4 material/screen, geometry animate, drawingGroup TAQIQLANGAN — backdrop sampling buziladi, ichki pill = plain fill), dark mode eslatmasi
+- App.swift / KMP Compose shell O'ZGARTIRILMADI (xavfsizlik) — GlassDemoView preview yoki App.swift'da swap qilib ko'rish uchun tayyor
+
+Stage Summary:
+- iosApp endi to'liq native SwiftUI glass tizimiga ega: `.glassEffect()` bir modifier bilan har qanday view Telegram-uslubidagi muzli oyna bo'ladi (GPU-hisoblangan blur + vibrancy + top-lit hairline)
+- iOS-only kafolatlangan: `#if os(iOS)` + faqat iosApp target membership + Android umuman Swift ishlatmaydi (composeApp/OpalGlass.kt alohida)
+- Tab o'tish animatsiyasi Telegram-uslubida: matched-geometry pill + bir xil spring + haptic — silliq, fizik obyekt hissi
+- Risks: sandbox'da Swift kompilyatsiya imkoni yo'q — Xcode'da bir marta build/preview kerak (iOS 15.0 deployment, SWIFT_VERSION 5.9, API'lar hammasi iOS 15+ mos)
+- Keyingi tavsiyalar: (1) Xcode preview'da GlassDemoView tekshirish (light/dark), (2) KMP Compose o'rniga native SwiftUI screen'lar bosqichma-bosqich o'tkazish (GlassTabBar'ni real app root qilish), (3) SESSION_PRESETS/streak/savedMinutes logikasini native iOS'ga KMP'dan ulash, (4) tab content'ga scroll-edge glass header (scrollContentBackground(.hidden) + material nav)
