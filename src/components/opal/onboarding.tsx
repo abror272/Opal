@@ -69,7 +69,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
                 alt=""
                 className={cn(
                   'h-full w-full object-cover',
-                  slide.blend ? 'mix-blend-screen opacity-70' : 'opacity-45'
+                  slide.blend ? 'mix-blend-screen opacity-45' : 'opacity-40'
                 )}
                 draggable={false}
               />
@@ -113,6 +113,15 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
       </div>
 
       <div className="relative flex flex-1 flex-col items-center justify-center px-8 pb-6">
+        {/* matn o'qilishi uchun radial scrim (yorqin kristall ustida ham) */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse 82% 62% at 50% 52%, rgba(5,6,15,0.88) 0%, rgba(5,6,15,0.55) 55%, rgba(5,6,15,0.15) 80%, transparent 92%)',
+          }}
+          aria-hidden="true"
+        />
         <AnimatePresence mode="wait">
           <motion.div
             key={step}

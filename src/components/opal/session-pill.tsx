@@ -1,9 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useOpalStore } from '@/lib/opal-store'
 import { formatClock } from '@/lib/opal-types'
+import { getAmbientMode, setAmbientMode, type AmbientMode } from '@/lib/ambient-audio'
+
+const noopSub = () => () => {}
+const ambSnapshot = (): AmbientMode | null => getAmbientMode()
+const ambServer = (): AmbientMode | null => null
 
 /** Boshqa tablarda bo'lganda faol sessiyani ko'rsatuvchi suzuvchi glass pill */
 export function SessionPill() {
@@ -11,11 +16,19 @@ export function SessionPill() {
   const tab = useOpalStore((s) => s.tab)
   const setTab = useOpalStore((s) => s.setTab)
   const [now, setNow] = useState(Date.now())
+  const ambient = useSyncExternalStore(noopSub, ambSnapshot, ambServer)
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(id)
   }, [])
+
+  // sessiya tugadi → ambient tovushni ham o'chirish (boshqa tab'da bo'lsa ham)
+  useEffect(() => {
+    if (!activeSession && getAmbientMode() !== 'off') {
+      setAmbientMode('off')
+    }
+  }, [activeSession])
 
   const visible = !!activeSession && tab !== 'timer'
   if (!activeSession) return null
@@ -51,6 +64,37 @@ export function SessionPill() {
           <span className="relative z-10 font-mono text-[13px] font-bold tabular-nums text-[#bfe9ff]">
             {formatClock(remaining)}
           </span>
+          {/* ambient tovush indikatori/mute */}
+          {ambient && ambient !== 'off' && (
+            <span
+              role="button"
+              tabIndex={0}
+              aria-label="Ambient tovushni o'chirish"
+              onClick={(e) => {
+                e.stopPropagation()
+                setAmbientMode('off')
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.stopPropagation()
+                  setAmbientMode('off')
+                }
+              }}
+              className="relative z-20 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#b18cff]/25 ring-1 ring-[#b18cff]/50"
+            >
+              <span className="flex items-end gap-[1.5px]" aria-hidden="true">
+                {[0, 1, 2].map((i) => (
+                  <motion.span
+                    key={i}
+                    className="w-[2px] rounded-full bg-[#e6d9ff]"
+                    style={{ height: 4 }}
+                    animate={{ height: [2, 8, 4, 9, 3] }}
+                    transition={{ duration: 0.9 + i * 0.2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.14 }}
+                  />
+                ))}
+              </span>
+            </span>
+          )}
           {/* progress fon */}
           <span
             className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#7dd3fc]/12 to-[#b18cff]/12"

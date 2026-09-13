@@ -434,7 +434,10 @@ export function AppsTab() {
                     <Lock size={17} className="text-white/90 drop-shadow" />
                   </span>
                 </span>
-                <span className="text-[10px] font-bold text-[#9fd8ff]">Unblock</span>
+                <span className="w-full max-w-[62px] truncate text-center text-[10px] font-semibold text-white/85">
+                  {app.name}
+                </span>
+                <span className="text-[9px] font-bold text-[#9fd8ff]">Unblock</span>
               </motion.button>
             ))}
           </div>

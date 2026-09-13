@@ -7,6 +7,7 @@ import { useOpalStore } from '@/lib/opal-store'
 import { createAndStartSession } from '@/lib/opal-session-actions'
 import { formatClock, formatMinutes, type FocusSession, type StatsResponse, type SessionType } from '@/lib/opal-types'
 import { syncLiveMinutes } from '@/lib/opal-live-client'
+import { AMBIENT_MODES, getAmbientMode, setAmbientMode, useAmbientMode } from '@/lib/ambient-audio'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Lock, Unlock, ShieldCheck, Ban, Flame, Minus, Plus, Play } from 'lucide-react'
@@ -20,6 +21,28 @@ const QUOTES = [
 ]
 
 const CONFETTI_COLORS = ['#7dd3fc', '#b18cff', '#ff9ad5', '#9fe8c8', '#ffd48a']
+
+/** Jonli ekvayzer chiziqlari — ambient tovush faol bo'lganda. */
+function EqBars() {
+  return (
+    <span className="flex items-end gap-[2px]" aria-hidden="true">
+      {[0, 1, 2].map((i) => (
+        <motion.span
+          key={i}
+          className="w-[2.5px] rounded-full bg-[#e6d9ff]"
+          style={{ height: 4 }}
+          animate={{ height: [3, 9, 5, 11, 4] }}
+          transition={{
+            duration: 0.9 + i * 0.23,
+            repeat: Infinity,
+            ease: 'easeInOut',
+            delay: i * 0.12,
+          }}
+        />
+      ))}
+    </span>
+  )
+}
 
 const PRESETS: { type: SessionType; label: string; emoji: string; duration: number }[] = [
   { type: 'DEEP_FOCUS', label: 'Deep Focus', emoji: '🧠', duration: 45 },
@@ -99,6 +122,7 @@ export function TimerTab() {
   const [finishing, setFinishing] = useState(false)
   const [celebrate, setCelebrate] = useState(false)
   const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)])
+  const ambient = useAmbientMode()
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000)
@@ -213,6 +237,13 @@ export function TimerTab() {
   const displaySeconds = activeSession ? remaining : duration * 60
   const clock = useMemo(() => formatClock(displaySeconds), [displaySeconds])
   const running = !!activeSession
+
+  // sessiya tugaganda ambient tovushni avtomatik o'chirish (running/finished keyin)
+  useEffect(() => {
+    if ((!running || finished) && getAmbientMode() !== 'off') {
+      setAmbientMode('off')
+    }
+  }, [running, finished])
 
   return (
     <div className="relative flex min-h-full flex-col">
@@ -354,8 +385,8 @@ export function TimerTab() {
               transition={{ delay: 0.15, duration: 0.5 }}
               className="mt-6 w-full max-w-[330px]"
             >
-              {/* preset chiplar */}
-              <div className="no-scrollbar mb-4 flex justify-center gap-2 overflow-x-auto pb-1">
+              {/* preset chiplar — justify-start: overflow'da chap chiplar kesilib qolmasligi uchun */}
+              <div className="no-scrollbar mb-4 flex justify-start gap-2 overflow-x-auto px-0.5 pb-1">
                 {PRESETS.map((p) => {
                   const active = p.label === label
                   return (
@@ -447,7 +478,7 @@ export function TimerTab() {
               className="mt-6 w-full max-w-[330px]"
             >
               {/* bloklangan chiplar */}
-              <div className="no-scrollbar mb-4 flex justify-center gap-2 overflow-x-auto pb-1">
+              <div className="no-scrollbar mb-3 flex justify-start gap-2 overflow-x-auto px-0.5 pb-1">
                 {(activeSession.blockedApps.length
                   ? activeSession.blockedApps
                   : ['TikTok', 'Instagram', 'X (Twitter)']
@@ -459,6 +490,30 @@ export function TimerTab() {
                     <ShieldCheck size={11} className="text-emerald-400" /> {name}
                   </span>
                 ))}
+              </div>
+
+              {/* ambient fokus tovushlari (Web Audio sintez) */}
+              <div className="no-scrollbar mb-3 flex justify-start gap-2 overflow-x-auto px-0.5 pb-0.5">
+                {AMBIENT_MODES.map(({ mode, label, emoji }) => {
+                  const active = ambient === mode
+                  return (
+                    <button
+                      key={mode}
+                      onClick={() => setAmbientMode(mode)}
+                      aria-pressed={active}
+                      aria-label={`Ambient tovush: ${label}`}
+                      className={cn(
+                        'flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold ring-1 backdrop-blur-md transition-all active:scale-95',
+                        active
+                          ? 'bg-[#b18cff]/20 text-[#e6d9ff] ring-[#b18cff]/45 shadow-[0_0_14px_rgba(177,140,255,0.3)]'
+                          : 'bg-black/35 text-white/55 ring-white/12 hover:text-white/85'
+                      )}
+                    >
+                      <span>{emoji}</span> {label}
+                      {active && mode !== 'off' && <EqBars />}
+                    </button>
+                  )
+                })}
               </div>
 
               {/* hold-to-stop */}

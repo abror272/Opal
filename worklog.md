@@ -191,3 +191,29 @@ Stage Summary:
 - Kod 100% Kotlin Multiplatform: bitta codebase, ~22 Kotlin fayl, 688K
 - Risk: kompilyatsiya sandbox'da tekshirilmagan (K/N UIKit API nomlari eng sezgir joy — Glass.ios.kt); real mashinada birinchi Gradle sync internet talab qiladi; Real qurilmada LAN IP sozlash kerak
 - Keyingi tavsiyalar: (1) real qurilmada build + test, (2) iOS DeviceActivity/Android UsageStats bilan haqiqiy bloklash, (3) push notification, (4) Battle Math'ni mobilga ko'chirish, (5) PIN qulfi (biometrik bilan)
+
+---
+Task ID: 6
+Agent: Z.ai Code (main, cron webDevReview round 5)
+Task: Loyiha holat bahosi + QA + majburiy styling detallari + yangi funksiyalar (web)
+
+Work Log:
+- QA (agent-browser, port 81): onboarding ✓, Home (Score 88, mini ring'lar) ✓, My Apps ✓, Timer (LCD) ✓, Today drill-in (arc + WebSocket toast "Dilnoza Instagram'ni 2 soat blokladi — jonli") ✓, sessiya boshlash → LCD 44:57 hisobladi ✓, hold-to-stop → PATCH /api/sessions 200 ✓, dev.log faqat 200 ✓ — REAL BUG TOPILMADI (avvalgi "Today o'z-o'zidan ochildi" shubhasi mening qisqartirilgan snapshot/head odatim tufayli edi — Today overlay tab'dan mustaqil ekan)
+- BUGFIX — Timer preset chiplari chapdan kesilardi ("…cus"): klassik `justify-center` + `overflow-x-auto` bug'i (overflow'da markazlashtirish chap tomonga scroll bermaydi) → `justify-start px-0.5`; running view'dagi bloklangan chiplar qatorida ham xuddi shu tuzatish. E2E: Deep Focus endi to'liq ko'rinadi ✓
+- STYLING — Onboarding 1-slayd matni yorqin kristall ustida o'qilmayotgan edi: radial scrim (ellipse 82%/62%, rgba(5,6,15) 0.88→0.55→0) + kristall opacity 0.7→0.45. Vizual tekshirildi — matn aniq o'qiladi ✓
+- STYLING — Apps Blocked tile'lari: ilova NOMI qo'shildi (avval faqat "Unblock" edi) — TikTok/Instagram/X/Reddit/Whisper real Opal'dagidek ikki qatorli yorliq ✓
+- YANGI FUNksiya — AMBIENT FOKUS TOVUSHLARI (Web Audio sintez, audio fayl YO'Q):
+  - `src/lib/ambient-audio.ts` — singleton: 🌧️ Yomg'ir (oq shovqin+bandpass 1500Hz), 🌊 Dengiz (brown shovqin+lowpass 520Hz+LFO swell 0.085Hz), 🎧 Chuqur (brown+lowpass 210Hz); barcha o'tishlar 1.4s fade-in / 0.9s fade-out — smooth
+  - `useSyncExternalStore` hook (SSR-safe), TimerTab running view'da 4 chip (Off/Yomg'ir/Dengiz/Chuqur) + jonli EqBars animatsiyasi
+  - Sessiya tugaganda AVTOMATIK o'chirish: TimerTab effekti (running/finished) + SessionPill effekti (boshqa tab'da tugasa ham)
+  - SessionPill'da ambient indikator: binafsha doira ichida jonli ekvayzer, bosilsa mute (stopPropagation bilan)
+- YANGI FUNksiya — PWA: `src/app/manifest.ts` (standalone, portrait, theme #05060f) + sharp bilan mobile icon1024 → icon-192/512/apple-touch-180 (public/icons/) + layout metadata (manifest, appleWebApp, themeColor #05060f, viewportFit cover). Tekshirildi: /manifest.webmanifest 200 ✓, icon-192 200 ✓
+- XATO VA O'ZIM TUZATTIM: ambient auto-off effekti `running`/`finished` e'lon qilinishidan OLDIN yozilgan edi → TDZ "Cannot access before initialization" client crash; effektni `const running` dan keyin ko'chirildi → app tiklandi
+- Lint 0/0, seed qayta tiklandi (streak 12, toza demo), konsolda [error] yo'q
+
+Stage Summary:
+- Ilova barqaror: to'liq QA o'tkazildi, haqiqiy runtime bug topilmadi (2 ta kosmetika masalasi tuzatildi)
+- Timer endi ambient tovushlar bilan immersiv: yomg'ir/dengiz/chuqur sintez (0 KB asset), sessiya bilan hayotiy siklda
+- Ilova endi PWA: telefondagi brauzerdan "Add to Home Screen" bilan native ko'rinishda o'rnatiladi
+- Risklar: AudioContext safari/iOS'da ilk gesture'dan keyin ochiladi (chip bosilishi gesture — OK); headless brauzerda tovush eshitilmaydi (API ishlashi tekshirildi); PWA offline cache yo'q (service worker keyingi qadam bo'lishi mumkin)
+- Keyingi tavsiyalar: service worker (offline shell + install banner), sessiya tarixi timeline'i (App Store uslubi), do'st qo'shish oynasi, eksport PDF hisobot, Rules'ga real vaqt scheduleri
