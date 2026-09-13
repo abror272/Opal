@@ -171,6 +171,8 @@ private class NativeGlassTabBar : UIView {
     }
 }
 
+// iOS native glass implementations
+
 @OptIn(ExperimentalForeignApi::class)
 @Composable
 actual fun GlassTabBar(selectedIndex: Int, onSelect: (Int) -> Unit, modifier: Modifier) {
@@ -198,6 +200,46 @@ actual fun GlassTabBar(selectedIndex: Int, onSelect: (Int) -> Unit, modifier: Mo
             .height(76.dp)
     )
 }
+
+/**
+ * iOS native glass pane implementation using UIVisualEffectView.
+ * Provides a blurred background with optional corner radius.
+ */
+@OptIn(ExperimentalForeignApi::class)
+@Composable
+actual fun GlassPane(
+    modifier: Modifier,
+    radius: Dp,
+    base: Float,
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box(modifier) {
+        UIKitView(
+            factory = {
+                UIVisualEffectView(
+                    effect = UIBlurEffect.effectWithStyle(
+                        UIBlurEffectStyle.UIBlurEffectStyleSystemUltraThinMaterialDark
+                    )
+                ).apply {
+                    userInteractionEnabled = false
+                }
+            },
+            update = { view ->
+                // Convert Dp to pixel radius
+                view.layer.cornerRadius = radius.toPx()
+                view.layer.masksToBounds = true
+                view.layer.borderWidth = 0.5
+                view.layer.borderColor = UIColor.whiteColor.colorWithAlphaComponent(0.14).CGColor
+            },
+            modifier = Modifier.matchParentSize()
+        )
+        content()
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+@Composable
+
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable

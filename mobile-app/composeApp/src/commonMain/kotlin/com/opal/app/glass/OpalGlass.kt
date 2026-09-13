@@ -64,52 +64,16 @@ expect fun GlassTabBar(selectedIndex: Int, onSelect: (Int) -> Unit, modifier: Mo
 expect fun GlassVeil(alpha: Float, modifier: Modifier = Modifier)
 
 /**
- * Umumiy shisha panel (ikkala platforma bir xil ko'rinadi).
- * Qorong'u fon ustida: yarim shaffof gradient + specular tepa nur + hairline border.
+ * Shisha panel — iOS'da native UIVisualEffectView blur, Android'da yuqori unumdorlikdagi obsidian glass.
  */
 @Composable
-fun GlassPane(
+expect fun GlassPane(
     modifier: Modifier = Modifier,
     radius: Dp = 26.dp,
     base: Float = 0.07f,
     content: @Composable BoxScope.() -> Unit
-) {
-    val shape = RoundedCornerShape(radius)
-    Box(
-        modifier
-            .clip(shape)
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color.White.copy(alpha = base + 0.025f),
-                        Color.White.copy(alpha = base * 0.55f)
-                    )
-                )
-            )
-            .border(
-                BorderStroke(
-                    0.5.dp,
-                    Brush.verticalGradient(
-                        listOf(Color.White.copy(alpha = 0.22f), Color.White.copy(alpha = 0.05f))
-                    )
-                ),
-                shape
-            )
-    ) {
-        // tepadagi specular nur
-        Box(
-            Modifier
-                .matchParentSize()
-                .background(
-                    Brush.verticalGradient(
-                        0f to Color.White.copy(alpha = 0.07f),
-                        0.22f to Color.Transparent
-                    )
-                )
-        )
-        content()
-    }
-}
+)
+
 
 /** Karta shaklida GlassPane + ichki padding. */
 @Composable
