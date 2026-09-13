@@ -97,7 +97,7 @@ export function SessionPill() {
           )}
           {/* progress fon */}
           <span
-            className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#7dd3fc]/12 to-[#b18cff]/12"
+            className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#86efac]/12 to-[#5eead4]/12"
             style={{ width: `${progress * 100}%` }}
             aria-hidden="true"
           />

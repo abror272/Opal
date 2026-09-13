@@ -101,7 +101,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
 
       <div className="relative flex items-center justify-between px-6 pt-2">
         <div className="flex items-center gap-2.5">
-          <span className="inline-block h-8 w-8 rounded-[10px] bg-gradient-to-br from-[#8fd9ff] via-[#b18cff] to-[#ff9ad5] shadow-[0_0_18px_rgba(143,217,255,0.5)]" />
+          <span className="inline-block h-8 w-8 rounded-[10px] bg-gradient-to-br from-[#86efac] via-[#b18cff] to-[#ff9ad5] shadow-[0_0_18px_rgba(134,239,172,0.5)]" />
           <span className="text-lg font-bold tracking-tight">Opal</span>
         </div>
         <button
@@ -157,7 +157,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
               className={cn(
                 'h-2 rounded-full transition-all duration-300',
                 i === step
-                  ? 'w-7 bg-[#8fd9ff] shadow-[0_0_10px_rgba(143,217,255,0.7)]'
+                  ? 'w-7 bg-[#86efac] shadow-[0_0_10px_rgba(134,239,172,0.7)]'
                   : 'w-2 bg-white/20 hover:bg-white/35'
               )}
             />

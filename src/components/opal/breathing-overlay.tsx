@@ -40,9 +40,9 @@ export function BreathingOverlay() {
 
   const phaseInfo = useMemo(() => {
     const inCycle = elapsed % CYCLE_MS
-    if (inCycle < 4000) return { label: PHASES[0], scale: 1.38, color: 'from-[#4d9fd6] to-[#7dd3fc]' }
-    if (inCycle < 8000) return { label: PHASES[1], scale: 1.38, color: 'from-[#7dd3fc] to-[#b18cff]' }
-    return { label: PHASES[2], scale: 1, color: 'from-[#3a6ea8] to-[#7dd3fc]' }
+    if (inCycle < 4000) return { label: PHASES[0], scale: 1.38, color: 'from-[#4d9fd6] to-[#5eead4]' }
+    if (inCycle < 8000) return { label: PHASES[1], scale: 1.38, color: 'from-[#5eead4] to-[#b18cff]' }
+    return { label: PHASES[2], scale: 1, color: 'from-[#3a6ea8] to-[#5eead4]' }
   }, [elapsed])
 
   const secondsLeft = Math.ceil((TOTAL_MS - elapsed) / 1000)
@@ -54,7 +54,7 @@ export function BreathingOverlay() {
   return (
     <div className="absolute inset-0 z-[60] flex flex-col bg-[#05060f]/97 text-white backdrop-blur-2xl">
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#7dd3fc]/10 blur-3xl" />
+        <div className="absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#5eead4]/10 blur-3xl" />
         <div
           className="absolute inset-0 opacity-40"
           style={{
@@ -88,7 +88,7 @@ export function BreathingOverlay() {
 
           <motion.div
             className={cn(
-              'relative h-[190px] w-[190px] rounded-full bg-gradient-to-br shadow-[0_0_70px_rgba(125,211,252,0.35)] transition-colors duration-1000',
+              'relative h-[190px] w-[190px] rounded-full bg-gradient-to-br shadow-[0_0_70px_rgba(94,234,212,0.35)] transition-colors duration-1000',
               phaseInfo.color
             )}
             animate={{ scale: phaseInfo.scale }}
@@ -122,7 +122,7 @@ export function BreathingOverlay() {
               className={cn(
                 'h-1.5 rounded-full transition-all duration-500',
                 cycleNum > i || done
-                  ? 'w-6 bg-[#8fd9ff]'
+                  ? 'w-6 bg-[#86efac]'
                   : cycleNum === i
                     ? 'w-6 bg-white/70'
                     : 'w-1.5 bg-white/15'

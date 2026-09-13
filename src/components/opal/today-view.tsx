@@ -1,7 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import {
   Bar,
   BarChart,
@@ -14,57 +16,94 @@ import {
   YAxis,
 } from 'recharts'
 import type { BlockApp, DailyStat, FocusSession, StatsResponse, UserProfile } from '@/lib/opal-types'
-import { computeScores, GLASS } from '@/lib/opal-ui'
+import { computeScores, GLASS, OPAL, clamp } from '@/lib/opal-ui'
 import { dayLabel, formatMinutes } from '@/lib/opal-types'
 import { LiveLeaderboard } from './live-leaderboard'
-import { Moon, TreePine, Sigma, ChevronLeft, ChevronRight, ScreenShare } from 'lucide-react'
+import { Moon, TreePine, Hourglass, ChevronLeft, ChevronRight, ScreenShare } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ScorePill } from './score-pill'
 
-function MetricBubble({
-  icon,
-  label,
+type MetricKey = 'Sleep' | 'Focus' | 'Rest'
+
+const METRIC_INFO: Record<
+  MetricKey,
+  { desc: string; icon: React.ReactNode }
+> = {
+  Sleep: {
+    desc: 'Uyqu Score kechki, uyqu vaqtidagi va ertalibgi holatni hamda kun davomida qanday his qilayotganingizni o‘lchaydi.',
+    icon: <Moon size={15} />,
+  },
+  Focus: {
+    desc: 'Focus Score fokus sessiyalaringiz, tejalgan vaqt va chalg‘ituvchi ilovalardan qochganingizni birlashtiradi.',
+    icon: <Hourglass size={15} />,
+  },
+  Rest: {
+    desc: 'Rest Score ekrandan tanaffuslar va umumiy ekran vaqti muvozanatini aks ettiradi.',
+    icon: <TreePine size={15} />,
+  },
+}
+
+/** Bitta metrik qatori — "Sleep 0m — Short" + AVG slider (haqiqiy Opal kabi) */
+function MetricRow({
+  title,
   value,
-  delay,
+  rating,
+  position,
+  avgAt,
 }: {
-  icon: React.ReactNode
-  label: string
-  value: number
-  delay: number
+  title: string
+  value: string
+  rating: 'Great' | 'OK' | 'Short'
+  /** 0..100 — sizning pozitsiyangiz */
+  position: number
+  /** 0..100 — AVG belgisi */
+  avgAt: number
 }) {
-  const R = 15
-  const C = 2 * Math.PI * R
+  const ratingColor =
+    rating === 'Great' ? 'text-[#7ee8b2]' : rating === 'OK' ? 'text-amber-300' : 'text-rose-400'
+  const fillColor =
+    rating === 'Great'
+      ? 'linear-gradient(90deg, rgba(126,232,178,0.25), #6ee7b7)'
+      : rating === 'OK'
+        ? 'linear-gradient(90deg, rgba(252,211,77,0.25), #fbbf24)'
+        : 'linear-gradient(90deg, rgba(251,113,133,0.3), #fb7185)'
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.4 }}
-      className={cn(GLASS, 'flex flex-col items-center gap-1.5 rounded-full px-4 py-3')}
-    >
-      <span className="relative inline-flex h-10 w-10 items-center justify-center">
-        <svg viewBox="0 0 36 36" className="absolute inset-0 h-full w-full -rotate-90">
-          <circle cx="18" cy="18" r={R} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="2.6" />
-          <circle
-            cx="18"
-            cy="18"
-            r={R}
-            fill="none"
-            stroke="#8fd9ff"
-            strokeWidth="2.6"
-            strokeLinecap="round"
-            strokeDasharray={C}
-            strokeDashoffset={C * (1 - value / 100)}
-            style={{ filter: 'drop-shadow(0 0 4px rgba(143,217,255,0.65))' }}
-          />
-        </svg>
-        <span className="text-white/85">{icon}</span>
-      </span>
-      <span className="text-[15px] font-extrabold leading-none text-white">{value}</span>
-      <span className="text-[9.5px] font-semibold uppercase tracking-wide text-white/45">{label}</span>
-    </motion.div>
+    <div>
+      <div className="flex items-baseline justify-between">
+        <p className="text-[14px] font-bold text-white">
+          {title} <span className="font-semibold text-white/45">{value}</span>
+        </p>
+        <span className={cn('text-[13px] font-bold', ratingColor)}>{rating}</span>
+      </div>
+      <div className="relative mt-2.5 h-2.5">
+        {/* segmentlangan track */}
+        <div className="absolute inset-0 flex gap-1">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <span key={i} className="h-full flex-1 rounded-full bg-white/8" />
+          ))}
+        </div>
+        {/* to'ldiruvchi */}
+        <div
+          className="absolute left-0 top-0 h-full rounded-full transition-all duration-700"
+          style={{
+            width: `${clamp(position, 2, 100)}%`,
+            background: fillColor,
+            boxShadow: rating === 'Great' ? '0 0 10px rgba(110,231,183,0.4)' : 'none',
+          }}
+        />
+        {/* AVG belgisi */}
+        <span
+          className="absolute -top-[7px] z-10 -translate-x-1/2 rounded-md bg-white px-1.5 py-[2px] text-[8.5px] font-black tracking-wide text-black shadow"
+          style={{ left: `${clamp(avgAt, 6, 94)}%` }}
+        >
+          AVG
+        </span>
+      </div>
+    </div>
   )
 }
 
-/** Yarim arc gauge (haqiqiy Opal Score vizuali) */
+/** Yarim arc gauge (haqiqiy Opal Score vizuali, mint gradient) */
 function ScoreArc({ score, delta }: { score: number; delta: number }) {
   const R = 88
   const LEN = Math.PI * R
@@ -73,9 +112,9 @@ function ScoreArc({ score, delta }: { score: number; delta: number }) {
       <svg viewBox="0 0 220 128" className="w-full">
         <defs>
           <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#5b9bd5" />
-            <stop offset="50%" stopColor="#8fd9ff" />
-            <stop offset="100%" stopColor="#b18cff" />
+            <stop offset="0%" stopColor="#86efac" />
+            <stop offset="55%" stopColor={OPAL.mint} />
+            <stop offset="100%" stopColor="#5eead4" />
           </linearGradient>
         </defs>
         {/* fon arc */}
@@ -97,7 +136,7 @@ function ScoreArc({ score, delta }: { score: number; delta: number }) {
           initial={{ strokeDashoffset: LEN }}
           animate={{ strokeDashoffset: LEN * (1 - score / 100) }}
           transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-          style={{ filter: 'drop-shadow(0 0 10px rgba(143,217,255,0.55))' }}
+          style={{ filter: `drop-shadow(0 0 10px ${OPAL.mintGlow})` }}
         />
         {/* bracket (haqiqiy Opal'dagi kabi) */}
         <path
@@ -111,15 +150,15 @@ function ScoreArc({ score, delta }: { score: number; delta: number }) {
       <div className="absolute inset-x-0 top-[34px] flex flex-col items-center">
         <div className="flex items-start gap-1.5">
           <span
-            className="text-[44px] font-extrabold leading-none tracking-tight text-[#a5e3ff]"
-            style={{ textShadow: '0 0 22px rgba(125,211,252,0.5)' }}
+            className="text-[44px] font-extrabold leading-none tracking-tight"
+            style={{ color: OPAL.mint, textShadow: `0 0 22px ${OPAL.mintGlow}` }}
           >
             {score}
           </span>
           <span
             className={cn(
               'mt-1 text-[13px] font-bold',
-              delta >= 0 ? 'text-emerald-400' : 'text-rose-400'
+              delta >= 0 ? 'text-[#9fe8b5]' : 'text-rose-400'
             )}
           >
             {delta >= 0 ? '▲' : '▼'}
@@ -149,9 +188,18 @@ export function TodayView() {
     queryFn: async () => (await fetch('/api/apps')).json(),
   })
 
+  const [selected, setSelected] = useState<MetricKey>('Sleep')
+
   const stats = statsQ.data
   const profile = profileQ.data
   const scores = computeScores(stats, sessionsQ.data)
+
+  const todayIso = new Date().toISOString().slice(0, 10)
+  const todaysSessions = (sessionsQ.data ?? []).filter(
+    (s) => (s.endedAt ?? s.startedAt).slice(0, 10) === todayIso
+  )
+  const completedToday = todaysSessions.filter((s) => s.completed)
+  const hadSleep = todaysSessions.some((s) => s.type === 'SLEEP')
 
   // chalg'ituvchi ilovalar daqiqasi
   const distracting = (appsQ.data ?? [])
@@ -161,6 +209,8 @@ export function TodayView() {
   const today = stats?.today
   const screenDelta = stats ? today!.screenTimeMinutes - stats.avgDailyScreenMinutes : 0
   const distractingDelta = Math.round(distracting * 0.18)
+  const sleepMinutes = hadSleep ? 450 : 0
+  const pickups = today?.pickups ?? 0
 
   const chartData: (DailyStat & { label: string })[] =
     stats?.days.map((d) => ({ ...d, label: dayLabel(d.date) })) ?? []
@@ -205,17 +255,135 @@ export function TodayView() {
         <ScoreArc score={scores.score} delta={scores.delta} />
       </div>
 
-      {/* metric bubbles */}
-      <div className="flex items-center justify-center gap-3">
-        <MetricBubble icon={<Moon size={14} />} label="Sleep" value={scores.sleep} delay={0.05} />
-        <MetricBubble icon={<Sigma size={14} />} label="Focus" value={scores.focus} delay={0.13} />
-        <MetricBubble icon={<TreePine size={14} />} label="Rest" value={scores.rest} delay={0.21} />
+      {/* tanlanadigan metrik pilllar (haqiqiy Opal — stadion outline) */}
+      <div className="flex items-start justify-center gap-3">
+        <ScorePill
+          value={scores.sleep}
+          icon={<Moon size={15} />}
+          label="Sleep"
+          size="lg"
+          selected={selected === 'Sleep'}
+          delay={0.05}
+          onClick={() => setSelected('Sleep')}
+        />
+        <ScorePill
+          value={scores.focus}
+          icon={<Hourglass size={15} />}
+          label="Focus"
+          size="lg"
+          selected={selected === 'Focus'}
+          delay={0.12}
+          onClick={() => setSelected('Focus')}
+        />
+        <ScorePill
+          value={scores.rest}
+          icon={<TreePine size={15} />}
+          label="Rest"
+          size="lg"
+          selected={selected === 'Rest'}
+          delay={0.19}
+          onClick={() => setSelected('Rest')}
+        />
       </div>
 
-      <p className="mx-auto -mt-1 max-w-[300px] text-center text-[12px] leading-relaxed text-white/40">
-        Opal Score uyqu, fokus va dam signallarini birlashtirib, texnologiyaning farovonligingizga
-        mosligini bitta ko‘rsatkichda ifodalaydi.
-      </p>
+      {/* What is X Score? + metrik slayderlar (haqiqiy Opal Today ekrani) */}
+      <AnimatePresence mode="wait">
+        <motion.section
+          key={selected}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+          aria-label={`${selected} Score tafsiloti`}
+        >
+          <h2 className="text-[17px] font-bold text-white">What is {selected} Score?</h2>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-white/45">
+            {METRIC_INFO[selected].desc}
+          </p>
+
+          <div className={cn(GLASS, 'mt-4 space-y-5 p-4')}>
+            {selected === 'Sleep' && (
+              <>
+                <MetricRow
+                  title="Sleep"
+                  value={hadSleep ? '7h 30m' : '0m'}
+                  rating={sleepMinutes >= 420 ? 'Great' : sleepMinutes >= 360 ? 'OK' : 'Short'}
+                  position={clamp((sleepMinutes / 480) * 100, 4, 100)}
+                  avgAt={78}
+                />
+                <MetricRow
+                  title="Pickups"
+                  value={`${pickups} marta`}
+                  rating={pickups <= 12 ? 'Great' : pickups <= 30 ? 'OK' : 'Short'}
+                  position={clamp(100 - pickups * 2, 6, 100)}
+                  avgAt={42}
+                />
+                <MetricRow
+                  title="Ekran vaqti (kech 3s)"
+                  value={formatMinutes(Math.round((today?.screenTimeMinutes ?? 0) * 0.3))}
+                  rating={(today?.screenTimeMinutes ?? 0) < 200 ? 'Great' : 'OK'}
+                  position={clamp(100 - (today?.screenTimeMinutes ?? 0) / 5, 8, 100)}
+                  avgAt={55}
+                />
+              </>
+            )}
+            {selected === 'Focus' && (
+              <>
+                <MetricRow
+                  title="Fokus sessiyalari"
+                  value={`${completedToday.length} ta`}
+                  rating={completedToday.length >= 2 ? 'Great' : completedToday.length >= 1 ? 'OK' : 'Short'}
+                  position={clamp(completedToday.length * 33 + 8, 6, 100)}
+                  avgAt={38}
+                />
+                <MetricRow
+                  title="Bugun tejaldi"
+                  value={formatMinutes(today?.savedMinutes ?? 0)}
+                  rating={(today?.savedMinutes ?? 0) >= 30 ? 'Great' : (today?.savedMinutes ?? 0) >= 10 ? 'OK' : 'Short'}
+                  position={clamp(((today?.savedMinutes ?? 0) / 90) * 100, 5, 100)}
+                  avgAt={45}
+                />
+                <MetricRow
+                  title="Distracting Apps"
+                  value={formatMinutes(distracting)}
+                  rating={distracting <= 30 ? 'Great' : distracting <= 60 ? 'OK' : 'Short'}
+                  position={clamp(100 - distracting, 6, 100)}
+                  avgAt={52}
+                />
+              </>
+            )}
+            {selected === 'Rest' && (
+              <>
+                <MetricRow
+                  title="Ekran vaqti"
+                  value={formatMinutes(today?.screenTimeMinutes ?? 0)}
+                  rating={screenDelta <= 0 ? 'Great' : screenDelta < 45 ? 'OK' : 'Short'}
+                  position={clamp(100 - (today?.screenTimeMinutes ?? 0) / 5, 6, 100)}
+                  avgAt={48}
+                />
+                <MetricRow
+                  title="Dam sessiyalari"
+                  value={`${todaysSessions.filter((s) => s.type === 'CUSTOM' && s.completed).length} ta`}
+                  rating={
+                    todaysSessions.filter((s) => s.type === 'CUSTOM' && s.completed).length >= 1
+                      ? 'Great'
+                      : 'Short'
+                  }
+                  position={todaysSessions.some((s) => s.type === 'CUSTOM' && s.completed) ? 72 : 10}
+                  avgAt={40}
+                />
+                <MetricRow
+                  title="O‘rtachaga nisbat"
+                  value={`${screenDelta <= 0 ? '▼' : '▲'} ${formatMinutes(Math.abs(screenDelta))}`}
+                  rating={screenDelta <= 0 ? 'Great' : 'Short'}
+                  position={clamp(50 - screenDelta / 4, 6, 100)}
+                  avgAt={50}
+                />
+              </>
+            )}
+          </div>
+        </motion.section>
+      </AnimatePresence>
 
       {/* TODAY'S HIGHLIGHTS */}
       <section aria-label="Bugungi yo'l ko'rsatkichlar">
@@ -235,7 +403,7 @@ export function TodayView() {
               <span
                 className={cn(
                   'text-[12px] font-bold',
-                  screenDelta <= 0 ? 'text-teal-300' : 'text-rose-300'
+                  screenDelta <= 0 ? 'text-[#7ee8b2]' : 'text-rose-300'
                 )}
               >
                 {screenDelta <= 0 ? '▼' : '▲'} {formatMinutes(Math.abs(screenDelta))} ›
@@ -243,10 +411,10 @@ export function TodayView() {
             </div>
             <div className="relative mt-2.5 h-2.5 rounded-full bg-white/10">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-teal-300 to-emerald-400"
+                className="h-full rounded-full bg-gradient-to-r from-[#86efac] to-[#34d399]"
                 style={{
                   width: `${Math.min(((today?.screenTimeMinutes ?? 0) / Math.max((today?.goalMinutes ?? 240) * 1.4, 1)) * 100, 100)}%`,
-                  boxShadow: '0 0 10px rgba(94,234,212,0.4)',
+                  boxShadow: '0 0 10px rgba(134,239,172,0.4)',
                 }}
               />
               <span
@@ -268,7 +436,7 @@ export function TodayView() {
               <span
                 className={cn(
                   'text-[12px] font-bold',
-                  distractingDelta <= 0 ? 'text-teal-300' : 'text-rose-300'
+                  distractingDelta <= 0 ? 'text-[#7ee8b2]' : 'text-rose-300'
                 )}
               >
                 {distractingDelta <= 0 ? '▼' : '▲'} {formatMinutes(Math.abs(distractingDelta))} ›
@@ -312,7 +480,7 @@ export function TodayView() {
                 <Tooltip
                   cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                   contentStyle={{
-                    background: '#0c0f1c',
+                    background: '#0c120e',
                     border: '1px solid rgba(255,255,255,0.12)',
                     borderRadius: 12,
                     fontSize: 11,
@@ -327,7 +495,7 @@ export function TodayView() {
                     return (
                       <Cell
                         key={i}
-                        fill={over ? '#fb7185' : isToday ? '#8fd9ff' : 'rgba(177,140,255,0.55)'}
+                        fill={over ? '#fb7185' : isToday ? OPAL.mint : 'rgba(94,234,212,0.45)'}
                       />
                     )
                   })}
@@ -337,10 +505,10 @@ export function TodayView() {
           </div>
           <div className="mt-2 flex items-center gap-4 text-[10px] font-semibold text-white/40">
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-[#8fd9ff]" /> Bugun
+              <span className="h-2 w-2 rounded-full" style={{ background: OPAL.mint }} /> Bugun
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-[#b18cff]/60" /> Maqsad ichida
+              <span className="h-2 w-2 rounded-full bg-[#5eead4]/45" /> Maqsad ichida
             </span>
             <span className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-rose-400" /> Maqsaddan oshgan
@@ -366,7 +534,7 @@ export function TodayView() {
                 />
                 <Tooltip
                   contentStyle={{
-                    background: '#0c0f1c',
+                    background: '#0c120e',
                     border: '1px solid rgba(255,255,255,0.12)',
                     borderRadius: 12,
                     fontSize: 11,
@@ -377,9 +545,9 @@ export function TodayView() {
                 <Line
                   type="monotone"
                   dataKey="savedMinutes"
-                  stroke="#8fd9ff"
+                  stroke={OPAL.mint}
                   strokeWidth={2.5}
-                  dot={{ r: 3, fill: '#8fd9ff', strokeWidth: 0 }}
+                  dot={{ r: 3, fill: OPAL.mint, strokeWidth: 0 }}
                   activeDot={{ r: 4.5 }}
                 />
               </LineChart>
@@ -387,7 +555,7 @@ export function TodayView() {
           </div>
           <p className="mt-2 text-center text-[11px] font-semibold text-white/45">
             Bu hafta jami{' '}
-            <span className="font-extrabold text-[#9fd8ff]">
+            <span className="font-extrabold text-[#c9fbdc]">
               {formatMinutes(stats?.weekSavedMinutes ?? 0)}
             </span>{' '}
             tejaldi
@@ -426,10 +594,10 @@ export function TodayView() {
       {/* haftalik hisobot kartasi */}
       <section
         aria-label="Haftalik hisobot"
-        className="relative overflow-hidden rounded-3xl border border-white/12 bg-gradient-to-br from-[#141b3a] via-[#101331] to-[#0b0e20] p-5 shadow-[0_14px_44px_rgba(0,0,0,0.5)]"
+        className="relative overflow-hidden rounded-3xl border border-white/12 bg-gradient-to-br from-[#12241a] via-[#0e1b16] to-[#0a100d] p-5 shadow-[0_14px_44px_rgba(0,0,0,0.5)]"
       >
         <div
-          className="pointer-events-none absolute -right-10 -top-14 h-40 w-40 rounded-full bg-[#8fd9ff]/15 blur-2xl"
+          className="pointer-events-none absolute -right-10 -top-14 h-40 w-40 rounded-full bg-[#86efac]/12 blur-2xl"
           aria-hidden="true"
         />
         <div className="relative flex items-center justify-between">
@@ -438,7 +606,12 @@ export function TodayView() {
               Haftalik hisobot
             </p>
             <div className="mt-1.5 flex items-center gap-2.5">
-              <span className="text-[34px] font-extrabold leading-none text-[#a5e3ff]">{grade}</span>
+              <span
+                className="text-[34px] font-extrabold leading-none"
+                style={{ color: OPAL.mint, textShadow: `0 0 18px ${OPAL.mintGlow}` }}
+              >
+                {grade}
+              </span>
               <div className="text-[11.5px] leading-tight text-white/55">
                 <p>
                   <span className="font-bold text-white/85">{inGoalDays}/7</span> kun maqsad ichida

@@ -152,8 +152,8 @@ export function UnblockChallenge({
                   solved
                     ? 'border-emerald-400/70 bg-emerald-400/10'
                     : values[i]
-                      ? 'border-[#8fd9ff]/60 bg-[#7dd3fc]/5 shadow-[0_0_12px_rgba(125,211,252,0.2)]'
-                      : 'border-[#8fd9ff]/25 bg-transparent'
+                      ? 'border-[#86efac]/60 bg-[#5eead4]/5 shadow-[0_0_12px_rgba(94,234,212,0.2)]'
+                      : 'border-[#86efac]/25 bg-transparent'
                 )}
               >
                 <input

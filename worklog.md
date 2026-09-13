@@ -217,3 +217,29 @@ Stage Summary:
 - Ilova endi PWA: telefondagi brauzerdan "Add to Home Screen" bilan native ko'rinishda o'rnatiladi
 - Risklar: AudioContext safari/iOS'da ilk gesture'dan keyin ochiladi (chip bosilishi gesture — OK); headless brauzerda tovush eshitilmaydi (API ishlashi tekshirildi); PWA offline cache yo'q (service worker keyingi qadam bo'lishi mumkin)
 - Keyingi tavsiyalar: service worker (offline shell + install banner), sessiya tarixi timeline'i (App Store uslubi), do'st qo'shish oynasi, eksport PDF hisobot, Rules'ga real vaqt scheduleri
+
+---
+Task ID: 7
+Agent: Z.ai Code (main, cron webDevReview round 6)
+Task: Haqiqiy Opal referens skrinshotlariga SODIQ dizayn roundi + yangi funksiyalar (kontekstli tavsiya dvigateli, Gemstones, jahon foizi, metrik tafsilotlar)
+
+Work Log:
+- QA (agent-browser, port 81): barcha ekranlar ishladi, konsol toza, dev.log faqat 200 — barqaror. FOYDALANUVCHI 4 ta HAQIQIY Opal skrinshoti yukladi (/upload/) — Home (kristall+Score+pillar), Today (arc+metrik slayderlar), Profil (Gemstones+laurel), Onboarding. Bu round ularning har biriga sodiqlik uchun.
+- STYLING — PALITRA SINTIQI: binafsha/cyan tizimdan HAQIQIY Opal mint-yashil tizimiga o'tish (#b7f5cd mint, #86efac→#5eead4 gradientlar, oltin olov streak): home, today, timer LCD (skan chiziqlar + glow + progress + Block Apps pill + konfeti), apps tab, breathing, onboarding, unblock-challenge, session-pill, tab bar, opal-app desktop brending — barchasi mint
+- YANGI KOMPONENT — score-pill.tsx: ScorePill (stadion outline, o'zi progress stropka — pathLength normallashtirilgan SVG rect, ikonka+raqam ichida, YORLIQ PASTDA — haqiqiy Opal aniq tartibi; sm/lg, selected holat) + ScoreBracket (Score'dan pilllarga osilgan ingichka bracket)
+- HOME QAYTA QURILDI (referensga mutlaq sodiq): Opal wordmark (O glyfi SVG + 'pal'), oltin Flame + raqam streak, HexAvatarButton (olti burchak + odam silueti, mint ring); kristall endi radial mask bilan eriydi + TOSH POYDEVOR (gradient tosh plita + soya) + mint ambient nur; Score mint glow; bracket; 3 ta ScorePill (Sleep/Focus/Rest, stropka progress, yorliq pastda)
+- YANGI — TAVSIYA KARTASI (haqiqiy Opal imzo glass kartasi): "kategoriya / teg" header + sarlavha + matn + illyustratsiya + to'liq kenglik frosted CTA; KONTEKSTLI DVIGATEL (opal-ui.ts suggestionsFor/pickSuggestion): soat bo'yicha (5-11 Focus, 11-14 Rest, 14-18 Rest/nafas, 18-22 Sleep/meditatsiya, 22-5 Uyqu rejimi) + maqsad oshganda ustuvor "tanaffus" varianti; "..." tugmasi tavsiyalarni AYLANTIRADI; CTA harakati: breathe→nafas overlay, timer→draft bilan Timer ochiladi
+- YANGI — "N allowed" pill: kartaning pastki qirrasiga osilgan (ruxsat etilgan ilovalar ikonkalari bilan) → Apps tab
+- YANGI — GEMSTONES: gemsFor() — 8 tosh (First 98%, Motivated 95%, Night Owl 41%, Pride 23%, Iron Will 12%, Opal Plus 9%, Time Lord 7%, Century 3%), har biri CSS radial-gradient blob (yorug'lik + qirrali shakl + highlight), Profil karuselida "Owned by X%", Home'da teaser strip (profilga yo'naltiradi)
+- YANGI — JAHON FOIZI: worldwideTopPercent(weekSaved) → Profil'da "Top X% WORLDWIDE" (globe)
+- YANGI — TODAY metrik tafsilotlari: pill bosilganda "What is Sleep/Focus/Rest Score?" bo'limi almasheadi (AnimatePresence) + har metrikda 3 ta MetricRow (sarlavha+qiymat+rehating Great/OK/Short rangli + segmentlangan track + AVG belgisi + silliq fill) — haqiqiy Opal Today ekrani strukturasining aniq nusxasi
+- PROFIL GERBI: ProfileCrest (dafna chambeli SVG — ikki shox pastki markazdan yonlarga), katta ism markazda, 3 katta statistika (FOCUS HOURS / DAY STREAK / Top X% WORLDWIDE — nur ichida ikonka ustida raqam), jami ko'rsatkichlar qatori (Time Saved/Sessions/AVG Daily Saved)
+- BRAND共享: brand.tsx (OpalWordmark + HexAvatarButton) — Home va Apps tab bir xil header (Apps'dagi eski gradient doira o'rniga hexagon avatar — profilga olib boradi)
+- BUGFIX: 'REST' SessionType mavjud emas edi (tsc xato) → CUSTOM bilan almashtirildi; navigating placeholder hack olib tashlandi; '...' tugma semantikasi tuzatildi (harakat o'rniga almashish)
+- Lint 0/0, tsc src 0 xato; E2E: tavsiya CTA→Timer draft (Deep Focus 45d to'ldirildi) ✓, sessiya 30d boshlandi (toast + LCD hisobladi + ambient chiplar) ✓, hold-to-stop 1.6s → "Sessiya yakunlandi" + PATCH 200 ✓, tavsiya almashishi ✓, Today pill almashtirish ✓, Profil gerb+gemstones ✓, desktop 1440 ✓, konsol toza ✓; seed qayta tiklandi (streak 12)
+
+Stage Summary:
+- Ilova endi FOYDALANUVCHI YUKLAGAN haqiqiy Opal skrinshotlariga deyarli piksel-sodiq: mint paletta, stadion progress pilllar (yorliq pastda), bracket, tavsiya kartasi, "N allowed", gemstones, laurel gerb, Top % worldwide
+- 4 yangi funksiya: kontekstli tavsiya dvigateli (vaqt+statistika), Gemstones to'plami (8 tosh, unlock shartlari), jahon foizi, Today metrik tafsilotlari (What is X Score? + AVG slayderlar)
+- Risklar: toshlar CSS blob (rasmlar emas — keyin AI rasm bilan almashtirish mumkin); metrik slayderlarning ba'zi qiymatlari statistikadan derivatsiya (uyqu davomiyligi DBda yo'q); 'N allowed' faqat ruxsat etilganlar soni
+- Keyingi tavsiyalar: (1) gemstone rasmlari AI generatsiya, (2) Uyqu tracking (SLEEP sessiyasi davomiyligi bilan Bugun metrikini real qilish), (3) Rules real vaqt scheduleri, (4) PWA service worker, (5) mobil KMP ilovaga ham shu mint dizayn+gemstones ko'chirish

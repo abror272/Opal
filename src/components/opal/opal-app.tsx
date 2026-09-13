@@ -135,7 +135,7 @@ export function OpalApp() {
         aria-hidden="true"
       >
         <div className="mb-4 flex items-center gap-3">
-          <span className="inline-block h-10 w-10 rounded-[13px] bg-gradient-to-br from-[#8fd9ff] via-[#b18cff] to-[#ff9ad5] shadow-[0_0_24px_rgba(143,217,255,0.45)]" />
+          <span className="inline-block h-10 w-10 rounded-[13px] bg-gradient-to-br from-[#d9fbe6] via-[#86efac] to-[#5eead4] shadow-[0_0_24px_rgba(134,239,172,0.45)]" />
           <span className="text-2xl font-bold tracking-tight text-white">Opal</span>
         </div>
         <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white">
@@ -165,7 +165,7 @@ export function OpalApp() {
 
           {needsOnboarding === null ? (
             <div className="flex h-full items-center justify-center">
-              <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-[#7dd3fc]/20 border-t-[#7dd3fc]" />
+              <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-[#86efac]/20 border-t-[#86efac]" />
             </div>
           ) : showOnboarding ? (
             <Onboarding onDone={() => setObDone(true)} />

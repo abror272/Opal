@@ -60,14 +60,14 @@ export function BottomTabBar() {
               aria-current={active ? 'page' : undefined}
               className={cn(
                 'relative flex h-11 w-[74px] flex-col items-center justify-center gap-0.5 rounded-full transition-colors duration-200',
-                active ? 'text-[#9fd8ff]' : 'text-white/45 hover:text-white/75'
+                active ? 'text-[#c9fbdc]' : 'text-white/45 hover:text-white/75'
               )}
             >
               {active && (
                 <motion.span
                   layoutId="tab-glow"
                   transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                  className="absolute inset-0 rounded-full bg-white/[0.09] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_0_18px_rgba(125,211,252,0.18)]"
+                  className="absolute inset-0 rounded-full bg-white/[0.10] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12),0_0_18px_rgba(134,239,172,0.16)]"
                 />
               )}
               <span className="relative">{t.icon}</span>

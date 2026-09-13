@@ -13,6 +13,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { ChevronRight, Lock, Plus, ShieldCheck, Clock3, Zap, MousePointerClick, CalendarDays } from 'lucide-react'
 import { UnblockChallenge } from './unblock-challenge'
+import { HexAvatarButton } from './brand'
 import type { SessionType } from '@/lib/opal-types'
 
 /* ── Rutinlar (haqiqiy Opal "Routines" bento) ─────────────── */
@@ -199,7 +200,7 @@ function AppDetailSheet({
         <div className="mt-5 rounded-2xl border border-white/8 bg-white/[0.04] p-4">
           <div className="flex items-center justify-between">
             <p className="text-[12.5px] font-bold text-white/80">Bugungi foydalanish</p>
-            <p className="text-[13px] font-extrabold text-[#9fd8ff]">
+            <p className="text-[13px] font-extrabold text-[#c9fbdc]">
               {formatMinutes(app.todayMinutes)}
               {app.dailyLimitMinutes > 0 && (
                 <span className="text-[11px] font-semibold text-white/40">
@@ -214,7 +215,7 @@ function AppDetailSheet({
                 'h-full rounded-full transition-all',
                 overLimit
                   ? 'bg-gradient-to-r from-rose-400 to-rose-500'
-                  : 'bg-gradient-to-r from-[#7dd3fc] to-[#b18cff]'
+                  : 'bg-gradient-to-r from-[#5eead4] to-[#b18cff]'
               )}
               style={{ width: `${Math.max(limitProgress * 100, 4)}%` }}
             />
@@ -231,7 +232,7 @@ function AppDetailSheet({
                 title={`${String(h).padStart(2, '0')}:00 — ${Math.round(v * 60)} daqiqa`}
                 className={cn(
                   'flex-1 rounded-t-[3px] transition-all',
-                  h === peakHour ? 'bg-[#9fd8ff]' : 'bg-white/15'
+                  h === peakHour ? 'bg-[#86efac]' : 'bg-white/15'
                 )}
                 style={{ height: `${Math.max(v * 100, 6)}%` }}
               />
@@ -267,7 +268,7 @@ function AppDetailSheet({
               className={cn(
                 'shrink-0 rounded-full px-4 py-2 text-[12px] font-bold ring-1 transition-all active:scale-95',
                 app.dailyLimitMinutes === m
-                  ? 'bg-[#7dd3fc]/15 text-[#bfe9ff] ring-[#7dd3fc]/45'
+                  ? 'bg-[#5eead4]/15 text-[#bfe9ff] ring-[#5eead4]/45'
                   : 'bg-white/[0.05] text-white/60 ring-white/10 hover:text-white'
               )}
             >
@@ -279,7 +280,7 @@ function AppDetailSheet({
         {/* Block tugmasi */}
         <button
           onClick={() => onBlock(app)}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#7dd3fc]/20 to-[#b18cff]/20 py-3.5 text-[14px] font-bold text-white ring-1 ring-[#7dd3fc]/30 active:scale-[0.98]"
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#5eead4]/20 to-[#b18cff]/20 py-3.5 text-[14px] font-bold text-white ring-1 ring-[#5eead4]/30 active:scale-[0.98]"
         >
           <Lock size={14} /> {app.name}ni bloklash
         </button>
@@ -399,9 +400,9 @@ export function AppsTab() {
     <div className="px-5 pb-4 pt-1">
       <header className="flex items-center justify-between">
         <h1 className="text-[24px] font-extrabold tracking-tight text-white">Apps</h1>
-        <span
-          className="inline-block h-7 w-7 rounded-full bg-gradient-to-br from-[#8fd9ff]/40 via-[#b18cff]/40 to-[#ff9ad5]/40 shadow-[0_0_10px_rgba(143,217,255,0.4)] ring-1 ring-white/20"
-          aria-hidden="true"
+        <HexAvatarButton
+          size={30}
+          onClick={() => window.dispatchEvent(new CustomEvent('opal:open-profile'))}
         />
       </header>
 
@@ -424,10 +425,10 @@ export function AppsTab() {
               >
                 <span
                   className={cn(
-                    'relative flex h-[54px] w-full max-w-[62px] items-center justify-center rounded-[16px] text-[24px] ring-[1.5px] ring-[#8fd9ff]/60',
+                    'relative flex h-[54px] w-full max-w-[62px] items-center justify-center rounded-[16px] text-[24px] ring-[1.5px] ring-[#86efac]/60',
                     app.gradient
                   )}
-                  style={{ boxShadow: '0 0 16px rgba(125,211,252,0.35)' }}
+                  style={{ boxShadow: '0 0 16px rgba(94,234,212,0.35)' }}
                 >
                   {app.emoji}
                   <span className="absolute inset-0 flex items-center justify-center rounded-[16px] bg-black/25">
@@ -437,7 +438,7 @@ export function AppsTab() {
                 <span className="w-full max-w-[62px] truncate text-center text-[10px] font-semibold text-white/85">
                   {app.name}
                 </span>
-                <span className="text-[9px] font-bold text-[#9fd8ff]">Unblock</span>
+                <span className="text-[9px] font-bold text-[#c9fbdc]">Unblock</span>
               </motion.button>
             ))}
           </div>
@@ -476,7 +477,7 @@ export function AppsTab() {
               )}
               <span className="relative mb-auto text-[20px]">{rule.icon}</span>
               {rule.left && (
-                <span className="relative mb-2 inline-flex w-fit items-center rounded-full bg-[#7dd3fc]/15 px-2.5 py-0.5 text-[9.5px] font-bold text-[#bfe9ff] ring-1 ring-[#7dd3fc]/40">
+                <span className="relative mb-2 inline-flex w-fit items-center rounded-full bg-[#5eead4]/15 px-2.5 py-0.5 text-[9.5px] font-bold text-[#bfe9ff] ring-1 ring-[#5eead4]/40">
                   {rule.left}
                 </span>
               )}
@@ -581,7 +582,7 @@ export function AppsTab() {
           className="w-[calc(100%-2rem)] max-w-[320px] translate-y-[-70%] rounded-3xl border border-white/12 bg-[#0c0f1c] p-5 shadow-2xl [top:50%]"
         >
           <DialogTitle className="flex items-center gap-2 text-[16px] font-extrabold text-white">
-            <CalendarDays size={16} className="text-[#9fd8ff]" /> Yangi qoida
+            <CalendarDays size={16} className="text-[#c9fbdc]" /> Yangi qoida
           </DialogTitle>
           <div className="mt-4 space-y-3">
             <input
@@ -590,7 +591,7 @@ export function AppsTab() {
               placeholder="Qoida nomi (masalan: Sport vaqti)"
               maxLength={28}
               aria-label="Qoida nomi"
-              className="h-11 w-full rounded-2xl border border-white/12 bg-white/[0.06] px-3.5 text-[13.5px] font-semibold text-white outline-none placeholder:text-white/30 focus:border-[#7dd3fc]/50"
+              className="h-11 w-full rounded-2xl border border-white/12 bg-white/[0.06] px-3.5 text-[13.5px] font-semibold text-white outline-none placeholder:text-white/30 focus:border-[#5eead4]/50"
             />
             <input
               value={newRuleTime}
@@ -598,7 +599,7 @@ export function AppsTab() {
               placeholder="Vaqt (masalan: 6PM — 8PM)"
               maxLength={24}
               aria-label="Qoida vaqti"
-              className="h-11 w-full rounded-2xl border border-white/12 bg-white/[0.06] px-3.5 text-[13.5px] font-semibold text-white outline-none placeholder:text-white/30 focus:border-[#7dd3fc]/50"
+              className="h-11 w-full rounded-2xl border border-white/12 bg-white/[0.06] px-3.5 text-[13.5px] font-semibold text-white outline-none placeholder:text-white/30 focus:border-[#5eead4]/50"
             />
             <button
               onClick={addRule}

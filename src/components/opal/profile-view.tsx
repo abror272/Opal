@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { formatMinutes, type UserProfile } from '@/lib/opal-types'
+import { formatMinutes, type FocusSession, type UserProfile } from '@/lib/opal-types'
 import { useOpalStore } from '@/lib/opal-store'
-import { GLASS } from '@/lib/opal-ui'
+import { GLASS, OPAL, gemsFor, worldwideTopPercent } from '@/lib/opal-ui'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
@@ -13,8 +13,8 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import {
   Flame,
-  Timer,
   Hourglass,
+  Globe,
   Crown,
   ShieldCheck,
   Lock,
@@ -38,6 +38,92 @@ function achievementsFor(profile: UserProfile) {
   ]
 }
 
+/** Haqiqiy Opal profil gerbi: dafna chambeli + olti burchakli avatar */
+function ProfileCrest({ initial }: { initial: string }) {
+  // dafna yaproqlari — ikki yoy bo'ylab (pastki markazda bo'shliq, yonlarda yuqoriga)
+  const leaves = Array.from({ length: 7 }, (_, i) => i)
+  const leaf = (angleDeg: number, radius: number, flip: boolean, key: number) => {
+    const a = (angleDeg * Math.PI) / 180
+    const cx = 100 + Math.cos(a) * radius
+    const cy = 100 - Math.sin(a) * radius * 0.92
+    const rot = angleDeg + (flip ? 62 : -62)
+    return (
+      <ellipse
+        key={key}
+        cx={cx}
+        cy={cy}
+        rx="7"
+        ry="15"
+        fill="rgba(183,245,205,0.10)"
+        stroke="rgba(183,245,205,0.16)"
+        strokeWidth="1"
+        transform={`rotate(${rot} ${cx} ${cy})`}
+      />
+    )
+  }
+  return (
+    <div className="relative mx-auto flex h-[168px] w-[268px] items-center justify-center">
+      <svg viewBox="0 0 200 200" className="absolute inset-0 h-full w-full" aria-hidden="true">
+        {/* chap shox — 190°→262° (pastki chap, yuqoriga yo'nalgan) */}
+        {leaves.map((i) => leaf(192 + i * 12, 94, false, i))}
+        {/* o'ng shox — 350°→278° (pastki o'ng) */}
+        {leaves.map((i) => leaf(-12 - i * 12, 94, true, 100 + i))}
+      </svg>
+      {/* olti burchakli avatar */}
+      <div className="relative flex h-[92px] w-[92px] items-center justify-center">
+        <svg viewBox="0 0 36 36" className="absolute inset-0 h-full w-full" aria-hidden="true">
+          <path
+            d="M18 2.5 L31.5 9.2 V26.8 L18 33.5 L4.5 26.8 V9.2 Z"
+            fill="rgba(183,245,205,0.08)"
+            stroke={OPAL.mint}
+            strokeWidth="1.3"
+            strokeLinejoin="round"
+            style={{ filter: `drop-shadow(0 0 10px ${OPAL.mintGlow})` }}
+          />
+        </svg>
+        <span className="relative flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[#9fe8b5] to-[#5eead4] text-[20px] font-black text-[#06281a] shadow-[0_0_18px_rgba(134,239,172,0.4)]">
+          {initial}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+/** Haqiqiy Opal katta statistikasi — nur ichida ikonka, raqam ustida, yorliq pastda */
+function BigStat({
+  icon,
+  value,
+  label,
+  glow,
+}: {
+  icon: React.ReactNode
+  value: string
+  label: string
+  glow: string
+}) {
+  return (
+    <div className="flex flex-col items-center">
+      <div className="relative flex h-[74px] w-[86px] items-end justify-center">
+        {/* nur fon */}
+        <div
+          className="absolute left-1/2 top-1 h-[64px] w-[64px] -translate-x-1/2 rounded-full"
+          style={{ background: `radial-gradient(circle, ${glow} 0%, transparent 68%)` }}
+          aria-hidden="true"
+        />
+        <span className="relative text-[34px] opacity-90 [&>svg]:h-full [&>svg]:w-full" style={{ color: glow.includes('flame') ? '#ffc46b' : undefined }}>
+          {icon}
+        </span>
+        <span className="absolute bottom-0 text-[21px] font-extrabold leading-none text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+          {value}
+        </span>
+      </div>
+      <span className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/60">
+        {label}
+      </span>
+    </div>
+  )
+}
+
 export function ProfileView() {
   const qc = useQueryClient()
   const pinEnabled = useOpalStore((s) => s.pinEnabled)
@@ -50,6 +136,14 @@ export function ProfileView() {
   const profileQ = useQuery<UserProfile>({
     queryKey: ['profile'],
     queryFn: async () => (await fetch('/api/profile')).json(),
+  })
+  const statsQ = useQuery<{ weekSavedMinutes: number }>({
+    queryKey: ['stats'],
+    queryFn: async () => (await fetch('/api/stats')).json(),
+  })
+  const sessionsQ = useQuery<FocusSession[]>({
+    queryKey: ['sessions'],
+    queryFn: async () => (await fetch('/api/sessions')).json(),
   })
 
   const patchMutation = useMutation({
@@ -90,6 +184,14 @@ export function ProfileView() {
   const isPlus = profile.plan === 'PLUS'
   const achievements = achievementsFor(profile)
 
+  const todayIso = new Date().toISOString().slice(0, 10)
+  const hadSleep = (sessionsQ.data ?? []).some(
+    (s) => s.type === 'SLEEP' && (s.endedAt ?? s.startedAt).slice(0, 10) === todayIso
+  )
+  const gems = gemsFor(profile, hadSleep)
+  const topPct = worldwideTopPercent(statsQ.data?.weekSavedMinutes ?? 0)
+  const focusHours = Math.round(profile.totalSavedMinutes / 60)
+
   return (
     <div className="space-y-5 px-5 pb-6 pt-1">
       <AchievementWatcher
@@ -98,57 +200,117 @@ export function ProfileView() {
         onSeen={markAchievementsSeen}
       />
 
-      {/* identifikatsiya kartasi */}
-      <section
-        className="relative overflow-hidden rounded-3xl border border-white/12 bg-gradient-to-br from-[#141b3a] via-[#151233] to-[#0d0a1e] p-5 text-white shadow-[0_14px_44px_rgba(0,0,0,0.5)]"
-        aria-label="Profil ma'lumotlari"
-      >
-        <div
-          className="pointer-events-none absolute -left-8 -top-12 h-36 w-36 rounded-full bg-[#8fd9ff]/15 blur-2xl"
-          aria-hidden="true"
-        />
-        <div className="relative flex items-center gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-[#5b7bff] via-[#8b7bff] to-[#c86bff] text-2xl font-black shadow-[0_0_22px_rgba(139,123,255,0.5)] ring-2 ring-white/25">
-            {profile.name[0]}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <p className="truncate text-[19px] font-extrabold">{profile.name}</p>
-              {isPlus && (
-                <span className="flex items-center gap-0.5 rounded-full bg-amber-400/20 px-2 py-0.5 text-[9px] font-bold text-amber-300 ring-1 ring-amber-400/40">
-                  <Crown size={10} /> PLUS
-                </span>
-              )}
-            </div>
-            <p className="text-[12.5px] text-white/50">{profile.handle}</p>
-            <div className="mt-1.5 flex items-center gap-1.5 text-[11.5px] font-semibold text-orange-300">
-              <Flame size={13} /> {profile.streakDays} kunlik streak · {profile.totalSessions} sessiya
-            </div>
-          </div>
-        </div>
+      {/* ── GERB: dafna + hexagon avatar + ism ── */}
+      <section className="pt-2 text-center" aria-label="Profil gerbi">
+        <ProfileCrest initial={profile.name[0]} />
+        <p className="mt-2 text-[26px] font-extrabold tracking-tight text-white">
+          {profile.name}
+        </p>
+        <p className="mt-0.5 text-[12px] font-medium text-white/40">{profile.handle}</p>
+        {isPlus && (
+          <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2.5 py-0.5 text-[10px] font-bold text-amber-300 ring-1 ring-amber-400/35">
+            <Crown size={10} /> OPAL PLUS
+          </span>
+        )}
 
-        <div className="relative mt-4 grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-2xl bg-white/[0.07] p-2.5 ring-1 ring-white/10">
-            <p className="flex items-center justify-center gap-1 text-[15px] font-extrabold">
-              <Hourglass size={13} className="text-emerald-300" />
-              {formatMinutes(profile.totalSavedMinutes)}
-            </p>
-            <p className="text-[10px] text-white/50">Jami tejaldi</p>
-          </div>
-          <div className="rounded-2xl bg-white/[0.07] p-2.5 ring-1 ring-white/10">
-            <p className="flex items-center justify-center gap-1 text-[15px] font-extrabold">
-              <Timer size={13} className="text-violet-300" />
-              {profile.totalSessions}
-            </p>
-            <p className="text-[10px] text-white/50">Sessiyalar</p>
-          </div>
-          <div className="rounded-2xl bg-white/[0.07] p-2.5 ring-1 ring-white/10">
-            <p className="flex items-center justify-center gap-1 text-[15px] font-extrabold">
-              <Gauge size={13} className="text-sky-300" />
-              {Math.round(profile.totalSavedMinutes / 60)}
-            </p>
-            <p className="text-[10px] text-white/50">Soat</p>
-          </div>
+        {/* 3 katta statistika (haqiqiy Opal tartibida) */}
+        <div className="mt-4 grid grid-cols-3 gap-1">
+          <BigStat
+            icon={<Hourglass />}
+            value={focusHours > 0 ? `${focusHours}h` : '--'}
+            label="Focus Hours"
+            glow="rgba(183,245,205,0.28)"
+          />
+          <BigStat
+            icon={<Flame className="fill-[#ffb85c]/45 text-[#ffc46b]" />}
+            value={`${profile.streakDays}`}
+            label="Day Streak"
+            glow="rgba(255,184,92,0.30)"
+          />
+          <BigStat
+            icon={<Globe />}
+            value={`Top ${topPct}%`}
+            label="Worldwide"
+            glow="rgba(94,234,212,0.28)"
+          />
+        </div>
+      </section>
+
+      {/* ── GEMSTONES karuseli (haqiqiy Opal) ── */}
+      <section aria-label="Gemstones">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-[16px] font-bold text-white">Gemstones</h3>
+          <span className="text-[11.5px] font-semibold text-white/40">
+            {gems.filter((g) => g.unlocked).length}/{gems.length} to‘plandi
+          </span>
+        </div>
+        <div className="no-scrollbar -mx-5 flex gap-4 overflow-x-auto px-5 pb-2">
+          {gems.map((g) => (
+            <div key={g.key} className="flex w-[92px] shrink-0 flex-col items-center gap-2">
+              <div className="relative flex h-[76px] w-[76px] items-center justify-center">
+                {g.unlocked && (
+                  <div
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      background: `radial-gradient(circle, ${g.colors[1]}55 0%, transparent 70%)`,
+                    }}
+                    aria-hidden="true"
+                  />
+                )}
+                {/* tosh shakli — qirrali blob */}
+                <div
+                  className={cn(
+                    'relative h-[58px] w-[58px] transition-all',
+                    !g.unlocked && 'opacity-30 grayscale'
+                  )}
+                  style={{
+                    borderRadius: '42% 58% 55% 45% / 48% 44% 56% 52%',
+                    background: `radial-gradient(circle at 32% 28%, ${g.colors[0]} 0%, ${g.colors[1]} 48%, ${g.colors[2]} 100%)`,
+                    boxShadow: g.unlocked
+                      ? `0 0 22px ${g.colors[1]}77, inset 0 -4px 10px rgba(0,0,0,0.35), inset 0 3px 6px rgba(255,255,255,0.25)`
+                      : 'inset 0 -4px 10px rgba(0,0,0,0.4)',
+                  }}
+                  aria-hidden="true"
+                >
+                  <span className="absolute left-[22%] top-[16%] h-2.5 w-3 rounded-full bg-white/55 blur-[3px]" />
+                  <span className="absolute bottom-[20%] right-[24%] h-1.5 w-1.5 rounded-full bg-white/25 blur-[1px]" />
+                </div>
+                {!g.unlocked && (
+                  <span className="absolute text-[13px] drop-shadow" aria-label="Bloklangan">
+                    🔒
+                  </span>
+                )}
+              </div>
+              <p className="text-[12.5px] font-bold text-white">{g.name}</p>
+              <p className="-mt-1.5 text-[10px] font-medium text-white/40">
+                Owned by {g.ownedPct}%
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Jami ko'rsatkichlar ── */}
+      <section className={cn(GLASS, 'grid grid-cols-3 gap-2 p-4 text-center')} aria-label="Jami statistika">
+        <div>
+          <p className="text-[15px] font-extrabold text-white">{formatMinutes(profile.totalSavedMinutes)}</p>
+          <p className="mt-0.5 text-[9.5px] font-semibold uppercase tracking-wider text-white/40">
+            Time Saved
+          </p>
+        </div>
+        <div className="border-x border-white/8">
+          <p className="text-[15px] font-extrabold text-white">{profile.totalSessions}</p>
+          <p className="mt-0.5 text-[9.5px] font-semibold uppercase tracking-wider text-white/40">
+            Sessions
+          </p>
+        </div>
+        <div>
+          <p className="text-[15px] font-extrabold text-white">
+            {Math.round((statsQ.data?.weekSavedMinutes ?? 0) / 7)}d
+          </p>
+          <p className="mt-0.5 text-[9.5px] font-semibold uppercase tracking-wider text-white/40">
+            AVG Daily Saved
+          </p>
         </div>
       </section>
 
@@ -163,8 +325,8 @@ export function ProfileView() {
           }}
           className="group relative block w-full overflow-hidden rounded-3xl bg-gradient-to-r from-amber-300 via-orange-300 to-rose-300 p-[1.5px] text-left shadow-[0_10px_36px_rgba(251,191,36,0.25)] transition-transform active:scale-[0.98]"
         >
-          <span className="relative flex items-center gap-3 rounded-[calc(1.5rem-1.5px)] bg-[#0c0f1c] px-4 py-4">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 to-orange-400 text-[#0c0f1c]">
+          <span className="relative flex items-center gap-3 rounded-[calc(1.5rem-1.5px)] bg-[#0c120e] px-4 py-4">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 to-orange-400 text-[#0c120e]">
               <Crown size={20} />
             </span>
             <span className="flex-1">
@@ -189,7 +351,7 @@ export function ProfileView() {
       {/* yutuqlar */}
       <section aria-label="Yutuqlar" className={GLASS + ' p-5'}>
         <h3 className="mb-3.5 flex items-center gap-2 text-[15px] font-bold text-white">
-          <Sparkles size={16} className="text-[#b18cff]" /> Yutuqlar
+          <Sparkles size={16} className="text-[#9fe8b5]" /> Yutuqlar
         </h3>
         <div className="grid grid-cols-3 gap-3">
           {achievements.map((a) => (
@@ -198,7 +360,7 @@ export function ProfileView() {
               className={cn(
                 'flex flex-col items-center gap-1 rounded-2xl p-3 text-center ring-1',
                 a.unlocked
-                  ? 'bg-gradient-to-b from-[#7dd3fc]/12 to-[#b18cff]/12 ring-[#8fd9ff]/25'
+                  ? 'bg-gradient-to-b from-[#86efac]/12 to-[#5eead4]/12 ring-[#9fe8b5]/25'
                   : 'bg-white/[0.03] opacity-40 ring-white/8 grayscale'
               )}
             >
@@ -267,7 +429,7 @@ export function ProfileView() {
           {/* kunlik maqsad */}
           <div className="flex items-center justify-between px-5 py-3.5">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/12 text-violet-300 ring-1 ring-violet-400/20">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#86efac]/12 text-[#9fe8b5] ring-1 ring-[#86efac]/20">
                 <Gauge size={16} />
               </div>
               <div>
@@ -284,7 +446,7 @@ export function ProfileView() {
                   className={cn(
                     'rounded-full px-2.5 py-1 text-[10.5px] font-bold ring-1 transition-all active:scale-95',
                     profile.goalMinutes === g
-                      ? 'bg-[#7dd3fc]/15 text-[#bfe9ff] ring-[#7dd3fc]/45'
+                      ? 'bg-[#9fe8b5]/15 text-[#c9fbdc] ring-[#9fe8b5]/45'
                       : 'bg-white/[0.05] text-white/50 ring-white/10'
                   )}
                 >
@@ -434,7 +596,7 @@ function PinSetupDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         aria-describedby={undefined}
-        className="max-w-[320px] rounded-3xl border border-white/12 bg-[#0c0f1c] p-6 shadow-2xl"
+        className="max-w-[320px] rounded-3xl border border-white/12 bg-[#0c120e] p-6 shadow-2xl"
       >
         <DialogTitle className="sr-only">PIN kod sozlash</DialogTitle>
         <PinPad

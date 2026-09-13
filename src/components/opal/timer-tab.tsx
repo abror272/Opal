@@ -20,7 +20,7 @@ const QUOTES = [
   { text: 'Endi qilingan ish — kech qilingan ishdan yaxshiroq.', author: 'Franklin' },
 ]
 
-const CONFETTI_COLORS = ['#7dd3fc', '#b18cff', '#ff9ad5', '#9fe8c8', '#ffd48a']
+const CONFETTI_COLORS = ['#86efac', '#5eead4', '#9fe8c8', '#ffd48a', '#c9fbdc']
 
 /** Jonli ekvayzer chiziqlari — ambient tovush faol bo'lganda. */
 function EqBars() {
@@ -306,7 +306,7 @@ export function TimerTab() {
                   className="pointer-events-none absolute inset-0 opacity-[0.14]"
                   style={{
                     backgroundImage:
-                      'repeating-linear-gradient(0deg, transparent 0 2px, rgba(125,211,252,0.35) 2px 3px)',
+                      'repeating-linear-gradient(0deg, transparent 0 2px, rgba(134,239,172,0.30) 2px 3px)',
                   }}
                   aria-hidden="true"
                 />
@@ -321,7 +321,7 @@ export function TimerTab() {
                       : {
                           color: '#cfeeff',
                           textShadow:
-                            '0 0 18px rgba(125,211,252,0.65), 0 0 44px rgba(125,211,252,0.3)',
+                            '0 0 18px rgba(134,239,172,0.6), 0 0 44px rgba(134,239,172,0.28)',
                         }
                   }
                 >
@@ -334,11 +334,11 @@ export function TimerTab() {
                       'h-full rounded-full transition-all duration-1000 ease-linear',
                       finished
                         ? 'w-full bg-emerald-400'
-                        : 'bg-gradient-to-r from-[#7dd3fc] to-[#b18cff]'
+                        : 'bg-gradient-to-r from-[#86efac] to-[#5eead4]'
                     )}
                     style={{
                       width: `${(running ? progress : 0) * 100}%`,
-                      boxShadow: '0 0 10px rgba(125,211,252,0.6)',
+                      boxShadow: '0 0 10px rgba(134,239,172,0.55)',
                     }}
                   />
                 </div>
@@ -396,7 +396,7 @@ export function TimerTab() {
                       className={cn(
                         'flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] font-bold ring-1 backdrop-blur-md transition-all active:scale-95',
                         active
-                          ? 'bg-white/20 text-white ring-white/40 shadow-[0_0_14px_rgba(125,211,252,0.35)]'
+                          ? 'bg-white/20 text-white ring-white/40 shadow-[0_0_14px_rgba(134,239,172,0.30)]'
                           : 'bg-black/30 text-white/60 ring-white/12 hover:text-white/85'
                       )}
                     >
@@ -448,7 +448,7 @@ export function TimerTab() {
                   className={cn(
                     'flex items-center gap-1.5 rounded-full px-4 py-2 text-[12.5px] font-bold ring-1 backdrop-blur-md transition-all active:scale-95',
                     blockOn
-                      ? 'bg-[#7dd3fc]/15 text-[#bfe9ff] ring-[#7dd3fc]/40 shadow-[0_0_14px_rgba(125,211,252,0.25)]'
+                      ? 'bg-[#86efac]/15 text-[#c9fbdc] ring-[#86efac]/40 shadow-[0_0_14px_rgba(134,239,172,0.22)]'
                       : 'bg-black/35 text-white/55 ring-white/15'
                   )}
                 >
