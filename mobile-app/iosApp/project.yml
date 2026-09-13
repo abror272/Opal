@@ -1,0 +1,44 @@
+name: iosApp
+options:
+  bundleIdPrefix: com.opal
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: ""
+    SWIFT_VERSION: "5.9"
+
+targets:
+  iosApp:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: iosApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.opal.app
+        PRODUCT_NAME: Opal
+        TARGETED_DEVICE_FAMILY: "1"
+        INFOPLIST_FILE: iosApp/Info.plist
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks"
+        FRAMEWORK_SEARCH_PATHS: "$(inherited) $(SRCROOT)/../composeApp/build/bin/iosSimulatorArm64 $(SRCROOT)/../composeApp/build/bin/iosArm64"
+        OTHER_LDFLAGS: "$(inherited) -framework ComposeApp"
+    preBuildScripts:
+      - name: Build Kotlin Framework
+        # gradlew yo'q bo'lsa (wrapper jar') tizim gradle'i ishlatiladi
+        script: |
+          cd "$SRCROOT/.."
+          if [ -x "./gradlew" ]; then
+            ./gradlew :composeApp:embedAndSignAppleFrameworkForXcode
+          else
+            gradle :composeApp:embedAndSignAppleFrameworkForXcode
+          fi
+        basedOnDependencyAnalysis: false
+    dependencies:
+      - framework: ../composeApp/build/bin/iosSimulatorArm64/ComposeApp.framework
+        embed: true
+        codeSign: false

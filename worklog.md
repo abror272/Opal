@@ -163,3 +163,31 @@ Stage Summary:
 - Risklar/cheklovlar: PIN localStorage'da plain saqlanadi (demo — real ilovada Secure Enclave kerak); leaderboard do'stlari mock (lekin endi server simulyatsiyasi bilan jonli); localhost:3000 to'g'ridan-to'g'ri ochilsa socket ulanmaydi (Caddy 81 orqali kerak — preview panel allaqachon shu yo'lak)
 - Keyingi tavsiyalar: sessiya tugaganda jonli board'ga `leaderboard:sync` ulash (hoziroq tayyor hook'da `syncMinutes` bor lekin hali ulanmagan), do'st qo'shish oynasi, eksport PDF hisobot, App Store-style sessiya tarixi timeline'i
 
+
+---
+Task ID: M1
+Agent: Z.ai Code (main)
+Task: Foydalanuvchi talabi — Opal'ni Android va iOS uchun ham Kotlin'da yozish; iOS uchun Telegram'dagidek SMOOTH glass effect (bo'lim o'tishida ham glass bilan o'tsin)
+
+Work Log:
+- Yangi talab: native mobil ilova, Kotlin'da (har ikki platforma), iOS'da haqiqiy glass effect + silliq tab o'tishlari
+- YECHIM: Kotlin Multiplatform (KMP) + Compose Multiplatform 1.8.0 — Kotlin 2.1.21, AGP 8.7.3, Gradle 8.10.2, Ktor 3.1.1, kotlinx-serialization 1.8.0, kotlinx-datetime 0.6.1
+- LOYIHA: /home/z/my-project/mobile-app/ (web loyihadan alohida, Next.js'ga tegmadi)
+- BACKEND ULASH: mavjud Next.js API'lari aynan ishlatildi (GET/PATCH /api/apps, GET/POST/PATCH /api/sessions, GET /api/stats, GET/PATCH /api/profile) — Ktor client, mobile'da CORS muammosi yo'q; API band bo'lmasa offline demo data bilan ishlaydi (graceful fallback)
+- MODELLAR: web API shakllariga aynan mos (id: String, PATCH /api/sessions `early` flag, StatsResponseDto days/today/weekSaved/trendPercent)
+- GLASS (iOS) — Glass.ios.kt: NativeGlassTabBar — UIVisualEffectView(SystemUltraThinMaterialDark) blur bar + frosted light-material pill (spring sirg'aladi, ikonka weight bo'yicha silliq ko'tariladi, label erib chiqadi) + SF Symbols (house.fill/timer/chart.bar.fill/square.grid.2x2.fill/person.fill) + UITapGestureRecognizer proxy (@ObjCAction); GlassVeil — tab o'tishda butun ekran ultra-thin blur bilan qoplanib Compose spring(520ms, CubicBezier) bilan eriydi (Telegram'dagi smooth glass o'tish)
+- GLASS (Android) — Glass.android.kt: ComposeGlassTabBar (gradient + specular nur + hairline border + sirg'aluvchi pill animateDpAsState spring) + GlassPane/GlassCard umumiy komponentlar (har ikki platforma kartalari bir xil)
+- UI: 5 tab (Home/Fokus/Statistika/Ilovalar/Profil) + faol sessiya overlay (gradient countdown ring, linear-sweep animatsiya, erta chiqish confirm, completion view); tab o'tish spring parallax slide+fade; pressable scale micro-interaction; AnimatedCount; TrendBadge; custom Canvas tab ikonlar (icons depsiz); WeekBarChart (stagger) + TrendLineChart (bezier reveal)
+- SESSION: SessionController — TimeSource.Monotonic ticker, avto-complete, early exit streak -1 (web bilan bir xil mantiq), completion view 3.6s
+- SAFE AREA: expect rememberSafePadding — Android WindowInsets.safeDrawing, iOS keyWindow.safeAreaInsets
+- ICON: AI generatsiya (z-ai image, 1024x1024) — kristall shield + violet-pink gradient; Android drawable-nodpi/ic_launcher.png + iOS AppIcon.appiconset
+- IOS XCODE: project.yml (XcodeGen) — preBuild script embedAndSignAppleFrameworkForXcode (gradlew bo'lmasa tizim gradle'i), FRAMEWORK_SEARCH_PATHS simulator+device, App.swift (SwiftUI + UIViewControllerRepresentable), Info.plist (ATS http ruxsat dev uchun, dark style)
+- README.md (uz): qurish qo'llanmasi (Android Studio/gradlew, xcodegen), base URL jadvali (emulyator 10.0.2.2, simulyator localhost, real qurilma LAN IP), glass tushuntirishi, cheklovlar (real ScreenTime API kerak — DeviceActivity/UsageStats keyingi bosqich)
+- VERIFIKATSIYA CHEKLOVI: sandbox'da Android SDK/Xcode yo'q — kompilyatsiya qilib bo'lmadi; kod KMP 1.8.0 barqaror API'lari bilan ehtiyotkorlik yozildi; web server 200 OK, tegilmagan
+
+Stage Summary:
+- Opal endi 3 xil shaklda: Web (Next.js), Android (Kotlin), iOS (Kotlin) — barchasi bitta backend bilan
+- iOS'da haqiqiy UIVisualEffectView glass (Telegram uslubi): jonli blur bar + sirg'aluvchi frosted pill + tab o'tish glass veil — foydalanuvchining asosiy talabi
+- Kod 100% Kotlin Multiplatform: bitta codebase, ~22 Kotlin fayl, 688K
+- Risk: kompilyatsiya sandbox'da tekshirilmagan (K/N UIKit API nomlari eng sezgir joy — Glass.ios.kt); real mashinada birinchi Gradle sync internet talab qiladi; Real qurilmada LAN IP sozlash kerak
+- Keyingi tavsiyalar: (1) real qurilmada build + test, (2) iOS DeviceActivity/Android UsageStats bilan haqiqiy bloklash, (3) push notification, (4) Battle Math'ni mobilga ko'chirish, (5) PIN qulfi (biometrik bilan)
