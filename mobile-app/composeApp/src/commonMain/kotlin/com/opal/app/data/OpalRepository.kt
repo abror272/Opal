@@ -11,6 +11,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 
 /**
  * Web backend bilan ishlaydigan repository.
@@ -129,7 +132,9 @@ class OpalRepository(private val client: HttpClient = createHttpClient()) {
             )
         }
         stats.update { st ->
-            val today = st.today ?: st.days.lastOrNull()?.copy(date = kotlinx.datetime.Clock.System.todayIn(kotlinx.datetime.TimeZone.currentSystemDefault()).toString())
+            val today = st.today ?: st.days.lastOrNull()?.copy(
+                date = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
+            )
             st.copy(
                 today = today?.copy(savedMinutes = today.savedMinutes + savedMinutes),
                 weekSavedMinutes = st.weekSavedMinutes + savedMinutes

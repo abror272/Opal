@@ -2,12 +2,8 @@ package com.opal.app.glass
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,5 +36,4 @@ actual fun GlassVeil(alpha: Float, modifier: Modifier) {
     )
 }
 
-@Composable
-actual fun rememberSafePadding(): PaddingValues = WindowInsets.safeDrawing.asPaddingValues()
+

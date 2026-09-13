@@ -64,13 +64,14 @@ fun WeekBarChart(
 
     Column(modifier.fillMaxWidth()) {
         BoxWithConstraints(Modifier.fillMaxWidth().height(chartHeight)) {
+            val chartMaxHeight = maxHeight
             val maxV = (values.maxOrNull() ?: 1).coerceAtLeast(1)
             Row(
                 Modifier.fillMaxSize(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 values.forEachIndexed { i, v ->
-                    val h = maxHeight * (v.toFloat() / maxV) * anims[i].value
+                    val h = chartMaxHeight * (v.toFloat() / maxV) * anims[i].value
                     val isToday = i == todayIndex
                     Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.BottomCenter) {
                         Box(

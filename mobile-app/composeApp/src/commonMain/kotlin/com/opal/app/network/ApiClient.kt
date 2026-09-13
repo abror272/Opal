@@ -4,7 +4,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.UserAgent
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.defaultRequest.DefaultRequest
+import io.ktor.client.plugins.defaultRequest
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
@@ -35,7 +35,7 @@ fun createHttpClient(): HttpClient = HttpClient(platformEngine()) {
     install(ContentNegotiation) {
         json(opalJson)
     }
-    install(DefaultRequest) {
+    defaultRequest {
         url(ApiConfig.baseUrl)
     }
     install(UserAgent) {

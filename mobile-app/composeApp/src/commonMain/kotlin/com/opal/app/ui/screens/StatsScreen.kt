@@ -34,7 +34,7 @@ import com.opal.app.ui.components.TrendBadge
 import com.opal.app.ui.components.TrendLineChart
 import com.opal.app.ui.components.WeekBarChart
 import com.opal.app.ui.components.WeeklyReportCard
-import com.opal.app.ui.weekdayLabelUz
+import com.opal.app.data.weekdayLabelUz
 
 @Composable
 fun StatsScreen() {

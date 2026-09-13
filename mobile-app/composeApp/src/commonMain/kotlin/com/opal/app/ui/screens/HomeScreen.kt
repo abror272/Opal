@@ -47,7 +47,7 @@ import com.opal.app.ui.components.SectionTitle
 import com.opal.app.ui.components.StatChip
 import com.opal.app.ui.components.TrendBadge
 import com.opal.app.ui.components.WeekBarChart
-import com.opal.app.ui.weekdayLabelUz
+import com.opal.app.data.weekdayLabelUz
 import kotlinx.coroutines.launch
 
 @Composable

@@ -72,7 +72,7 @@ fun OpalApp() {
             if (firstRender) {
                 firstRender = false
             } else {
-                veil.value = 1f
+                veil.snapTo(1f)
                 veil.animateTo(0f, tween(520, easing = CubicBezierEasing(0.33f, 0f, 0.2f, 1f)))
             }
         }

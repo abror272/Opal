@@ -97,10 +97,10 @@ fun FocusScreen() {
                     Box(
                         Modifier
                             .clip(RoundedCornerShape(50))
-                            .background(
-                                if (selected) OpalGradient
-                                else Color.White.copy(alpha = 0.07f)
-                            )
+                            .let {
+                                if (selected) it.background(OpalGradient)
+                                else it.background(Color.White.copy(alpha = 0.07f))
+                            }
                             .border(
                                 0.5.dp,
                                 if (selected) Color.Transparent else Color.White.copy(alpha = 0.16f),
