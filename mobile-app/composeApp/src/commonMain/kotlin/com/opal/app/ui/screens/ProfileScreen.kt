@@ -77,7 +77,7 @@ fun ProfileScreen() {
                             "⭐ Opal Plus a'zosi",
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = OpalColors.Pink,
+                            color = OpalColors.MintLight,
                             modifier = Modifier.padding(top = 6.dp)
                         )
                     }

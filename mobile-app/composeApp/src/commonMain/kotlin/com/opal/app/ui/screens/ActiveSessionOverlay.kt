@@ -276,7 +276,7 @@ private fun CompletionView(
                 .size(110.dp)
                 .clip(CircleShape)
                 .background(
-                    if (completedFully) Brush.linearGradient(listOf(OpalColors.AccentDeep, OpalColors.Pink))
+                    if (completedFully) Brush.linearGradient(listOf(OpalColors.AccentDeep, OpalColors.MintLight))
                     else Brush.linearGradient(listOf(OpalColors.Amber, OpalColors.Danger))
                 ),
             contentAlignment = Alignment.Center

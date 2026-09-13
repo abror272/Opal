@@ -1,11 +1,12 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
+import { toPng } from 'html-to-image'
 import type { BlockApp, FocusSession, StatsResponse, UserProfile } from '@/lib/opal-types'
-import { formatMinutes } from '@/lib/opal-types'
+import { formatMinutes, sessionFullyCompleted } from '@/lib/opal-types'
 import {
   weekRangeLabel,
   weekSavedSeries,
@@ -15,7 +16,7 @@ import {
   OPAL,
 } from '@/lib/opal-ui'
 import { cn } from '@/lib/utils'
-import { Flame, Globe2, Hourglass, Moon, Share2, ShieldCheck, Smartphone, Trophy } from 'lucide-react'
+import { Flame, Globe2, Hourglass, ImageDown, Moon, Share2, ShieldCheck, Smartphone, Trophy } from 'lucide-react'
 
 /**
  * HAFTALIK HISOBOT — haqiqiy Opal'ning imzo "Weekly Report" kartasi.
@@ -41,6 +42,8 @@ export function WeeklyReport() {
   })
 
   const [sharing, setSharing] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const reportRef = useRef<HTMLDivElement>(null)
 
   const stats = statsQ.data
   const sessions = sessionsQ.data ?? []
@@ -60,7 +63,7 @@ export function WeeklyReport() {
     const cutoff = Date.now() - 7 * 24 * 3600_000
     return sessions.filter((s) => new Date(s.startedAt).getTime() >= cutoff)
   }, [sessions])
-  const completedCount = weekSessions.filter((s) => s.completed).length
+  const completedCount = weekSessions.filter(sessionFullyCompleted).length
   const completionPct = weekSessions.length ? Math.round((completedCount / weekSessions.length) * 100) : 0
 
   // o'rtacha uyqu (oxirgi 7 kunlik SLEEP)
@@ -110,8 +113,36 @@ export function WeeklyReport() {
 
   const bars = week.map((d, i) => ({ ...d, h: 6 + (d.saved / maxSaved) * 80, i }))
 
+  /** Hisobotni PNG rasm sifatida yuklab olish (html-to-image) */
+  const exportPng = async () => {
+    const node = reportRef.current
+    if (!node || exporting) return
+    setExporting(true)
+    try {
+      // framer-motion animatsiyalari tugashini kutamiz
+      await new Promise((r) => setTimeout(r, 80))
+      const dataUrl = await toPng(node, {
+        pixelRatio: 2,
+        backgroundColor: '#05060f',
+        cacheBust: true,
+      })
+      const a = document.createElement('a')
+      a.download = `opal-haftalik-hisobot-${new Date().toISOString().slice(0, 10)}.png`
+      a.href = dataUrl
+      a.click()
+      toast.success('Hisobot PNG sifatida saqlandi 🖼️', {
+        description: 'Rasm galereyangizda — do‘stlaringizga ulashing',
+      })
+    } catch {
+      toast.error('Rasm yaratishda xatolik', { description: 'Yana bir urinib ko‘ring' })
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <div className="px-5 pb-8 pt-2">
+      <div ref={reportRef}>
       {/* ── Hero karta ── */}
       <motion.section
         initial={{ opacity: 0, y: 16 }}
@@ -274,19 +305,37 @@ export function WeeklyReport() {
           </div>
         )}
       </motion.section>
+      </div>
 
-      {/* ── Ulashish ── */}
-      <motion.button
+      {/* ── Ulashish + PNG eksport ── */}
+      <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4, duration: 0.4 }}
-        whileTap={{ scale: 0.97 }}
-        onClick={share}
-        disabled={sharing}
-        className="mt-5 flex w-full items-center justify-center gap-2 rounded-full border border-[#86efac]/35 bg-gradient-to-b from-emerald-400/25 to-emerald-500/12 py-4 text-[15px] font-bold text-emerald-100 shadow-[0_0_24px_rgba(134,239,172,0.18),inset_0_1px_0_rgba(255,255,255,0.15)] backdrop-blur-xl active:scale-[0.98] disabled:opacity-60"
+        className="mt-5 flex gap-2.5"
       >
-        <Share2 size={16} /> {sharing ? 'Ulanmoqda…' : 'Hisobotni ulashish'}
-      </motion.button>
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={share}
+          disabled={sharing || exporting}
+          className="flex flex-1 items-center justify-center gap-2 rounded-full border border-[#86efac]/35 bg-gradient-to-b from-emerald-400/25 to-emerald-500/12 py-4 text-[15px] font-bold text-emerald-100 shadow-[0_0_24px_rgba(134,239,172,0.18),inset_0_1px_0_rgba(255,255,255,0.15)] backdrop-blur-xl active:scale-[0.98] disabled:opacity-60"
+        >
+          <Share2 size={16} /> {sharing ? 'Ulanmoqda…' : 'Ulashish'}
+        </motion.button>
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={exportPng}
+          disabled={exporting || sharing}
+          aria-label="Hisobotni PNG sifatida yuklab olish"
+          className="flex w-[58px] shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/[0.05] text-white/70 backdrop-blur-xl transition-colors hover:text-white active:scale-[0.98] disabled:opacity-60"
+        >
+          {exporting ? (
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/25 border-t-white/85" aria-hidden="true" />
+          ) : (
+            <ImageDown size={17} />
+          )}
+        </motion.button>
+      </motion.div>
       <p className="mt-2.5 text-center text-[10.5px] text-white/35">
         Opal · Apple Design Award 2025 uslubi — haftada bir marta yangilanadi
       </p>

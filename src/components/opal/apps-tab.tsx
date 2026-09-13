@@ -680,10 +680,21 @@ export function AppsTab() {
             >
               Qoidani qo‘shish
             </button>
-            <p className="text-center text-[10.5px] text-white/35">
-              {parseRuleWindow(newRuleTime)
-                ? '⏱ Jonli jadval: aktiv/qolgan vaqt avtomatik hisoblanadi'
-                : 'Qoidani bosganda taymer mos davomiylik bilan ochiladi'}
+            <p
+              className={cn(
+                'text-center text-[10.5px]',
+                !parseRuleWindow(newRuleTime) && /\d/.test(newRuleTime)
+                  ? 'font-semibold text-amber-300/95'
+                  : 'text-white/35'
+              )}
+            >
+              {parseRuleWindow(newRuleTime) ? (
+                '⏱ Jonli jadval: aktiv/qolgan vaqt avtomatik hisoblanadi'
+              ) : /\d/.test(newRuleTime) ? (
+                '⚠️ Vaqtni tushunmadim — “9AM — 5PM” yoki “755AM - 825AM” ko‘rinishida yozing (jonli kuzatuv bo‘lmaydi)'
+              ) : (
+                'Qoidani bosganda taymer mos davomiylik bilan ochiladi'
+              )}
             </p>
           </div>
         </DialogContent>

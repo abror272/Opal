@@ -52,6 +52,19 @@ export async function PATCH(request: NextRequest) {
     const existing = await db.focusSession.findUnique({ where: { id } })
     if (!existing) return NextResponse.json({ error: 'Sessiya topilmadi' }, { status: 404 })
     if (existing.completed) {
+      // rescore: foydalanuvchi sessiya tugagach FOKUS BAHOSINI kiritishi mumkin
+      // (focus-rating kartasi — real focusScore, taxminiy emas)
+      if (body.rescore === true) {
+        const focusScore = Math.min(
+          Math.max(Math.round(Number(body.focusScore) || existing.focusScore), 0),
+          100
+        )
+        const rescored = await db.focusSession.update({
+          where: { id },
+          data: { focusScore },
+        })
+        return NextResponse.json(rescored)
+      }
       return NextResponse.json(existing)
     }
 

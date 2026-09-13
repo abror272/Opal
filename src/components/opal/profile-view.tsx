@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { PinPad } from './pin-pad'
 import { GemImage } from './gem-image'
+import { ConsistencyHeatmap } from './consistency-heatmap'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import {
@@ -276,6 +277,9 @@ export function ProfileView() {
           ))}
         </div>
       </section>
+
+      {/* ── CONSISTENCY HEATMAP (so'nggi 5 hafta) ── */}
+      <ConsistencyHeatmap />
 
       {/* ── Jami ko'rsatkichlar ── */}
       <section className={cn(GLASS, 'grid grid-cols-3 gap-2 p-4 text-center')} aria-label="Jami statistika">

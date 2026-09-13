@@ -1,6 +1,7 @@
 // Umumiy UI yordamchilari — haqiqiy Opal (Apple Design Award 2025) dizayn tili
 // Referens: foydalanuvchi yuklagan haqiqiy Opal skrinshotlari (Mobbin)
 
+import { sessionFullyCompleted } from '@/lib/opal-types'
 import type { FocusSession, StatsResponse, SessionType } from '@/lib/opal-types'
 
 /* ────────────────────────────────────────────────────────────
@@ -104,7 +105,9 @@ export function computeScores(
   const todaysSessions = (sessions ?? []).filter(
     (s) => (s.endedAt ?? s.startedAt).slice(0, 10) === todayKey
   )
-  const completed = todaysSessions.filter((s) => s.completed)
+  // faqat REJALASHTIRILGAN davomiylikka yetgan sessiyalar to'liq hisoblanadi
+  // (erta chiqish `completed: true` bilan DB'ga yoziladi)
+  const completed = todaysSessions.filter(sessionFullyCompleted)
 
   const over = Math.max(screen - goal, 0)
   const score = Math.round(clamp(88 - over * 0.1 + saved * 0.18, 42, 99))
@@ -266,12 +269,18 @@ export interface RuleWindow {
 
 /**
  * "9AM — 5PM" / "10PM—8AM" / "12—1PM" / "6pm - 8pm" / "9:00-17:00"
- * formatlarini kunlik daqiqalar oynasiga aylantiradi.
+ * hamda YIQIQ formatlar ("755AM", "831am", "1730", "930-1045")
+ * ni kunlik daqiqalar oynasiga aylantiradi.
  * Mos kelmasa (masalan "Har kuni") null qaytaradi.
  */
 export function parseRuleWindow(time: string): RuleWindow | null {
   if (!time) return null
-  const t = time.toLowerCase().replace(/[–—−]/g, '-')
+  const t = time
+    .toLowerCase()
+    .replace(/[–—−]/g, '-')
+    // yiqiq soat: "755am"/"1730"/"930" → "7:55am"/"17:30"/"9:30"
+    // (faqat 3-4 xonali ketma-ket raqamlar; "12—1PM" kabi 1-2 xonalarga tegmaydi)
+    .replace(/\b(\d{1,2})(\d{2})\s*(am|pm)?\b/g, '$1:$2$3')
   if (!/\d/.test(t)) return null
 
   const re = /(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/g
@@ -300,6 +309,8 @@ export interface RuleStatusInfo {
   state: RuleState
   /** "4s 32d" ko'rinishida qolgan/keladigan vaqt */
   label: string
+  /** xom daqiqa: aktiv bo'lsa qolgan, upcoming bo'lsa boshlanishiga (bildirishnomalar uchun) */
+  minutes: number
 }
 
 /** Qoida oynasining hozirgi holati: aktiv (qolgan vaqt) yoki kutilmoqda (boshlanishiga) */
@@ -313,11 +324,11 @@ export function ruleWindowStatus(win: RuleWindow, now: Date = new Date()): RuleS
   if (isActive) {
     const endAbs = crosses && nowMin < win.endMin ? win.endMin : win.endMin + (crosses ? 1440 : 0)
     const left = Math.max(endAbs - nowMin, 1)
-    return { state: 'active', label: formatMinutesShort(left) }
+    return { state: 'active', label: formatMinutesShort(left), minutes: left }
   }
   // boshlanishigacha (keyingi sikl)
   const until = nowMin < win.startMin ? win.startMin - nowMin : win.startMin + 1440 - nowMin
-  return { state: 'upcoming', label: formatMinutesShort(until) }
+  return { state: 'upcoming', label: formatMinutesShort(until), minutes: until }
 }
 
 /** "4s 32d" uslubidagi qisqa vaqt (formatMinutes bilan bir xil, aniqroq nom) */

@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import type { FocusSession } from '@/lib/opal-types'
-import { formatMinutes } from '@/lib/opal-types'
+import { formatMinutes, sessionFullyCompleted } from '@/lib/opal-types'
 import { GLASS, clockTime } from '@/lib/opal-ui'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -32,7 +32,10 @@ function groupLabel(iso: string, todayIso: string, yesterdayIso: string): string
 
 function statusOf(s: FocusSession): { done: boolean; text: string } {
   if (!s.endedAt) return { done: false, text: 'Davom etmoqda' }
-  return s.completed ? { done: true, text: "To'liq yakunlandi" } : { done: false, text: 'Erta chiqildi' }
+  // DB'da `completed` erta chiqishda ham true — rejalashtirilgan davomiylik bilan solishtiramiz
+  return sessionFullyCompleted(s)
+    ? { done: true, text: "To'liq yakunlandi" }
+    : { done: false, text: 'Erta chiqildi' }
 }
 
 function SessionRow({ s, index }: { s: FocusSession; index: number }) {
@@ -125,16 +128,18 @@ export function HistoryView() {
       .map(([key, list]) => ({
         key,
         label: groupLabel(key, todayIso, yesterdayIso),
-        savedMinutes: list.reduce((acc, s) => acc + (s.completed ? s.savedMinutes : 0), 0),
+        savedMinutes: list.reduce((acc, s) => acc + (s.endedAt ? s.savedMinutes : 0), 0),
         sessions: list.sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()),
       }))
   }, [sessionsQ.data])
 
   const all = sessionsQ.data ?? []
-  const completed = all.filter((s) => s.completed && s.endedAt)
-  const completionPct = all.length ? Math.round((completed.length / all.length) * 100) : 0
-  const totalSaved = completed.reduce((acc, s) => acc + s.savedMinutes, 0)
-  const sleepCount = completed.filter((s) => s.type === 'SLEEP').length
+  const ended = all.filter((s) => s.endedAt)
+  const completed = ended.filter(sessionFullyCompleted)
+  const completionPct = ended.length ? Math.round((completed.length / ended.length) * 100) : 0
+  // erta chiqish ham daqiqalarni tejaydi (savedMinutes > 0 bo'lishi mumkin)
+  const totalSaved = ended.reduce((acc, s) => acc + s.savedMinutes, 0)
+  const sleepCount = ended.filter((s) => s.type === 'SLEEP').length
 
   if (sessionsQ.isLoading) {
     return (

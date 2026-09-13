@@ -26,6 +26,25 @@ export interface FocusSession {
   blockedApps: string
 }
 
+/**
+ * Sessiya REJALASHTIRILGAN davomiylikka qadar davom etganini aniqlaydi.
+ *
+ * MUHIM: DB'dagi `completed` maydoni har qanday tugagan sessiyada true
+ * (erta chiqish ham shu maydonni true qiladi — PATCH /api/sessions shunday ishlaydi).
+ * Shuning uchun "to'liq yakunlandi" ni elapsed vs duration orqali ajratamiz
+ * (1.5 daqiqa tolerans — avto-complete timer sekundiga tick qiladi).
+ */
+export function sessionFullyCompleted(s: {
+  completed: boolean
+  startedAt: string
+  endedAt: string | null
+  durationMinutes: number
+}): boolean {
+  if (!s.completed || !s.endedAt) return false
+  const elapsedMin = (new Date(s.endedAt).getTime() - new Date(s.startedAt).getTime()) / 60_000
+  return elapsedMin >= s.durationMinutes - 1.5
+}
+
 export type SessionType = 'DEEP_FOCUS' | 'WORK' | 'STUDY' | 'SLEEP' | 'CUSTOM'
 
 export interface DailyStat {

@@ -36,6 +36,16 @@ export interface BlockedAppView {
   gradient: string
 }
 
+/** Yakunlangan sessiya — "Sessiya qanday o'tdi?" baholash kartasi uchun */
+export interface RatingPending {
+  id: string
+  label: string
+  emoji: string
+  early: boolean
+  /** baholanganmi (kartani yashirish uchun) */
+  rated: boolean
+}
+
 interface OpalState {
   tab: TabKey
   setTab: (t: TabKey) => void
@@ -59,6 +69,10 @@ interface OpalState {
   // achievements already celebrated (avoid duplicate toasts)
   seenAchievements: string[]
   markAchievementsSeen: (labels: string[]) => void
+  // fokus baholash (sessiya tugagach)
+  ratingPending: RatingPending | null
+  setRatingPending: (r: Omit<RatingPending, 'rated'>) => void
+  markRatingDone: () => void
 }
 
 export const useOpalStore = create<OpalState>()(
@@ -84,6 +98,10 @@ export const useOpalStore = create<OpalState>()(
       seenAchievements: [],
       markAchievementsSeen: (labels) =>
         set((s) => ({ seenAchievements: [...s.seenAchievements, ...labels] })),
+      ratingPending: null,
+      setRatingPending: (r) => set({ ratingPending: { ...r, rated: false } }),
+      markRatingDone: () =>
+        set((s) => (s.ratingPending ? { ratingPending: { ...s.ratingPending, rated: true } } : {})),
     }),
     {
       name: 'opal-session-store',

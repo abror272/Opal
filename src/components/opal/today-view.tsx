@@ -17,7 +17,7 @@ import {
 } from 'recharts'
 import type { BlockApp, DailyStat, FocusSession, StatsResponse, UserProfile } from '@/lib/opal-types'
 import { computeScores, GLASS, OPAL, clamp, lastSleep, clockTime } from '@/lib/opal-ui'
-import { dayLabel, formatMinutes } from '@/lib/opal-types'
+import { dayLabel, formatMinutes, sessionFullyCompleted } from '@/lib/opal-types'
 import { LiveLeaderboard } from './live-leaderboard'
 import { Moon, TreePine, Hourglass, ChevronLeft, ChevronRight, ScreenShare } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -198,7 +198,7 @@ export function TodayView() {
   const todaysSessions = (sessionsQ.data ?? []).filter(
     (s) => (s.endedAt ?? s.startedAt).slice(0, 10) === todayIso
   )
-  const completedToday = todaysSessions.filter((s) => s.completed)
+  const completedToday = todaysSessions.filter(sessionFullyCompleted)
 
   // chalg'ituvchi ilovalar daqiqasi
   const distracting = (appsQ.data ?? [])
@@ -387,13 +387,13 @@ export function TodayView() {
                 />
                 <MetricRow
                   title="Dam sessiyalari"
-                  value={`${todaysSessions.filter((s) => s.type === 'CUSTOM' && s.completed).length} ta`}
+                  value={`${todaysSessions.filter((s) => s.type === 'CUSTOM' && sessionFullyCompleted(s)).length} ta`}
                   rating={
-                    todaysSessions.filter((s) => s.type === 'CUSTOM' && s.completed).length >= 1
+                    todaysSessions.filter((s) => s.type === 'CUSTOM' && sessionFullyCompleted(s)).length >= 1
                       ? 'Great'
                       : 'Short'
                   }
-                  position={todaysSessions.some((s) => s.type === 'CUSTOM' && s.completed) ? 72 : 10}
+                  position={todaysSessions.some((s) => s.type === 'CUSTOM' && sessionFullyCompleted(s)) ? 72 : 10}
                   avgAt={40}
                 />
                 <MetricRow

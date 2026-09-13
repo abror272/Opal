@@ -8,6 +8,7 @@ import { createAndStartSession } from '@/lib/opal-session-actions'
 import { formatClock, formatMinutes, type FocusSession, type StatsResponse, type SessionType } from '@/lib/opal-types'
 import { syncLiveMinutes } from '@/lib/opal-live-client'
 import { AMBIENT_MODES, getAmbientMode, setAmbientMode, useAmbientMode } from '@/lib/ambient-audio'
+import { FocusRatingCard } from './focus-rating-card'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Lock, Unlock, ShieldCheck, Ban, Flame, Minus, Plus, Play } from 'lucide-react'
@@ -59,6 +60,7 @@ export function TimerTab() {
   const qc = useQueryClient()
   const activeSession = useOpalStore((s) => s.activeSession)
   const endSession = useOpalStore((s) => s.endSession)
+  const setRatingPending = useOpalStore((s) => s.setRatingPending)
   const timerDraft = useOpalStore((s) => s.timerDraft)
   const clearTimerDraft = useOpalStore((s) => s.clearTimerDraft)
 
@@ -168,6 +170,13 @@ export function TimerTab() {
     if (finished && activeSession && !celebrate) {
       setCelebrate(true)
       completeMutation.mutate({ focusScore: 90 + Math.floor(Math.random() * 9) })
+      // fokus baholash kartasi (real focusScore) — avvalgi pending'ni yangisiga almashtiramiz
+      setRatingPending({
+        id: activeSession.sessionId,
+        label: activeSession.label,
+        emoji: activeSession.emoji,
+        early: false,
+      })
       toast.success('🎉 Ajoyib! Sessiya to‘liq yakunlandi', {
         description: 'Streak va statistika yangilandi',
       })
@@ -185,6 +194,14 @@ export function TimerTab() {
         await completeMutation.mutateAsync({ focusScore: score, early })
         endSession()
         setCelebrate(false)
+        if (activeSession) {
+          setRatingPending({
+            id: activeSession.sessionId,
+            label: activeSession.label,
+            emoji: activeSession.emoji,
+            early,
+          })
+        }
         toast.success(early ? 'Sessiya yakunlandi' : '🎉 Sessiya to‘liq yakunlandi', {
           description: early ? 'Keyingi safar oxirigacha davom eting!' : 'Streak va statistika yangilandi',
         })
@@ -195,7 +212,7 @@ export function TimerTab() {
         setFinishing(false)
       }
     },
-    [finishing, progress, completeMutation, endSession]
+    [finishing, progress, activeSession, completeMutation, endSession, setRatingPending]
   )
 
   // hold-to-stop
@@ -385,6 +402,11 @@ export function TimerTab() {
               transition={{ delay: 0.15, duration: 0.5 }}
               className="mt-6 w-full max-w-[330px]"
             >
+              {/* oxirgi sessiya uchun fokus baholash (real focusScore) */}
+              <div className="mb-4">
+                <FocusRatingCard />
+              </div>
+
               {/* preset chiplar — justify-start: overflow'da chap chiplar kesilib qolmasligi uchun */}
               <div className="no-scrollbar mb-4 flex justify-start gap-2 overflow-x-auto px-0.5 pb-1">
                 {PRESETS.map((p) => {
@@ -518,12 +540,18 @@ export function TimerTab() {
 
               {/* hold-to-stop */}
               {finished ? (
-                <button
-                  onClick={() => endSession()}
-                  className="w-full rounded-full bg-gradient-to-b from-emerald-400/30 to-emerald-500/20 py-4 text-[15px] font-bold text-emerald-100 ring-1 ring-emerald-300/40 backdrop-blur-xl active:scale-[0.98]"
-                >
-                  ✨ Davom etish
-                </button>
+                <>
+                  <button
+                    onClick={() => endSession()}
+                    className="w-full rounded-full bg-gradient-to-b from-emerald-400/30 to-emerald-500/20 py-4 text-[15px] font-bold text-emerald-100 ring-1 ring-emerald-300/40 backdrop-blur-xl active:scale-[0.98]"
+                  >
+                    ✨ Davom etish
+                  </button>
+                  {/* to'liq yakunlangan sessiya uchun ham baholash */}
+                  <div className="mt-3">
+                    <FocusRatingCard compact />
+                  </div>
+                </>
               ) : (
                 <button
                   onMouseDown={startHold}

@@ -31,7 +31,8 @@ async function main() {
   ]
   await prisma.blockApp.createMany({ data: apps })
 
-  // Daily stats — last 7 days
+  // Daily stats — oxirgi 35 kun (5 hafta — Consistency heatmap uchun).
+  // Oxirgi 7 kun qo'lda sozlangan (demo hikoyasi), eski 28 kun deterministik generator.
   const stats = [
     { date: dateStr(6), screenTimeMinutes: 342, savedMinutes: 96, pickups: 74, goalMinutes: 240 },
     { date: dateStr(5), screenTimeMinutes: 296, savedMinutes: 128, pickups: 61, goalMinutes: 240 },
@@ -41,6 +42,32 @@ async function main() {
     { date: dateStr(1), screenTimeMinutes: 204, savedMinutes: 181, pickups: 44, goalMinutes: 240 },
     { date: dateStr(0), screenTimeMinutes: 118, savedMinutes: 97, pickups: 26, goalMinutes: 240 },
   ]
+  // deterministik "haqiqiy hayot" naqsh: dam olish kunlari ekran ko'p, fokus kam;
+  // ba'zi kunlar nol (safar/bemor); umumiy tendensiya — so'nggi haftalar yaxshiroq
+  const WEEKEND = [0, 6] // Yakshanba, Shanba
+  const restDays = new Set([13, 19, 27, 33]) // nol kunlar (yo'qolgan kunlar)
+  for (let off = 34; off >= 7; off--) {
+    if (restDays.has(off)) continue
+    const d = new Date()
+    d.setDate(d.getDate() - off)
+    const dow = d.getDay()
+    const weekend = WEEKEND.includes(dow)
+    // pseudo-random (deterministik): off asosida
+    const wob = ((off * 37 + 11) % 23) - 11 // -11..11
+    const recentBoost = off < 14 ? 18 : 0 // yaqin haftalar yaxshiroq
+    const screen = Math.max(120, Math.min(430, (weekend ? 355 : 268) + wob * 4 - recentBoost))
+    const saved = weekend
+      ? Math.max(0, 34 + wob + recentBoost)
+      : Math.max(0, 92 + wob * 3 + recentBoost)
+    const pickups = weekend ? 82 + wob : 58 + Math.round(wob * 1.5)
+    stats.push({
+      date: dateStr(off),
+      screenTimeMinutes: Math.round(screen),
+      savedMinutes: Math.round(saved),
+      pickups,
+      goalMinutes: 240,
+    })
+  }
   await prisma.dailyStat.createMany({ data: stats })
 
   // Past sessions
