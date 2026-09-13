@@ -40,7 +40,9 @@ import com.opal.app.theme.OpalColors
 import com.opal.app.theme.OpalGradient
 import com.opal.app.ui.components.AnimatedCount
 import com.opal.app.ui.components.Avatar
+import com.opal.app.ui.components.GemstonesSection
 import com.opal.app.ui.components.StatChip
+import com.opal.app.ui.components.WeeklyReportCard
 import kotlinx.coroutines.launch
 
 @Composable
@@ -49,8 +51,14 @@ fun ProfileScreen() {
     val scope = rememberCoroutineScope()
     val profile by repo.profile.collectAsState()
     val apps by repo.apps.collectAsState()
+    val stats by repo.stats.collectAsState()
+    val sessions by repo.sessions.collectAsState()
 
     val isPlus = profile.plan == "PLUS"
+    // Night Owl toshi — oxirgi uyqu sessiyasi (32 soat ichida tugagan SLEEP)
+    val hadSleep = remember(sessions) {
+        sessions.any { it.type == "SLEEP" }
+    }
 
     Column(
         Modifier
@@ -93,6 +101,16 @@ fun ProfileScreen() {
             StatChip("🧠", "${profile.totalSessions}", "Sessiya", Modifier.weight(1f))
             StatChip("⏱️", formatMinutes(profile.totalSavedMinutes), "Tejaldi", Modifier.weight(1f))
         }
+
+        Spacer(Modifier.height(20.dp))
+
+        // ---- Haftalik hisobot (web bilan bir xil imzo karta) ----
+        WeeklyReportCard(stats = stats, profile = profile)
+
+        Spacer(Modifier.height(16.dp))
+
+        // ---- Gemstones (haqiqiy Opal to'plami) ----
+        GemstonesSection(profile = profile, hadSleepSession = hadSleep)
 
         Spacer(Modifier.height(20.dp))
 

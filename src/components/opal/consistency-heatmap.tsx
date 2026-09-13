@@ -1,12 +1,13 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { motion } from 'framer-motion'
-import type { StatsResponse } from '@/lib/opal-types'
+import { AnimatePresence, motion } from 'framer-motion'
+import type { DailyStat, StatsResponse } from '@/lib/opal-types'
 import { formatMinutes } from '@/lib/opal-types'
 import { GLASS } from '@/lib/opal-ui'
 import { cn } from '@/lib/utils'
+import { X } from 'lucide-react'
 
 /**
  * CONSISTENCY HEATMAP — so'nggi 5 haftalik "tejash" xaritasi
@@ -42,6 +43,14 @@ function levelOf(saved: number): 0 | 1 | 2 | 3 | 4 {
   return 4
 }
 
+const LEVEL_NAMES: Record<0 | 1 | 2 | 3 | 4, string> = {
+  0: 'Fokus yo‘q',
+  1: 'Yengil kun',
+  2: 'O‘rtacha kun',
+  3: 'Yaxshi kun',
+  4: 'Zo‘r kun!',
+}
+
 const LEVEL_CLASSES: Record<0 | 1 | 2 | 3 | 4, string> = {
   0: 'bg-white/[0.055]',
   1: 'bg-[#86efac]/22',
@@ -56,9 +65,16 @@ export function ConsistencyHeatmap() {
     queryFn: async () => (await fetch('/api/stats?days=35')).json(),
   })
 
-  const { cells, weeks, totalSaved, activeDays } = useMemo(() => {
+  // tanlangan kun tafsilotlari (katakchani bosganda chiqadi)
+  const [selectedISO, setSelectedISO] = useState<string | null>(null)
+
+  const { cells, weeks, totalSaved, activeDays, dayByDate } = useMemo(() => {
     const byDate = new Map<string, number>()
-    for (const d of statsQ.data?.days ?? []) byDate.set(d.date, d.savedMinutes)
+    const full = new Map<string, DailyStat>()
+    for (const d of statsQ.data?.days ?? []) {
+      byDate.set(d.date, d.savedMinutes)
+      full.set(d.date, d)
+    }
 
     const now = new Date()
     const todayIso = now.toISOString().slice(0, 10)
@@ -97,8 +113,11 @@ export function ConsistencyHeatmap() {
       weeks: Math.ceil(totalCells / 7),
       totalSaved: valid.reduce((a, c) => a + c.saved, 0),
       activeDays: valid.filter((c) => c.saved > 0).length,
+      dayByDate: full,
     }
   }, [statsQ.data])
+
+  const selected = selectedISO ? dayByDate.get(selectedISO) ?? null : null
 
   // oy yorliqlari — ustun tepasida (ustundagi 1-kun oyi)
   const monthLabels = useMemo(() => {
@@ -124,8 +143,13 @@ export function ConsistencyHeatmap() {
         {loading ? (
           <span className="text-[11.5px] font-semibold text-white/30">yuklanmoqda…</span>
         ) : (
-          <span className="text-[11.5px] font-semibold text-white/40">
-            {activeDays}/35 kun · <span className="text-[#9fe8b5]">{formatMinutes(totalSaved)}</span> tejaldi
+          <span className="flex items-center gap-2">
+            <span className="text-[11.5px] font-semibold text-white/40">
+              {activeDays}/35 kun · <span className="text-[#9fe8b5]">{formatMinutes(totalSaved)}</span>
+            </span>
+            <span className="rounded-full bg-white/[0.05] px-2 py-0.5 text-[9px] font-semibold text-white/35 ring-1 ring-white/8">
+              kunni bosing
+            </span>
           </span>
         )}
       </div>
@@ -179,22 +203,125 @@ export function ConsistencyHeatmap() {
                   c.isFuture ? (
                     <span key={c.dateISO} aria-hidden="true" />
                   ) : (
-                    <motion.span
+                    <motion.button
                       key={c.dateISO}
+                      type="button"
                       initial={{ opacity: 0, scale: 0.4 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: Math.min(i * 0.008, 0.5), duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                      whileTap={{ scale: 1.35 }}
+                      onClick={() => setSelectedISO((prev) => (prev === c.dateISO ? null : c.dateISO))}
+                      aria-label={`${c.label}: ${c.saved > 0 ? `${formatMinutes(c.saved)} tejaldi` : 'fokus yo‘q'} — tafsilotlarni ko‘rish`}
+                      aria-pressed={selectedISO === c.dateISO}
                       className={cn(
-                        'h-[13px] w-full rounded-[3.5px]',
+                        'h-[13px] w-full rounded-[3.5px] transition-shadow cursor-pointer outline-none',
+                        'focus-visible:ring-2 focus-visible:ring-[#e6fff0]/70',
                         LEVEL_CLASSES[levelOf(c.saved)],
-                        c.isToday && 'ring-1 ring-[#e6fff0] ring-offset-1 ring-offset-transparent'
+                        c.isToday && selectedISO !== c.dateISO && 'ring-1 ring-[#e6fff0] ring-offset-1 ring-offset-transparent',
+                        selectedISO === c.dateISO && 'ring-[1.5px] ring-white ring-offset-2 ring-offset-[#0a0f0c]'
                       )}
-                      title={`${c.label} · ${c.saved > 0 ? `${formatMinutes(c.saved)} tejaldi` : 'fokus yo‘q'}`}
                     />
                   )
                 )}
               </div>
             </div>
+
+            {/* tanlangan kun tafsilotlari */}
+            <AnimatePresence initial={false}>
+              {selected && (
+                <motion.div
+                  key="day-details"
+                  initial={{ opacity: 0, height: 0, y: -6 }}
+                  animate={{ opacity: 1, height: 'auto', y: 0 }}
+                  exit={{ opacity: 0, height: 0, y: -6 }}
+                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                  className="overflow-hidden"
+                  role="region"
+                  aria-label={`${selected.date} kun tafsilotlari`}
+                >
+                  <div className="relative mt-3 rounded-2xl border border-[#86efac]/22 bg-gradient-to-b from-[#86efac]/10 to-white/[0.02] p-3.5">
+                    <button
+                      onClick={() => setSelectedISO(null)}
+                      aria-label="Kun tafsilotlarini yopish"
+                      className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/6 text-white/45 transition-colors hover:bg-white/12 hover:text-white/80"
+                    >
+                      <X size={12} />
+                    </button>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-[13px] font-extrabold text-white">{selected.date.slice(0, 10)}</p>
+                      <span
+                        className={cn(
+                          'rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ring-1',
+                          levelOf(selected.savedMinutes) >= 3
+                            ? 'bg-[#86efac]/15 text-[#c9fbdc] ring-[#86efac]/35'
+                            : levelOf(selected.savedMinutes) >= 1
+                              ? 'bg-white/6 text-white/60 ring-white/12'
+                              : 'bg-white/4 text-white/35 ring-white/8'
+                        )}
+                      >
+                        {LEVEL_NAMES[levelOf(selected.savedMinutes)]}
+                      </span>
+                    </div>
+                    <div className="mt-2.5 grid grid-cols-3 gap-2 text-center">
+                      <div className="rounded-xl bg-black/25 px-2 py-2 ring-1 ring-white/8">
+                        <p className="text-[14px] font-extrabold text-[#b7f5cd]">
+                          {formatMinutes(selected.savedMinutes)}
+                        </p>
+                        <p className="mt-0.5 text-[8.5px] font-bold uppercase tracking-wider text-white/40">
+                          Tejaldi
+                        </p>
+                      </div>
+                      <div className="rounded-xl bg-black/25 px-2 py-2 ring-1 ring-white/8">
+                        <p className="text-[14px] font-extrabold text-white">
+                          {formatMinutes(selected.screenTimeMinutes)}
+                        </p>
+                        <p className="mt-0.5 text-[8.5px] font-bold uppercase tracking-wider text-white/40">
+                          Ekran vaqti
+                        </p>
+                      </div>
+                      <div className="rounded-xl bg-black/25 px-2 py-2 ring-1 ring-white/8">
+                        <p className="text-[14px] font-extrabold text-white">{selected.pickups}</p>
+                        <p className="mt-0.5 text-[8.5px] font-bold uppercase tracking-wider text-white/40">
+                          Ko‘tarilishlar
+                        </p>
+                      </div>
+                    </div>
+                    {/* maqsad progressi */}
+                    {selected.goalMinutes > 0 && (
+                      <div className="mt-2.5">
+                        <div className="mb-1 flex items-center justify-between text-[9px] font-semibold text-white/40">
+                          <span>Kunlik maqsad ({Math.round(selected.goalMinutes / 60)}h ekran)</span>
+                          <span
+                            className={cn(
+                              selected.screenTimeMinutes <= selected.goalMinutes
+                                ? 'text-[#9fe8b5]'
+                                : 'text-amber-300'
+                            )}
+                          >
+                            {selected.screenTimeMinutes <= selected.goalMinutes
+                              ? '✓ maqsadda'
+                              : `+${formatMinutes(selected.screenTimeMinutes - selected.goalMinutes)} ortiq`}
+                          </span>
+                        </div>
+                        <div className="h-[5px] overflow-hidden rounded-full bg-white/8">
+                          <div
+                            className={cn(
+                              'h-full rounded-full bg-gradient-to-r transition-[width] duration-500',
+                              selected.screenTimeMinutes <= selected.goalMinutes
+                                ? 'from-[#86efac] to-[#5eead4]'
+                                : 'from-amber-300 to-orange-400'
+                            )}
+                            style={{
+                              width: `${Math.min((selected.screenTimeMinutes / selected.goalMinutes) * 100, 100)}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* legend */}
             <div className="mt-3 flex items-center justify-end gap-1.5" aria-hidden="true">

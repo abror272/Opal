@@ -33,12 +33,14 @@ import com.opal.app.ui.components.StatChip
 import com.opal.app.ui.components.TrendBadge
 import com.opal.app.ui.components.TrendLineChart
 import com.opal.app.ui.components.WeekBarChart
+import com.opal.app.ui.components.WeeklyReportCard
 import com.opal.app.ui.weekdayLabelUz
 
 @Composable
 fun StatsScreen() {
     val repo = remember { AppGraph.repo }
     val stats by repo.stats.collectAsState()
+    val profile by repo.profile.collectAsState()
     val online by repo.online.collectAsState()
 
     val today = stats.today
@@ -94,6 +96,11 @@ fun StatsScreen() {
         }
 
         Spacer(Modifier.height(20.dp))
+
+        // ---- Haftalik hisobot xulosasi (web bilan bir xil) ----
+        WeeklyReportCard(stats = stats, profile = profile)
+
+        Spacer(Modifier.height(18.dp))
 
         // ---- Bugungi maqsad ----
         GlassCard(Modifier.fillMaxWidth(), radius = 26.dp, padding = 16.dp) {

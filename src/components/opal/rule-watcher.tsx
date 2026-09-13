@@ -4,9 +4,18 @@ import { useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { allRules, liveRuleStatus, ruleAppsLabel } from '@/lib/opal-ui'
 
-const PRE_NOTIFY_KEY = 'opal:rule-prenotify'
+const PRE_NOTIFY_KEY = 'opal:rule-prenotify-v2'
 
 type NotifiedStore = { date: string; ids: string[] }
+
+/** eski (v1) kalitni o'chirish — bir marta */
+function cleanupLegacyKey() {
+  try {
+    window.localStorage.removeItem('opal:rule-prenotify')
+  } catch {
+    // ignore
+  }
+}
 
 /** Kunlik o'tgan bildirishnomalarni localStorage'dan o'qish (reload'da spam yo'q) */
 function loadNotified(): NotifiedStore {
@@ -32,6 +41,17 @@ function saveNotified(store: NotifiedStore) {
 }
 
 /**
+ * Oldindan ogohlantirish darajalari — qoida boshlanishidan OLDIN:
+ *   15 daqiqa → reja qiling (🔔), 5 daqiqa → tez orada (⏳), 1 daqiqa → oxirgi eslatma (⏰)
+ * Har daraja kuniga BIR MARTA (localStorage kaliti + tier suffiksi bilan).
+ */
+const PRE_NOTIFY_TIERS = [
+  { at: 15, icon: '🔔', title: 'tez orada', verb: 'daqiqadan so‘ng boshlanadi' },
+  { at: 5, icon: '⏳', title: 'tayyorlaning', verb: 'daqiqadan so‘ng boshlanadi' },
+  { at: 1, icon: '⏰', title: '1 daqiqa qoldi', verb: 'daqiqadan so‘ng boshlanadi!' },
+] as const
+
+/**
  * QOIDA TRANSITION KUZATUVCHISI — ilova ochiq turganda qoida oynasi
  * boshlanganda/tugaganda jonli bildirishnoma chiqaradi.
  * (Home'dagi statik "aktiv" chipidan farqi: bu HOZIR bo'lgan o'zgarishni tutadi.)
@@ -39,8 +59,8 @@ function saveNotified(store: NotifiedStore) {
  * - 15s tick bilan barcha qoidalar baholanadi
  * - birinchi baholash faqat boshlang'ich holat sifatida yozib olinadi (spam yo'q)
  * - faqat parse qilinadigan vaqt oynasi bor qoidalar kuzatiladi
- * - QO'SHIMCHA: boshlanishiga ≤5 daqiqa qolganda BIR MARTA "tez orada" ogohlantirishi
- *   (kuniga bir marta, localStorage bilan — reload'da qayta kelmaydi)
+ * - QO'SHIMCHA: 15 / 5 / 1 daqiqalik oldindan ogohlantirish darajalari
+ *   (har biri kuniga bir marta, localStorage bilan — reload'da qayta kelmaydi)
  */
 export function RuleWatcher() {
   // ruleId → 'active' | 'upcoming'
@@ -48,12 +68,15 @@ export function RuleWatcher() {
   const notifiedRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
+    cleanupLegacyKey()
     const loaded = loadNotified()
     notifiedRef.current = new Set(loaded.ids)
     prevRef.current = null // localStorage'dan kelganda ham birinchi sikl snapshot bo'lsin
 
-    const preNotify = (ruleId: string) => {
-      notifiedRef.current.add(ruleId)
+    const keyOf = (ruleId: string, tierAt: number) => `${ruleId}:${tierAt}`
+
+    const markNotified = (key: string) => {
+      notifiedRef.current.add(key)
       saveNotified({ date: new Date().toISOString().slice(0, 10), ids: [...notifiedRef.current] })
     }
 
@@ -68,33 +91,37 @@ export function RuleWatcher() {
         next.set(rule.id, st.state)
 
         if (!prev) {
-          // birinchi sikl: hozir 5 daqiqa ichida boshlanadigan qoidani belgilaymiz
+          // birinchi sikl: allaqachon o'tib ketgan darajalarni jim belgilaymiz
           // (toast yo'q — lekin sahifa ochilgandan keyin boshlansa 'active' tosti keladi)
-          if (st.state === 'upcoming' && st.minutes >= 1 && st.minutes <= 5) preNotify(rule.id)
+          if (st.state === 'upcoming' && st.minutes >= 1) {
+            for (const tier of PRE_NOTIFY_TIERS) {
+              if (st.minutes <= tier.at) markNotified(keyOf(rule.id, tier.at))
+            }
+          }
           continue
         }
 
-        // ── 5 DAQIQALIK OLDINDAN OGohlantirish ──
-        if (
-          st.state === 'upcoming' &&
-          st.minutes >= 1 &&
-          st.minutes <= 5 &&
-          !notifiedRef.current.has(rule.id)
-        ) {
-          preNotify(rule.id)
-          toast(`${rule.icon} ${rule.title} — tez orada`, {
-            description: `≈${st.minutes} daqiqadan so'ng boshlanadi · ${ruleAppsLabel(rule)}`,
-            icon: '⏳',
-            duration: 7000,
-          })
+        // ── 15 / 5 / 1 DAQIQALIK OLDINDAN OGohlantirishlar ──
+        if (st.state === 'upcoming' && st.minutes >= 1) {
+          for (const tier of PRE_NOTIFY_TIERS) {
+            const key = keyOf(rule.id, tier.at)
+            if (st.minutes <= tier.at && !notifiedRef.current.has(key)) {
+              markNotified(key)
+              toast(`${rule.icon} ${rule.title} — ${tier.title}`, {
+                description: `≈${tier.at} ${tier.verb} · ${ruleAppsLabel(rule)}`,
+                icon: tier.icon,
+                duration: tier.at <= 5 ? 7000 : 6000,
+              })
+            }
+          }
         }
 
         const before = prev.get(rule.id)
         if (before === st.state) continue
 
         if (st.state === 'active') {
-          // boshlandi
-          preNotify(rule.id) // boshlandi — endi oldindan ogohlantirish kerak emas
+          // boshlandi — oldindan ogohlantirishlar endi kerak emas
+          for (const tier of PRE_NOTIFY_TIERS) markNotified(keyOf(rule.id, tier.at))
           toast(`${rule.icon} ${rule.title} boshlandi`, {
             description: `${ruleAppsLabel(rule)} · ${st.label} qoldi`,
             icon: '🔒',

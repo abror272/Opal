@@ -370,14 +370,20 @@ export function AppsTab() {
               >
                 <span
                   className={cn(
-                    'relative flex h-[54px] w-full max-w-[62px] items-center justify-center rounded-[16px] text-[24px] ring-[1.5px] ring-[#86efac]/60',
+                    'relative flex h-[54px] w-full max-w-[62px] items-center justify-center rounded-[16px] text-[24px] ring-[1.5px] ring-[#86efac]/60 brightness-[.8] saturate-[.85]',
                     app.gradient
                   )}
                   style={{ boxShadow: '0 0 16px rgba(94,234,212,0.35)' }}
                 >
-                  {app.emoji}
-                  <span className="absolute inset-0 flex items-center justify-center rounded-[16px] bg-black/25">
-                    <Lock size={17} className="text-white/90 drop-shadow" />
+                  {/* glass overlay — emoji ko'rinib turadi, bloklangan hissi qoladi */}
+                  <span
+                    className="absolute inset-0 rounded-[16px] bg-gradient-to-b from-white/10 to-black/30"
+                    aria-hidden="true"
+                  />
+                  <span className="relative z-10 drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]">{app.emoji}</span>
+                  {/* burchakdagi qulf belgisi */}
+                  <span className="absolute -bottom-[7px] -right-[7px] z-20 flex h-[19px] w-[19px] items-center justify-center rounded-full border border-[#86efac]/50 bg-[#0b100d] text-[#9fe8b5] shadow-[0_2px_8px_rgba(0,0,0,0.55)]">
+                    <Lock size={10} strokeWidth={2.6} />
                   </span>
                 </span>
                 <span className="w-full max-w-[62px] truncate text-center text-[10px] font-semibold text-white/85">

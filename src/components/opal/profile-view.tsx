@@ -29,6 +29,7 @@ import {
   History,
   BarChart3,
   ChevronRight,
+  Download,
 } from 'lucide-react'
 
 function achievementsFor(profile: UserProfile) {
@@ -93,35 +94,42 @@ function ProfileCrest({ initial }: { initial: string }) {
   )
 }
 
-/** Haqiqiy Opal katta statistikasi — nur ichida ikonka, raqam ustida, yorliq pastda */
+/** Haqiqiy Opal katta statistikasi — glass ikonka chipi tepada, raqam ostida, yorliq eng pastda */
 function BigStat({
   icon,
   value,
   label,
+  tint,
   glow,
 }: {
   icon: React.ReactNode
   value: string
   label: string
+  /** chip ikonka rangi (hex) */
+  tint: string
+  /** chip orqasidagi yumshoq nur (rgba) */
   glow: string
 }) {
   return (
     <div className="flex flex-col items-center">
-      <div className="relative flex h-[74px] w-[86px] items-end justify-center">
-        {/* nur fon */}
+      <div className="relative flex items-center justify-center">
+        {/* nur fon — chip orqasida, chegaralangan */}
         <div
-          className="absolute left-1/2 top-1 h-[64px] w-[64px] -translate-x-1/2 rounded-full"
-          style={{ background: `radial-gradient(circle, ${glow} 0%, transparent 68%)` }}
+          className="absolute left-1/2 top-1/2 h-[54px] w-[54px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{ background: `radial-gradient(circle, ${glow} 0%, transparent 70%)` }}
           aria-hidden="true"
         />
-        <span className="relative text-[34px] opacity-90 [&>svg]:h-full [&>svg]:w-full" style={{ color: glow.includes('flame') ? '#ffc46b' : undefined }}>
+        <span
+          className="relative flex h-[38px] w-[38px] items-center justify-center rounded-[14px] bg-white/[0.05] ring-1 backdrop-blur-sm [&>svg]:h-[17px] [&>svg]:w-[17px]"
+          style={{ color: tint, boxShadow: `inset 0 0 0 1px transparent, 0 0 14px ${glow}` }}
+        >
           {icon}
         </span>
-        <span className="absolute bottom-0 text-[21px] font-extrabold leading-none text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-          {value}
-        </span>
       </div>
-      <span className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/60">
+      <span className="mt-2 text-[20px] font-extrabold leading-none tracking-tight text-white">
+        {value}
+      </span>
+      <span className="mt-1 text-[9px] font-bold uppercase tracking-[0.14em] text-white/50">
         {label}
       </span>
     </div>
@@ -136,6 +144,33 @@ export function ProfileView() {
   const seenAchievements = useOpalStore((s) => s.seenAchievements)
   const markAchievementsSeen = useOpalStore((s) => s.markAchievementsSeen)
   const [pinDialogOpen, setPinDialogOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
+
+  // barcha ma'lumotlarni JSON zaxira sifatida yuklab olish
+  const exportData = async () => {
+    if (exporting) return
+    setExporting(true)
+    try {
+      const res = await fetch('/api/export')
+      if (!res.ok) throw new Error('export failed')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `opal-backup-${new Date().toISOString().slice(0, 10)}.json`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+      toast.success('Zaxira yuklab olindi 💾', {
+        description: 'Sessiyalar, statistika va sozlamalar JSON faylida',
+      })
+    } catch {
+      toast.error('Eksport bajarilmadi', { description: 'Yana urinib ko\u2018ring' })
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const profileQ = useQuery<UserProfile>({
     queryKey: ['profile'],
@@ -223,19 +258,22 @@ export function ProfileView() {
             icon={<Hourglass />}
             value={focusHours > 0 ? `${focusHours}h` : '--'}
             label="Focus Hours"
-            glow="rgba(183,245,205,0.28)"
+            tint="#9fe8b5"
+            glow="rgba(183,245,205,0.22)"
           />
           <BigStat
-            icon={<Flame className="fill-[#ffb85c]/45 text-[#ffc46b]" />}
+            icon={<Flame className="fill-[#ffb85c]/40" />}
             value={`${profile.streakDays}`}
             label="Day Streak"
-            glow="rgba(255,184,92,0.30)"
+            tint="#ffc46b"
+            glow="rgba(255,184,92,0.24)"
           />
           <BigStat
             icon={<Globe />}
             value={`Top ${topPct}%`}
             label="Worldwide"
-            glow="rgba(94,234,212,0.28)"
+            tint="#5eead4"
+            glow="rgba(94,234,212,0.22)"
           />
         </div>
       </section>
@@ -388,7 +426,7 @@ export function ProfileView() {
 
           <div className="flex items-center justify-between px-5 py-3.5">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/8 text-white/70 ring-1 ring-white/10">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/12 text-amber-300 ring-1 ring-amber-400/20">
                 <Lock size={16} />
               </div>
               <div>
@@ -400,13 +438,13 @@ export function ProfileView() {
               checked={profile.strictMode}
               onCheckedChange={(v) => patchMutation.mutate({ strictMode: v })}
               aria-label="Qattiq rejim sozlamasi"
-              className="data-[state=checked]:bg-rose-500/70"
+              className="data-[state=checked]:bg-amber-400/80"
             />
           </div>
 
           <div className="flex items-center justify-between px-5 py-3.5">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/12 text-rose-300 ring-1 ring-rose-400/20">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#5eead4]/12 text-[#7ee7d2] ring-1 ring-[#5eead4]/20">
                 <Bell size={16} />
               </div>
               <div>
@@ -513,6 +551,32 @@ export function ProfileView() {
               </div>
             </div>
             <ChevronRight size={17} className="text-white/25" />
+          </button>
+
+          {/* Ma'lumotlarni eksport qilish (JSON zaxira) */}
+          <button
+            onClick={exportData}
+            disabled={exporting}
+            className="flex w-full items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-white/[0.03] disabled:opacity-60"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#86efac]/12 text-[#9fe8b5] ring-1 ring-[#86efac]/20">
+                <Download size={16} />
+              </div>
+              <div>
+                <p className="text-[13.5px] font-bold text-white">Ma’lumotlarni eksport qilish</p>
+                <p className="text-[11px] text-white/40">Barcha ma’lumot — JSON zaxira fayli</p>
+              </div>
+            </div>
+            {exporting ? (
+              <span
+                className="h-4 w-4 animate-spin rounded-full border-2 border-white/15 border-t-[#86efac]/80"
+                role="status"
+                aria-label="Eksportlanmoqda"
+              />
+            ) : (
+              <ChevronRight size={17} className="text-white/25" />
+            )}
           </button>
 
           <div className="flex items-center justify-between px-5 py-3.5">

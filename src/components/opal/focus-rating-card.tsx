@@ -22,9 +22,18 @@ const LEVELS = [
   { score: 96, emoji: '🤩', label: 'Mukammal' },
 ] as const
 
-export function FocusRatingCard({ compact = false }: { compact?: boolean }) {
+export function FocusRatingCard({
+  compact = false,
+  floating = false,
+}: {
+  compact?: boolean
+  /** suzuvchi rejim — boshqa tablar ustida, tab bar tepasida ko'rinadi */
+  floating?: boolean
+}) {
   const rating = useOpalStore((s) => s.ratingPending)
   const markRatingDone = useOpalStore((s) => s.markRatingDone)
+  const activeSession = useOpalStore((s) => s.activeSession)
+  const tab = useOpalStore((s) => s.tab)
   const qc = useQueryClient()
   const [picked, setPicked] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
@@ -64,7 +73,7 @@ export function FocusRatingCard({ compact = false }: { compact?: boolean }) {
     markRatingDone()
   }
 
-  return (
+  const card = (
     <AnimatePresence>
       {visible && (
         <motion.div
@@ -149,4 +158,20 @@ export function FocusRatingCard({ compact = false }: { compact?: boolean }) {
       )}
     </AnimatePresence>
   )
+
+  // suzuvchi rejim: boshqa tablar ustida, tab bar tepasida.
+  // SessionPill ham ko'rinsa — pill ustiga chiqmaydigan balandlikda turadi.
+  if (floating) {
+    const pillVisible = !!activeSession && tab !== 'timer'
+    return (
+      <div
+        className="pointer-events-none absolute inset-x-4 z-30 transition-[bottom] duration-300"
+        style={{ bottom: pillVisible ? 148 : 84 }}
+      >
+        <div className="pointer-events-auto">{card}</div>
+      </div>
+    )
+  }
+
+  return card
 }

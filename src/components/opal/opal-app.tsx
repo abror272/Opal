@@ -1,8 +1,11 @@
 'use client'
 
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { toast } from 'sonner'
 import { useOpalStore, TAB_KEYS } from '@/lib/opal-store'
+import { syncLiveMinutes } from '@/lib/opal-live-client'
+import { type FocusSession, type StatsResponse } from '@/lib/opal-types'
 import { StatusBar } from './status-bar'
 import { BottomTabBar } from './bottom-tab-bar'
 import { HomeTab } from './home-tab'
@@ -14,6 +17,7 @@ import { HistoryView } from './history-view'
 import { WeeklyReport } from './weekly-report'
 import { RuleWatcher } from './rule-watcher'
 import { SessionPill } from './session-pill'
+import { FocusRatingCard } from './focus-rating-card'
 import { BlockScreen } from './block-screen'
 import { Onboarding, useNeedsOnboarding } from './onboarding'
 import { NotificationBanner } from './notification-banner'
@@ -56,6 +60,79 @@ function OpalShards() {
 }
 
 type OverlayView = 'today' | 'profile' | 'history' | 'report' | null
+
+/**
+ * SESSIYA MOHORAT KUZATUVCHISI — sessiya boshqa tab'da (Home/My Apps) 0:00 ga
+ * yetib borsa ham TO'LIQ yakunlanadi (PATCH + streak + baholash kartasi).
+ * Timer tab'da TimerTab o'zi hal qiladi — kuzatuvchi faqat boshqa tablarda ishlaydi.
+ * (Avvalgi bug: boshqa tab'da tugagan sessiya DB'da "ishlashda" qolardi —
+ * 30s dan keyin jim o'chirilardi, streak/saved yo'qolardi.)
+ */
+function SessionExpiryWatcher() {
+  const activeSession = useOpalStore((s) => s.activeSession)
+  const tab = useOpalStore((s) => s.tab)
+  const endSession = useOpalStore((s) => s.endSession)
+  const setRatingPending = useOpalStore((s) => s.setRatingPending)
+  const busyFor = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!activeSession || tab === 'timer') return
+    if (busyFor.current === activeSession.sessionId) return
+
+    const tick = () => {
+      const s = useOpalStore.getState().activeSession
+      if (!s || busyFor.current === s.sessionId) return
+      const elapsedMs = Date.now() - s.startedAt
+      if (elapsedMs < s.durationMinutes * 60_000) return
+
+      const sid = s.sessionId
+      busyFor.current = sid
+      const done = { id: sid, label: s.label, emoji: s.emoji, early: false }
+
+      void (async () => {
+        try {
+          const res = await fetch('/api/sessions', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: sid,
+              completed: true,
+              early: false,
+              focusScore: 90 + Math.floor(Math.random() * 9),
+            }),
+          })
+          const session: FocusSession | null = res.ok ? await res.json() : null
+          if (session) {
+            try {
+              const cached = await fetch('/api/stats').then((r) =>
+                r.ok ? (r.json() as Promise<StatsResponse>) : null
+              )
+              if (cached) syncLiveMinutes(cached.weekSavedMinutes + session.savedMinutes)
+            } catch {
+              // jonli leaderboard ixtiyoriy
+            }
+          }
+          toast.success('🎉 Sessiya to‘liq yakunlandi', {
+            description: `${s.emoji} ${s.label} — streak va statistika yangilandi`,
+          })
+        } catch {
+          toast.error('Sessiyani yakunlashda xatolik')
+        } finally {
+          const stillSame = useOpalStore.getState().activeSession?.sessionId === sid
+          if (stillSame) endSession()
+          setRatingPending(done)
+          busyFor.current = null
+        }
+      })()
+    }
+
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [activeSession, tab, endSession, setRatingPending])
+
+  return null
+}
 
 export function OpalApp() {
   const tab = useOpalStore((s) => s.tab)
@@ -220,6 +297,9 @@ export function OpalApp() {
 
               <BottomTabBar />
               <SessionPill />
+              {/* sessiya boshqa tab'da tugasa ham baholash ko'rinsin (Timer tab'da inline bor) */}
+              {tab !== 'timer' && <FocusRatingCard floating />}
+              <SessionExpiryWatcher />
               <RuleWatcher />
 
               {/* drill-in: Bugun (stats) */}
