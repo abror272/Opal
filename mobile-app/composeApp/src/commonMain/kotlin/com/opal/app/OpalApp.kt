@@ -37,6 +37,8 @@ import androidx.compose.ui.unit.dp
 import com.opal.app.data.AppGraph
 import com.opal.app.glass.GlassTabBar
 import com.opal.app.glass.GlassVeil
+import com.opal.app.platform.rememberMarkOnboarded
+import com.opal.app.platform.rememberOnboarded
 import com.opal.app.platform.rememberSafePadding
 import com.opal.app.theme.OpalColors
 import com.opal.app.theme.OpalTheme
@@ -45,6 +47,7 @@ import com.opal.app.ui.screens.ActiveSessionOverlay
 import com.opal.app.ui.screens.AppsScreen
 import com.opal.app.ui.screens.FocusScreen
 import com.opal.app.ui.screens.HomeScreen
+import com.opal.app.ui.screens.OnboardingScreen
 import com.opal.app.ui.screens.ProfileScreen
 import com.opal.app.ui.screens.StatsScreen
 
@@ -52,137 +55,150 @@ import com.opal.app.ui.screens.StatsScreen
 private enum class OpalOverlay { PROFILE, STATS }
 
 /**
- * OPAL MOBILE — root.
- * 3 asosiy tab (Home / My Apps / Timer) + Profile & Stats overlay.
+ * OPAL MOBILE — root. Birinchi ochilishda onboarding, keyin asosiy ilova.
  */
 @Composable
 fun OpalApp() {
     OpalTheme {
-        val insets = rememberSafePadding()
-        val repo = remember { AppGraph.repo }
-        val sessionCtl = remember { AppGraph.sessions }
+        val onboarded = rememberOnboarded()
+        val markOnboarded = rememberMarkOnboarded()
+        var showOnboarding by remember { mutableStateOf(!onboarded) }
 
-        LaunchedEffect(Unit) { repo.refreshAll() }
-
-        var tab by remember { mutableStateOf(TabKey.HOME) }
-        var overlay by remember { mutableStateOf<OpalOverlay?>(null) }
-
-        // Tab o'tish glass veil
-        val veil = remember { Animatable(0f) }
-        var firstRender by remember { mutableStateOf(true) }
-        LaunchedEffect(tab) {
-            if (firstRender) {
-                firstRender = false
-            } else {
-                veil.snapTo(1f)
-                veil.animateTo(0f, tween(520, easing = CubicBezierEasing(0.33f, 0f, 0.2f, 1f)))
-            }
+        if (showOnboarding) {
+            OnboardingScreen(
+                onDone = {
+                    markOnboarded()
+                    showOnboarding = false
+                }
+            )
+        } else {
+            MainShell()
         }
+    }
+}
 
-        val active by sessionCtl.active.collectAsState()
-        val completion by sessionCtl.completion.collectAsState()
-        val showOverlay = active != null || completion != null
+@Composable
+private fun MainShell() {
+    val insets = rememberSafePadding()
+    val repo = remember { AppGraph.repo }
+    val sessionCtl = remember { AppGraph.sessions }
 
+    LaunchedEffect(Unit) { repo.refreshAll() }
+
+    var tab by remember { mutableStateOf(TabKey.HOME) }
+    var overlay by remember { mutableStateOf<OpalOverlay?>(null) }
+
+    // Tab o'tish glass veil
+    val veil = remember { Animatable(0f) }
+    var firstRender by remember { mutableStateOf(true) }
+    LaunchedEffect(tab) {
+        if (firstRender) {
+            firstRender = false
+        } else {
+            veil.snapTo(1f)
+            veil.animateTo(0f, tween(520, easing = CubicBezierEasing(0.33f, 0f, 0.2f, 1f)))
+        }
+    }
+
+    val active by sessionCtl.active.collectAsState()
+    val completion by sessionCtl.completion.collectAsState()
+    val showOverlay = active != null || completion != null
+
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(OpalColors.Bg)
+    ) {
+        // dekorativ mint glow blob'lar
         Box(
             Modifier
-                .fillMaxSize()
-                .background(OpalColors.Bg)
-        ) {
-            // dekorativ mint glow blob'lar
-            Box(
-                Modifier
-                    .offset(x = (-150).dp, y = (-140).dp)
-                    .size(400.dp)
-                    .background(
-                        Brush.radialGradient(listOf(Color(0x1FA9E8B8), Color.Transparent))
-                    )
-            )
-            Box(
-                Modifier
-                    .align(Alignment.BottomEnd)
-                    .offset(x = 140.dp, y = 180.dp)
-                    .size(360.dp)
-                    .background(
-                        Brush.radialGradient(listOf(Color(0x147FE7D0), Color.Transparent))
-                    )
-            )
+                .offset(x = (-150).dp, y = (-140).dp)
+                .size(400.dp)
+                .background(Brush.radialGradient(listOf(Color(0x1FA9E8B8), Color.Transparent)))
+        )
+        Box(
+            Modifier
+                .align(Alignment.BottomEnd)
+                .offset(x = 140.dp, y = 180.dp)
+                .size(360.dp)
+                .background(Brush.radialGradient(listOf(Color(0x147FE7D0), Color.Transparent)))
+        )
 
-            Column(Modifier.fillMaxSize()) {
-                Spacer(Modifier.height(insets.calculateTopPadding()))
+        Column(Modifier.fillMaxSize()) {
+            Spacer(Modifier.height(insets.calculateTopPadding()))
 
-                Box(Modifier.weight(1f)) {
-                    AnimatedContent(
-                        targetState = tab,
-                        transitionSpec = {
-                            val forward = targetState.ordinal > initialState.ordinal
-                            val enter = slideInHorizontally(
-                                animationSpec = spring(dampingRatio = 0.9f, stiffness = 380f),
-                                initialOffsetX = { full -> if (forward) full / 4 else -full / 4 }
-                            ) + fadeIn(tween(240))
-                            val exit = slideOutHorizontally(
-                                animationSpec = tween(220),
-                                targetOffsetX = { full -> if (forward) -full / 6 else full / 6 }
-                            ) + fadeOut(tween(170))
-                            enter togetherWith exit
-                        },
-                        label = "tabContent"
-                    ) { key ->
-                        when (key) {
-                            TabKey.HOME -> HomeScreen(
-                                onStartFocus = { tab = TabKey.TIMER },
-                                onOpenProfile = { overlay = OpalOverlay.PROFILE },
-                                onOpenStats = { overlay = OpalOverlay.STATS }
-                            )
-                            TabKey.APPS -> AppsScreen()
-                            TabKey.TIMER -> FocusScreen()
-                        }
+            Box(Modifier.weight(1f)) {
+                AnimatedContent(
+                    targetState = tab,
+                    transitionSpec = {
+                        val forward = targetState.ordinal > initialState.ordinal
+                        val enter = slideInHorizontally(
+                            animationSpec = spring(dampingRatio = 0.9f, stiffness = 380f),
+                            initialOffsetX = { full -> if (forward) full / 4 else -full / 4 }
+                        ) + fadeIn(tween(240))
+                        val exit = slideOutHorizontally(
+                            animationSpec = tween(220),
+                            targetOffsetX = { full -> if (forward) -full / 6 else full / 6 }
+                        ) + fadeOut(tween(170))
+                        enter togetherWith exit
+                    },
+                    label = "tabContent"
+                ) { key ->
+                    when (key) {
+                        TabKey.HOME -> HomeScreen(
+                            onStartFocus = { tab = TabKey.TIMER },
+                            onOpenProfile = { overlay = OpalOverlay.PROFILE },
+                            onOpenStats = { overlay = OpalOverlay.STATS }
+                        )
+                        TabKey.APPS -> AppsScreen()
+                        TabKey.TIMER -> FocusScreen()
                     }
                 }
-
-                GlassTabBar(
-                    selectedIndex = tab.ordinal,
-                    onSelect = { index -> tab = TabKey.entries[index] },
-                    modifier = Modifier.padding(horizontal = 14.dp)
-                )
-
-                Spacer(Modifier.height(insets.calculateBottomPadding() + 10.dp))
             }
 
-            // Tab o'tish paytidagi frosted veil
-            GlassVeil(alpha = veil.value, modifier = Modifier.fillMaxSize())
+            GlassTabBar(
+                selectedIndex = tab.ordinal,
+                onSelect = { index -> tab = TabKey.entries[index] },
+                modifier = Modifier.padding(horizontal = 14.dp)
+            )
 
-            // Profile overlay
-            AnimatedVisibility(
-                visible = overlay == OpalOverlay.PROFILE,
-                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(tween(220)),
-                exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(tween(200))
-            ) {
-                ProfileScreen(onClose = { overlay = null })
-            }
+            Spacer(Modifier.height(insets.calculateBottomPadding() + 10.dp))
+        }
 
-            // Stats (Today) overlay
-            AnimatedVisibility(
-                visible = overlay == OpalOverlay.STATS,
-                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(tween(220)),
-                exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(tween(200))
-            ) {
-                StatsScreen(onClose = { overlay = null })
-            }
+        // Tab o'tish paytidagi frosted veil
+        GlassVeil(alpha = veil.value, modifier = Modifier.fillMaxSize())
 
-            // Faol sessiya overlay
-            AnimatedVisibility(
-                visible = showOverlay,
-                enter = slideInVertically(
-                    animationSpec = spring(dampingRatio = 0.86f, stiffness = 300f),
-                    initialOffsetY = { it }
-                ) + fadeIn(tween(220)),
-                exit = slideOutVertically(
-                    animationSpec = tween(300),
-                    targetOffsetY = { it }
-                ) + fadeOut(tween(200))
-            ) {
-                ActiveSessionOverlay()
-            }
+        // Profile overlay
+        AnimatedVisibility(
+            visible = overlay == OpalOverlay.PROFILE,
+            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(tween(220)),
+            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(tween(200))
+        ) {
+            ProfileScreen(onClose = { overlay = null })
+        }
+
+        // Stats (Today) overlay
+        AnimatedVisibility(
+            visible = overlay == OpalOverlay.STATS,
+            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(tween(220)),
+            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(tween(200))
+        ) {
+            StatsScreen(onClose = { overlay = null })
+        }
+
+        // Faol sessiya overlay
+        AnimatedVisibility(
+            visible = showOverlay,
+            enter = slideInVertically(
+                animationSpec = spring(dampingRatio = 0.86f, stiffness = 300f),
+                initialOffsetY = { it }
+            ) + fadeIn(tween(220)),
+            exit = slideOutVertically(
+                animationSpec = tween(300),
+                targetOffsetY = { it }
+            ) + fadeOut(tween(200))
+        ) {
+            ActiveSessionOverlay()
         }
     }
 }

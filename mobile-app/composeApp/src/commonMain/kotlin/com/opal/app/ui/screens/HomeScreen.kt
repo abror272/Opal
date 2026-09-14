@@ -74,12 +74,12 @@ private data class Suggestion(
 )
 
 private fun suggestionFor(hour: Int, overGoal: Boolean): Suggestion = when {
-    overGoal -> Suggestion("Focus", "Maqsad oshdi", "Ekrandan tanaffus kerak", "Bugungi ekran vaqti maqsaddan oshdi. Qisqa fokus sessiyasi reytingni tiklaydi.", "Fokusni boshlash", "🎯", OpalIcon.Hourglass)
-    hour >= 22 || hour < 5 -> Suggestion("Sleep", "Uyqu rejimi", "Yotish vaqti bo'ldi", "Telefon yotoqda ertangi kunning energiyasini o'g'irlaydi. Uyqu rejimini yoqing.", "Uyqu rejimini boshlash", "🌙", OpalIcon.Moon)
-    hour in 18..21 -> Suggestion("Sleep", "Oxirgi Pickup", "Tinchlash qiyinmi?", "Uyquga yengil kirish uchun yo'naltirilgan meditatsiyani sinab ko'ring.", "Meditatsiya va uyqu", "🌙", OpalIcon.Moon)
-    hour in 14..17 -> Suggestion("Rest", "Tushlikdan keyin", "Kun o'rtasidagi pasayish?", "1 daqiqalik nafas mashg'uloti fokusni qayta tiklaydi.", "1 daqiqa nafas olish", "🌿", OpalIcon.Plant)
-    hour in 11..13 -> Suggestion("Rest", "Tushlik yaqin", "Kichik dam rejimini rejalashtiring", "Ish rejimidan oldin qisqa dam bloki energiyani saqlab qoladi.", "Dam taymerini qo'yish", "🌿", OpalIcon.Plant)
-    else -> Suggestion("Focus", "Yangi kun", "Yangi kun — yangi rekord", "Chalg'ituvchilar ortga to'planishidan oldin chuqur fokus bilan boshlang.", "Deep Focus 45d", "🧠", OpalIcon.Hourglass)
+    overGoal -> Suggestion("Fokus", "Maqsad oshdi", "Ekrandan tanaffus kerak", "Bugungi ekran vaqti maqsaddan oshdi. Qisqa fokus sessiyasi reytingni tiklaydi.", "Fokusni boshlash", "🎯", OpalIcon.Hourglass)
+    hour >= 22 || hour < 5 -> Suggestion("Uyqu", "Uyqu rejimi", "Yotish vaqti bo'ldi", "Telefon yotoqda ertangi kunning energiyasini o'g'irlaydi. Uyqu rejimini yoqing.", "Uyqu rejimini boshlash", "🌙", OpalIcon.Moon)
+    hour in 18..21 -> Suggestion("Uyqu", "Oxirgi olish", "Tinchlash qiyinmi?", "Uyquga yengil kirish uchun yo'naltirilgan meditatsiyani sinab ko'ring.", "Meditatsiya va uyqu", "🌙", OpalIcon.Moon)
+    hour in 14..17 -> Suggestion("Dam", "Tushlikdan keyin", "Kun o'rtasidagi pasayish?", "1 daqiqalik nafas mashg'uloti fokusni qayta tiklaydi.", "1 daqiqa nafas olish", "🌿", OpalIcon.Plant)
+    hour in 11..13 -> Suggestion("Dam", "Tushlik yaqin", "Kichik dam rejimini rejalashtiring", "Ish rejimidan oldin qisqa dam bloki energiyani saqlab qoladi.", "Dam taymerini qo'yish", "🌿", OpalIcon.Plant)
+    else -> Suggestion("Fokus", "Yangi kun", "Yangi kun — yangi rekord", "Chalg'ituvchilar ortga to'planishidan oldin chuqur fokus bilan boshlang.", "Deep Focus 45d", "🧠", OpalIcon.Hourglass)
 }
 
 @Composable

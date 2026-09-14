@@ -10,3 +10,11 @@ import androidx.compose.runtime.Composable
  */
 @Composable
 expect fun rememberSafePadding(): PaddingValues
+
+/** Onboarding tugallanganmi? (platforma saqlashida) */
+@Composable
+expect fun rememberOnboarded(): Boolean
+
+/** Onboarding tugallanganini belgilash (lambda qaytaradi). */
+@Composable
+expect fun rememberMarkOnboarded(): () -> Unit
