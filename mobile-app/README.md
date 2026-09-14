@@ -62,31 +62,50 @@ Serverni ishga tushirish: web loyiha ildizida `bun run dev`.
 
 ## 🤖 Android qurish
 
-Talablar: **Android Studio Ladybug+**, JDK 17, Android SDK 35.
+Talablar: **Android Studio Ladybug+**, **JDK 17+** (`JAVA_HOME`), Android SDK 35.
 
-1. Android Studio → `Open` → `mobile-app/` papkasini tanlang
+> ⚠️ Bu repo'da Gradle project **`mobile-app/`** ichida. Android Studio'da aynan
+> shu papkani `Open` qiling (repo ildizini emas — ildizda Gradle build yo'q).
+
+1. Android Studio → `Open` → **`mobile-app/`** papkasini tanlang
 2. Gradle sync tugagach (birinchi marta internet kerak) → `composeApp` konfiguratsiyasini tanlab ▶ Run
 3. Yoki terminalda:
    ```bash
    cd mobile-app
-   gradle wrapper --gradle-version 8.10.2   # bir marta (wrapper jar'ini yaratadi)
+   chmod +x gradlew        # macOS/Linux'da bir marta
    ./gradlew :composeApp:assembleDebug
    # APK: composeApp/build/outputs/apk/debug/
    ```
 
-## 🍎 iOS qurish
+> `local.properties` (Android SDK yo'li) `.gitignore`da — Android Studio uni o'zi yaratadi.
 
-Talablar: **macOS, Xcode 15+**, [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`), Gradle.
+## 🍎 iOS qurish (macOS)
 
-1. Xcode project'ini generatsiya qiling:
+Talablar:
+- **macOS** + **Xcode 15+**
+- **JDK 17+** (`java -version` bilan tekshiring). Agar `JAVA_HOME` bo'sh bo'lsa:
+  `export JAVA_HOME=$(/usr/libexec/java_home -v 17)`
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen): `brew install xcodegen`
+
+1. Repo'ni klon qilgach, wrapper'ni executable qiling (bir marta):
    ```bash
-   cd mobile-app/iosApp
-   xcodegen            # iosApp.xcodeproj yaratadi
+   cd mobile-app
+   chmod +x gradlew
+   ```
+2. Xcode project'ini generatsiya qiling:
+   ```bash
+   cd iosApp
+   xcodegen generate      # iosApp.xcodeproj yaratadi
    open iosApp.xcodeproj
    ```
-2. Scheme: **iosApp** → Run ▶ (iPhone 15+ simulyator)
-   - Pre-build script avtomatik `composeApp.framework` ni Kotlin'dan quradi
-   - Real qurilma uchun `project.yml` dagi framework path'ni `iosArm64` ga o'zgartiring va Signing'da Team tanlang
+3. Scheme: **iosApp** → Run ▶ (iPhone simulyator)
+   - Pre-build script avtomatik `ComposeApp.framework`ni Kotlin'dan quradi
+     (`composeApp/build/xcode-frameworks/<CONFIGURATION>/<SDK_NAME>`)
+   - **Real qurilma** uchun: Signing & Capabilities → Team tanlang.
+     `project.yml`da hech narsani o'zgartirish shart emas — skript barcha
+     arxitekturalar (arm64, simulator arm64/x64) uchun ishlaydi.
+4. Agar Xcode "Sandbox: bash deny file-read-data" bersa — bu allaqachon
+   `ENABLE_USER_SCRIPT_SANDBOXING: NO` bilan tuzatilgan (`project.yml`).
 
 ## ⚠️ Cheklovlar va keyingi qadamlar
 

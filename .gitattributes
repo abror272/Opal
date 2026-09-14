@@ -1,0 +1,10 @@
+# Cross-platform line endings: shell skriptlar macOS/Linux'da LF bo'lishi shart
+gradlew text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf
+
+# Binary fayllar
+*.jar binary
+*.png binary
+*.jpg binary
+*.webp binary
