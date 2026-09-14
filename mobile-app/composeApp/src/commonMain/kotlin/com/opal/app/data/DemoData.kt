@@ -56,29 +56,33 @@ object DemoData {
         plan = "FREE"
     )
 
+    /** 35 kunlik izchillik xaritasi uchun to'liq oyna. */
+    private val SAVE_PATTERN = listOf(
+        95, 120, 0, 140, 88, 150, 60, 0, 110, 175, 45, 130, 0, 90, 160,
+        70, 0, 105, 132, 48, 165, 82, 0, 118, 96, 142, 55, 0, 128, 172,
+        64, 0, 100, 138, 76
+    )
+
     fun stats(): StatsResponseDto {
         val t = today()
-        val screen = listOf(326, 291, 342, 198, 254, 176, 212)
-        val saved = listOf(95, 120, 60, 140, 88, 150, 96)
-        val pickups = listOf(74, 61, 80, 43, 57, 38, 46)
-        val days = (0..6).map { i ->
-            val d = t.minus(DatePeriod(days = 6 - i))
+        val days = (0..34).map { i ->
+            val d = t.minus(DatePeriod(days = 34 - i))
             DailyStatDto(
                 id = "demo-stat-$i",
                 date = d.toString(),
-                screenTimeMinutes = screen[i],
-                savedMinutes = saved[i],
-                pickups = pickups[i],
+                screenTimeMinutes = 180 + ((i * 53) % 190),
+                savedMinutes = SAVE_PATTERN[i % SAVE_PATTERN.size],
+                pickups = 30 + ((i * 17) % 60),
                 goalMinutes = 240
             )
         }
-        val todayStat = days.last()
+        val last7 = days.takeLast(7)
         return StatsResponseDto(
             days = days,
-            today = todayStat,
-            weekSavedMinutes = saved.sum(),
-            weekScreenMinutes = screen.sum(),
-            avgDailyScreenMinutes = screen.sum() / 7,
+            today = days.last(),
+            weekSavedMinutes = last7.sumOf { it.savedMinutes },
+            weekScreenMinutes = last7.sumOf { it.screenTimeMinutes },
+            avgDailyScreenMinutes = last7.sumOf { it.screenTimeMinutes } / 7,
             trendPercent = -8,
             goalMinutes = 240
         )

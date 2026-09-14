@@ -43,6 +43,7 @@ import com.opal.app.platform.rememberSafePadding
 import com.opal.app.theme.OpalColors
 import com.opal.app.theme.OpalTheme
 import com.opal.app.ui.TabKey
+import com.opal.app.ui.components.SessionPill
 import com.opal.app.ui.screens.ActiveSessionOverlay
 import com.opal.app.ui.screens.AppsScreen
 import com.opal.app.ui.screens.BreathingOverlay
@@ -104,7 +105,8 @@ private fun MainShell() {
 
     val active by sessionCtl.active.collectAsState()
     val completion by sessionCtl.completion.collectAsState()
-    val showOverlay = active != null || completion != null
+    // To'liq ekranli sessiya oynasi faqat Taymer tabida; boshqa tablarda — SessionPill.
+    val showOverlay = completion != null || (active != null && tab == TabKey.TIMER)
 
     Box(
         Modifier
@@ -157,6 +159,22 @@ private fun MainShell() {
                         TabKey.APPS -> AppsScreen()
                         TabKey.TIMER -> FocusScreen()
                     }
+                }
+            }
+
+            // Faol sessiya suzuvchi pill (boshqa tablarda)
+            AnimatedVisibility(
+                visible = active != null && completion == null && tab != TabKey.TIMER,
+                enter = slideInVertically { it } + fadeIn(tween(200)),
+                exit = slideOutVertically { it } + fadeOut(tween(180))
+            ) {
+                Column {
+                    SessionPill(
+                        controller = sessionCtl,
+                        onClick = { tab = TabKey.TIMER },
+                        modifier = Modifier.padding(horizontal = 32.dp)
+                    )
+                    Spacer(Modifier.height(10.dp))
                 }
             }
 

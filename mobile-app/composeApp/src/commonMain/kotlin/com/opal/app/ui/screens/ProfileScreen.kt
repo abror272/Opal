@@ -42,7 +42,10 @@ import com.opal.app.theme.OpalRadius
 import com.opal.app.theme.OpalSpacing
 import com.opal.app.ui.OpalIcon
 import com.opal.app.ui.OpalIcons
+import com.opal.app.ui.components.ConsistencyHeatmap
 import com.opal.app.ui.components.GemstonesSection
+import com.opal.app.ui.components.HistoryList
+import com.opal.app.ui.components.LiveLeaderboard
 
 @Composable
 fun ProfileScreen(onClose: () -> Unit) {
@@ -50,6 +53,7 @@ fun ProfileScreen(onClose: () -> Unit) {
     val insets = rememberSafePadding()
     val profile by repo.profile.collectAsState()
     val sessions by repo.sessions.collectAsState()
+    val stats by repo.stats.collectAsState()
     val hadSleep = remember(sessions) { sessions.any { it.type == "SLEEP" } }
 
     val focusHours = profile.totalSavedMinutes / 60
@@ -133,6 +137,25 @@ fun ProfileScreen(onClose: () -> Unit) {
                 MiniStat("Tejalgan vaqt", "${profile.totalSavedMinutes / 60}s ${profile.totalSavedMinutes % 60}d", Modifier.weight(1f))
                 MiniStat("Sessiyalar", "${profile.totalSessions}", Modifier.weight(1f))
             }
+
+            Spacer(Modifier.height(OpalSpacing.xxl))
+
+            // ---- Consistency heatmap ----
+            ConsistencyHeatmap(stats.days)
+
+            Spacer(Modifier.height(OpalSpacing.xxl))
+
+            // ---- Live leaderboard ----
+            LiveLeaderboard(
+                myName = profile.name,
+                mySavedMinutes = profile.totalSavedMinutes,
+                myStreak = profile.streakDays
+            )
+
+            Spacer(Modifier.height(OpalSpacing.xxl))
+
+            // ---- History ----
+            HistoryList(sessions)
 
             Spacer(Modifier.height(OpalSpacing.xxl))
 
