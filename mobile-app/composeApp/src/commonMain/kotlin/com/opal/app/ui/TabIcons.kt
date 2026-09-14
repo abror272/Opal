@@ -3,9 +3,7 @@ package com.opal.app.ui
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -14,18 +12,16 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/** 5 ta asosiy tab. Tartib GlassTabBar'lar bilan bir xil bo'lishi shart. */
+/** 3 ta asosiy tab (haqiqiy Opal kabi). Tartib GlassTabBar'lar bilan bir xil bo'lishi shart. */
 enum class TabKey(val title: String) {
-    HOME("Asosiy"),
-    FOCUS("Fokus"),
-    STATS("Statistika"),
-    APPS("Ilovalar"),
-    PROFILE("Profil")
+    HOME("Home"),
+    APPS("My Apps"),
+    TIMER("Timer")
 }
 
 /**
- * Material-icons kutubxonasiga bog'lanmasdan o'z minimal ikonlarimiz.
- * 24x24 viewport'da chiziladi, masshtablanadi.
+ * Tab ikonkalari — haqiqiy Opal uslubi:
+ * Home = halqa (ring), My Apps = 4 nuqta, Timer = play uchburchagi.
  */
 @Composable
 fun OpalTabIcon(tab: TabKey, tint: Color, modifier: Modifier = Modifier) {
@@ -36,70 +32,39 @@ fun OpalTabIcon(tab: TabKey, tint: Color, modifier: Modifier = Modifier) {
 
 private fun DrawScope.drawTabIcon(tab: TabKey, c: Color) {
     val s = size.minDimension / 24f
-
     fun pt(x: Float, y: Float) = Offset(x * s, y * s)
 
     when (tab) {
         TabKey.HOME -> {
-            val path = Path().apply {
-                moveTo(3.6f, 11.2f)
-                lineTo(12f, 3.8f)
-                lineTo(20.4f, 11.2f)
-                lineTo(20.4f, 19.2f)
-                cubicTo(20.4f, 20.0f, 19.9f, 20.4f, 19.2f, 20.4f)
-                lineTo(4.8f, 20.4f)
-                cubicTo(4.1f, 20.4f, 3.6f, 20.0f, 3.6f, 19.2f)
-                close()
-            }
-            drawPath(path, c)
-            // eshik
-            drawRoundRect(
-                color = Color.Black.copy(alpha = 0.35f),
-                topLeft = pt(10.4f, 14.6f),
-                size = Size(3.2f * s, 5.8f * s),
-                cornerRadius = CornerRadius(1.4f * s)
-            )
-        }
-
-        TabKey.FOCUS -> {
+            // halqa
             drawCircle(
                 color = c,
-                radius = 7.4f * s,
-                center = pt(12f, 13.4f),
-                style = Stroke(width = 1.9f * s, cap = StrokeCap.Round)
+                radius = 8.6f * s,
+                center = pt(12f, 12f),
+                style = Stroke(width = 2.2f * s, cap = StrokeCap.Round)
             )
-            drawLine(c, pt(12f, 13.4f), pt(12f, 8.6f), strokeWidth = 1.9f * s, cap = StrokeCap.Round)
-            drawLine(c, pt(12f, 13.4f), pt(15.2f, 15.2f), strokeWidth = 1.9f * s, cap = StrokeCap.Round)
-            // tepadagi tugma
-            drawLine(c, pt(9.8f, 3.4f), pt(14.2f, 3.4f), strokeWidth = 1.9f * s, cap = StrokeCap.Round)
-        }
-
-        TabKey.STATS -> {
-            drawRoundRect(c, pt(4.2f, 12.4f), Size(3.7f * s, 8f * s), CornerRadius(1.6f * s))
-            drawRoundRect(c, pt(10.15f, 6.8f), Size(3.7f * s, 13.6f * s), CornerRadius(1.6f * s))
-            drawRoundRect(c, pt(16.1f, 14.8f), Size(3.7f * s, 5.6f * s), CornerRadius(1.6f * s))
         }
 
         TabKey.APPS -> {
-            val r = CornerRadius(2.1f * s)
-            drawRoundRect(c, pt(4f, 4f), Size(7.1f * s, 7.1f * s), r)
-            drawRoundRect(c, pt(12.9f, 4f), Size(7.1f * s, 7.1f * s), r)
-            drawRoundRect(c, pt(4f, 12.9f), Size(7.1f * s, 7.1f * s), r)
-            drawRoundRect(c, pt(12.9f, 12.9f), Size(7.1f * s, 7.1f * s), r)
+            // 4 nuqta (2x2)
+            val r = 3.2f * s
+            drawCircle(c, radius = r, center = pt(7.6f, 7.6f))
+            drawCircle(c, radius = r, center = pt(16.4f, 7.6f))
+            drawCircle(c, radius = r, center = pt(7.6f, 16.4f))
+            drawCircle(c, radius = r, center = pt(16.4f, 16.4f))
         }
 
-        TabKey.PROFILE -> {
-            drawCircle(c, radius = 4.1f * s, center = pt(12f, 7.7f))
-            val body = Path().apply {
-                moveTo(4.6f, 20.6f)
-                cubicTo(4.6f, 15.4f, 8.1f, 13.7f, 12f, 13.7f)
-                cubicTo(15.9f, 13.7f, 19.4f, 15.4f, 19.4f, 20.6f)
+        TabKey.TIMER -> {
+            // play uchburchagi
+            val p = Path().apply {
+                moveTo(8.5f * s, 5.5f * s)
+                lineTo(19f * s, 12f * s)
+                lineTo(8.5f * s, 18.5f * s)
                 close()
             }
-            drawPath(body, c)
+            drawPath(p, c)
         }
     }
 }
 
-/** Kichik util — Dp bo'sh joy uchun. */
 fun defaultIconSize(): Dp = 24.dp

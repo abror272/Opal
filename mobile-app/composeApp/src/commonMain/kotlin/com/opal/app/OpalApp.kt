@@ -31,10 +31,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.opal.app.data.AppGraph
 import com.opal.app.glass.GlassTabBar
@@ -50,9 +48,12 @@ import com.opal.app.ui.screens.HomeScreen
 import com.opal.app.ui.screens.ProfileScreen
 import com.opal.app.ui.screens.StatsScreen
 
+/** Home'dan ochiladigan to'liq ekran oynalar. */
+private enum class OpalOverlay { PROFILE, STATS }
+
 /**
  * OPAL MOBILE — root.
- * Tab o'tish: spring parallax slide + fade + iOS'da haqiqiy glass "veil" erishi.
+ * 3 asosiy tab (Home / My Apps / Timer) + Profile & Stats overlay.
  */
 @Composable
 fun OpalApp() {
@@ -64,8 +65,9 @@ fun OpalApp() {
         LaunchedEffect(Unit) { repo.refreshAll() }
 
         var tab by remember { mutableStateOf(TabKey.HOME) }
+        var overlay by remember { mutableStateOf<OpalOverlay?>(null) }
 
-        // Tab o'tish glass veil (Telegram uslubi — iOS'da UIVisualEffectView)
+        // Tab o'tish glass veil
         val veil = remember { Animatable(0f) }
         var firstRender by remember { mutableStateOf(true) }
         LaunchedEffect(tab) {
@@ -86,22 +88,22 @@ fun OpalApp() {
                 .fillMaxSize()
                 .background(OpalColors.Bg)
         ) {
-            // dekorativ neon glow blob'lar
+            // dekorativ mint glow blob'lar
             Box(
                 Modifier
-                    .offset(x = (-140).dp, y = (-110).dp)
-                    .size(380.dp)
+                    .offset(x = (-150).dp, y = (-140).dp)
+                    .size(400.dp)
                     .background(
-                        Brush.radialGradient(listOf(Color(0x2E7C5CFF), Color.Transparent))
+                        Brush.radialGradient(listOf(Color(0x1FA9E8B8), Color.Transparent))
                     )
             )
             Box(
                 Modifier
                     .align(Alignment.BottomEnd)
-                    .offset(x = 130.dp, y = 160.dp)
-                    .size(340.dp)
+                    .offset(x = 140.dp, y = 180.dp)
+                    .size(360.dp)
                     .background(
-                        Brush.radialGradient(listOf(Color(0x26FF7AD9), Color.Transparent))
+                        Brush.radialGradient(listOf(Color(0x147FE7D0), Color.Transparent))
                     )
             )
 
@@ -127,13 +129,12 @@ fun OpalApp() {
                     ) { key ->
                         when (key) {
                             TabKey.HOME -> HomeScreen(
-                                onStartFocus = { tab = TabKey.FOCUS },
-                                onOpenStats = { tab = TabKey.STATS }
+                                onStartFocus = { tab = TabKey.TIMER },
+                                onOpenProfile = { overlay = OpalOverlay.PROFILE },
+                                onOpenStats = { overlay = OpalOverlay.STATS }
                             )
-                            TabKey.FOCUS -> FocusScreen()
-                            TabKey.STATS -> StatsScreen()
                             TabKey.APPS -> AppsScreen()
-                            TabKey.PROFILE -> ProfileScreen()
+                            TabKey.TIMER -> FocusScreen()
                         }
                     }
                 }
@@ -149,6 +150,24 @@ fun OpalApp() {
 
             // Tab o'tish paytidagi frosted veil
             GlassVeil(alpha = veil.value, modifier = Modifier.fillMaxSize())
+
+            // Profile overlay
+            AnimatedVisibility(
+                visible = overlay == OpalOverlay.PROFILE,
+                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(tween(220)),
+                exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(tween(200))
+            ) {
+                ProfileScreen(onClose = { overlay = null })
+            }
+
+            // Stats (Today) overlay
+            AnimatedVisibility(
+                visible = overlay == OpalOverlay.STATS,
+                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(tween(220)),
+                exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(tween(200))
+            ) {
+                StatsScreen(onClose = { overlay = null })
+            }
 
             // Faol sessiya overlay
             AnimatedVisibility(

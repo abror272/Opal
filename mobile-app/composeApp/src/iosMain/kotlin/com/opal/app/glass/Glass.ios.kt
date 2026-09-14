@@ -45,8 +45,8 @@ import platform.objc.sel
  *    Compose spring animatsiyasi bilan erib ketadi.
  */
 
-private val TAB_SYMBOLS = listOf("house.fill", "timer", "chart.bar.fill", "square.grid.2x2.fill", "person.fill")
-private val TAB_TITLES = listOf("Home", "Fokus", "Statistika", "Ilovalar", "Profil")
+private val TAB_SYMBOLS = listOf("circle", "square.grid.2x2.fill", "play.fill")
+private val TAB_TITLES = listOf("Home", "My Apps", "Timer")
 
 /** UITapGestureRecognizer action'lari uchun proxy. */
 private class TabTapProxy : NSObject() {

@@ -20,7 +20,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 enum class OpalIcon {
     Lock, Shield, Flame, Zap, Phone, Clock, Chart, Check,
     TrendUp, TrendDown, Trophy, Star, Moon, Gem, Target,
-    Sliders, Play, ChevronRight, Eye
+    Sliders, Play, ChevronRight, ChevronLeft, Eye,
+    Hourglass, Plant, Person, Globe, Plus, Minus, Gear, Ring
 }
 
 @Composable
@@ -246,6 +247,99 @@ private fun DrawScope.drawOpalIcon(icon: OpalIcon, c: Color) {
             }
             drawPath(p, c, style = stroke)
             drawCircle(c, radius = 3f * s, center = pt(12f, 12f), style = stroke)
+        }
+
+        OpalIcon.ChevronLeft -> poly(15f, 6f, 9f, 12f, 15f, 18f)
+
+        OpalIcon.Hourglass -> {
+            val p = Path().apply {
+                moveTo(7f * s, 3.5f * s)
+                lineTo(17f * s, 3.5f * s)
+                lineTo(17f * s, 7f * s)
+                cubicTo(17f * s, 9.6f * s, 14.4f * s, 11f * s, 12f * s, 12f * s)
+                cubicTo(14.4f * s, 13f * s, 17f * s, 14.4f * s, 17f * s, 17f * s)
+                lineTo(17f * s, 20.5f * s)
+                lineTo(7f * s, 20.5f * s)
+                lineTo(7f * s, 17f * s)
+                cubicTo(7f * s, 14.4f * s, 9.6f * s, 13f * s, 12f * s, 12f * s)
+                cubicTo(9.6f * s, 11f * s, 7f * s, 9.6f * s, 7f * s, 7f * s)
+                close()
+            }
+            drawPath(p, c, style = stroke)
+            poly(7f, 3.5f, 17f, 3.5f)
+            poly(7f, 20.5f, 17f, 20.5f)
+        }
+
+        OpalIcon.Plant -> {
+            // tree / rest — toj + tana
+            val crown = Path().apply {
+                moveTo(12f * s, 3f * s)
+                cubicTo(8.4f * s, 3f * s, 6f * s, 5.6f * s, 6f * s, 8.6f * s)
+                cubicTo(4.4f * s, 9.4f * s, 3.5f * s, 11.2f * s, 4.2f * s, 13f * s)
+                cubicTo(4.8f * s, 14.6f * s, 6.4f * s, 15.4f * s, 8f * s, 15.2f * s)
+                cubicTo(8.4f * s, 16.6f * s, 10f * s, 17.4f * s, 11.4f * s, 17f * s)
+                lineTo(11.4f * s, 21f * s)
+                lineTo(12.6f * s, 21f * s)
+                lineTo(12.6f * s, 17f * s)
+                cubicTo(14f * s, 17.4f * s, 15.6f * s, 16.6f * s, 16f * s, 15.2f * s)
+                cubicTo(17.6f * s, 15.4f * s, 19.2f * s, 14.6f * s, 19.8f * s, 13f * s)
+                cubicTo(20.5f * s, 11.2f * s, 19.6f * s, 9.4f * s, 18f * s, 8.6f * s)
+                cubicTo(18f * s, 5.6f * s, 15.6f * s, 3f * s, 12f * s, 3f * s)
+                close()
+            }
+            drawPath(crown, c, style = stroke)
+        }
+
+        OpalIcon.Person -> {
+            drawCircle(c, radius = 4.2f * s, center = pt(12f, 8f), style = stroke)
+            val body = Path().apply {
+                moveTo(4.5f * s, 20.5f * s)
+                cubicTo(4.5f * s, 15.6f * s, 8f * s, 13.6f * s, 12f * s, 13.6f * s)
+                cubicTo(16f * s, 13.6f * s, 19.5f * s, 15.6f * s, 19.5f * s, 20.5f * s)
+            }
+            drawPath(body, c, style = stroke)
+        }
+
+        OpalIcon.Globe -> {
+            drawCircle(c, radius = 8.6f * s, center = pt(12f, 12f), style = stroke)
+            // meridian
+            val mer = Path().apply {
+                moveTo(12f * s, 3.4f * s)
+                cubicTo(8.5f * s, 6f * s, 8.5f * s, 18f * s, 12f * s, 20.6f * s)
+                cubicTo(15.5f * s, 18f * s, 15.5f * s, 6f * s, 12f * s, 3.4f * s)
+                close()
+            }
+            drawPath(mer, c, style = stroke)
+            drawLine(c, pt(3.6f, 12f), pt(20.4f, 12f), strokeWidth = sw, cap = StrokeCap.Round)
+        }
+
+        OpalIcon.Plus -> {
+            drawLine(c, pt(12f, 5f), pt(12f, 19f), strokeWidth = sw, cap = StrokeCap.Round)
+            drawLine(c, pt(5f, 12f), pt(19f, 12f), strokeWidth = sw, cap = StrokeCap.Round)
+        }
+
+        OpalIcon.Minus -> {
+            drawLine(c, pt(5f, 12f), pt(19f, 12f), strokeWidth = sw, cap = StrokeCap.Round)
+        }
+
+        OpalIcon.Gear -> {
+            drawCircle(c, radius = 3.2f * s, center = pt(12f, 12f), style = stroke)
+            // 8 teeth as short radial lines
+            var i = 0
+            while (i < 8) {
+                val ang = (i * 45f) * 0.017453292f
+                val cx = 12f + kotlin.math.cos(ang) * 7.4f
+                val cy = 12f + kotlin.math.sin(ang) * 7.4f
+                val cx2 = 12f + kotlin.math.cos(ang) * 9.6f
+                val cy2 = 12f + kotlin.math.sin(ang) * 9.6f
+                drawLine(c, pt(cx, cy), pt(cx2, cy2), strokeWidth = sw, cap = StrokeCap.Round)
+                i++
+            }
+            drawCircle(c, radius = 6.4f * s, center = pt(12f, 12f), style = Stroke(width = sw))
+        }
+
+        OpalIcon.Ring -> {
+            drawCircle(c, radius = 8.4f * s, center = pt(12f, 12f), style = Stroke(width = 2.4f * s))
         }
     }
 }
