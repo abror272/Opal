@@ -62,14 +62,20 @@ Serverni ishga tushirish: web loyiha ildizida `bun run dev`.
 
 ## 🤖 Android qurish
 
-Talablar: **Android Studio Ladybug+**, **JDK 17+** (`JAVA_HOME`), Android SDK 35.
+Talablar: **Android Studio Ladybug+**, Android SDK 35. JDK alohida o'rnatish shart emas —
+`mobile-app/gradle/gradle-daemon-jvm.properties` Gradle daemon'ini **JDK 21** ga majburlaydi
+(AGP 8.7.3 JDK 25 bilan ishlamaydi: sync `java.lang.IllegalArgumentException: 25.0.4` beradi).
 
 > ⚠️ Bu repo'da Gradle project **`mobile-app/`** ichida. Android Studio'da aynan
 > shu papkani `Open` qiling (repo ildizini emas — ildizda Gradle build yo'q).
 
 1. Android Studio → `Open` → **`mobile-app/`** papkasini tanlang
-2. Gradle sync tugagach (birinchi marta internet kerak) → `composeApp` konfiguratsiyasini tanlab ▶ Run
-3. Yoki terminalda:
+2. **Gradle JDK'ni tekshiring:** `Settings` → `Build, Execution, Deployment` →
+   `Build Tools` → `Gradle` → **Gradle JDK = Embedded JDK (jbr-21) / 17 / 21**.
+   ❌ JDK 25 yoki "JAVA_HOME" ni tanlamang — sync yiqiladi va Edit Configurations'da
+   module `<no module>` bo'lib qoladi.
+3. Sync tugagach `composeApp` konfiguratsiyasini tanlab ▶ Run
+4. Yoki terminalda:
    ```bash
    cd mobile-app
    chmod +x gradlew        # macOS/Linux'da bir marta
@@ -78,6 +84,12 @@ Talablar: **Android Studio Ladybug+**, **JDK 17+** (`JAVA_HOME`), Android SDK 35
    ```
 
 > `local.properties` (Android SDK yo'li) `.gitignore`da — Android Studio uni o'zi yaratadi.
+
+### ❗️ "no module" xatosi bo'lsa
+1. `mobile-app/` papkasi ochilganiga ishonch hosil qiling (ildiz emas).
+2. `File` → `Invalidate Caches…` → `Invalidate and Restart`.
+3. Sync'dan keyin: `Edit Configurations` → `+` → `Android App` → **Module** ro'yxatida
+   `OpalApp.composeApp` paydo bo'ladi.
 
 ## 🍎 iOS qurish (macOS)
 

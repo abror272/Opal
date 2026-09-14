@@ -14,6 +14,11 @@ pluginManagement {
     }
 }
 
+plugins {
+    // Mashinada mos JDK (17/21) topilmasa, Gradle uni avtomatik yuklab oladi
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
+}
+
 dependencyResolutionManagement {
     repositories {
         google()
