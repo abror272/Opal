@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -44,9 +45,12 @@ import androidx.compose.ui.unit.sp
 import com.opal.app.data.AppGraph
 import com.opal.app.data.InstalledApp
 import com.opal.app.data.RuleSpec
+import com.opal.app.data.currentMinutesOfDay
+import com.opal.app.data.installedSocialPackages
 import com.opal.app.data.minutesToTime
 import com.opal.app.data.openBlockingSettings
 import com.opal.app.data.parseTimeToMinutes
+import com.opal.app.data.ruleStatusLabel
 import com.opal.app.glass.Pressable
 import com.opal.app.platform.rememberSafePadding
 import com.opal.app.theme.OpalColors
@@ -91,6 +95,7 @@ fun AppsScreen(onOpenProfile: () -> Unit = {}) {
 
     var query by remember { mutableStateOf("") }
     var editing by remember { mutableStateOf<RuleSpec?>(null) }
+    var nowMin by remember { mutableStateOf(currentMinutesOfDay()) }
 
     LaunchedEffect(Unit) {
         repo.loadDeviceData()
@@ -98,6 +103,13 @@ fun AppsScreen(onOpenProfile: () -> Unit = {}) {
         while (true) {
             delay(1500)
             repo.refreshBlockingService()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(30_000)
+            nowMin = currentMinutesOfDay()
         }
     }
 
@@ -195,7 +207,7 @@ fun AppsScreen(onOpenProfile: () -> Unit = {}) {
             rules.chunked(2).forEach { row ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(OpalSpacing.md)) {
                     row.forEach { rule ->
-                        RuleCard(rule, Modifier.weight(1f)) { editing = rule }
+                        RuleCard(rule, ruleStatusLabel(rule, nowMin), Modifier.weight(1f)) { editing = rule }
                     }
                     if (row.size == 1) Spacer(Modifier.weight(1f))
                 }
@@ -225,6 +237,7 @@ fun AppsScreen(onOpenProfile: () -> Unit = {}) {
         editing?.let { rule ->
             RuleEditorSheet(
                 initial = rule,
+                apps = apps,
                 onDismiss = { editing = null },
                 onSave = { updated ->
                     repo.updateRule(updated)
@@ -486,11 +499,16 @@ private fun AppTile(
 }
 
 @Composable
-private fun RuleCard(rule: RuleSpec, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun RuleCard(
+    rule: RuleSpec,
+    status: String? = null,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
     val photo = rulePhoto(rule.photo)
     Box(
         modifier
-            .height(158.dp)
+            .height(170.dp)
             .clip(RoundedCornerShape(OpalRadius.md))
             .background(Brush.linearGradient(ruleGradient(rule.photo)))
             .border(
@@ -544,17 +562,6 @@ private fun RuleCard(rule: RuleSpec, modifier: Modifier = Modifier, onClick: () 
                 }
             }
             Column {
-                if (rule.type == "limit") {
-                    Box(
-                        Modifier
-                            .padding(bottom = 8.dp)
-                            .clip(RoundedCornerShape(50))
-                            .background(OpalColors.Accent.copy(alpha = 0.12f))
-                            .padding(horizontal = 9.dp, vertical = 3.dp)
-                    ) {
-                        Text("${rule.opens} ta ochish", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = OpalColors.MintLight)
-                    }
-                }
                 Text(
                     rule.title,
                     fontSize = 14.5.sp,
@@ -576,6 +583,16 @@ private fun RuleCard(rule: RuleSpec, modifier: Modifier = Modifier, onClick: () 
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                if (status != null) {
+                    val live = status == "Hozir faol"
+                    Text(
+                        if (live) "● $status" else status,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (live) OpalColors.MintLight else Color.White.copy(alpha = 0.42f),
+                        modifier = Modifier.padding(top = 3.dp)
+                    )
+                }
             }
         }
     }
@@ -586,6 +603,7 @@ private fun RuleCard(rule: RuleSpec, modifier: Modifier = Modifier, onClick: () 
 @Composable
 private fun RuleEditorSheet(
     initial: RuleSpec,
+    apps: List<InstalledApp>,
     onDismiss: () -> Unit,
     onSave: (RuleSpec) -> Unit
 ) {
@@ -593,10 +611,19 @@ private fun RuleEditorSheet(
     var subtitle by remember { mutableStateOf(initial.subtitle) }
     var enabled by remember { mutableStateOf(initial.enabled) }
     var type by remember { mutableStateOf(initial.type) }
+    var mode by remember { mutableStateOf(initial.mode) }
+    var selectedApps by remember { mutableStateOf(initial.apps.toSet()) }
     var startMin by remember { mutableStateOf(parseTimeToMinutes(initial.start)) }
     var endMin by remember { mutableStateOf(parseTimeToMinutes(initial.end)) }
     var opens by remember { mutableStateOf(initial.opens) }
     val insets = rememberSafePadding()
+
+    // Ro'yxat bo'sh bo'lsa — qurilmadagi standart chalg'ituvchilarni tanlab beramiz.
+    LaunchedEffect(Unit) {
+        if (selectedApps.isEmpty() && mode != "blockAll") {
+            selectedApps = installedSocialPackages().ifEmpty { emptySet() }
+        }
+    }
 
     Box(Modifier.fillMaxSize()) {
         Box(
@@ -629,7 +656,12 @@ private fun RuleEditorSheet(
                 )
             }
 
-            Column(Modifier.padding(horizontal = 20.dp)) {
+            Column(
+                Modifier
+                    .heightIn(max = 600.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp)
+            ) {
                 Spacer(Modifier.height(16.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(initial.icon, fontSize = 22.sp)
@@ -665,6 +697,20 @@ private fun RuleEditorSheet(
                 Spacer(Modifier.height(18.dp))
 
                 if (type == "schedule") {
+                    FieldLabel("Rejim")
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ModeChip("🔒", "Hammasini bloklash", mode == "blockAll") { mode = "blockAll" }
+                        ModeChip("🚫", "Tanlangan ilovalarni bloklash", mode == "block") { mode = "block" }
+                        ModeChip("✅", "Tanlangan ilovalarni ochish", mode == "allow") { mode = "allow" }
+                    }
+                    if (mode != "blockAll") {
+                        Spacer(Modifier.height(16.dp))
+                        FieldLabel("Ilovalar — ${selectedApps.size} ta tanlandi")
+                        AppPicker(apps, selectedApps) { pkg ->
+                            selectedApps = if (pkg in selectedApps) selectedApps - pkg else selectedApps + pkg
+                        }
+                    }
+                    Spacer(Modifier.height(18.dp))
                     FieldLabel("Vaqt oralig'i")
                     TimeRow("Boshlanish", startMin) { startMin = it }
                     Spacer(Modifier.height(10.dp))
@@ -682,6 +728,11 @@ private fun RuleEditorSheet(
                             textAlign = TextAlign.Center
                         )
                         StepperButton("＋") { if (opens < 200) opens++ }
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    FieldLabel("Ilovalar — ${selectedApps.size} ta tanlandi")
+                    AppPicker(apps, selectedApps) { pkg ->
+                        selectedApps = if (pkg in selectedApps) selectedApps - pkg else selectedApps + pkg
                     }
                 }
 
@@ -711,9 +762,12 @@ private fun RuleEditorSheet(
                                         subtitle = subtitle,
                                         enabled = enabled,
                                         type = type,
+                                        mode = if (type == "schedule") mode else "block",
                                         start = minutesToTime(startMin),
                                         end = minutesToTime(endMin),
-                                        opens = opens
+                                        opens = opens,
+                                        apps = if (type == "schedule" && mode == "blockAll") emptyList()
+                                        else selectedApps.toList()
                                     )
                                 )
                             }
@@ -818,5 +872,112 @@ private fun StepperButton(symbol: String, onClick: () -> Unit) {
         contentAlignment = Alignment.Center
     ) {
         Text(symbol, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = OpalColors.TextPrimary)
+    }
+}
+
+@Composable
+private fun ModeChip(emoji: String, label: String, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(if (selected) OpalColors.Accent.copy(alpha = 0.14f) else Color.White.copy(alpha = 0.04f))
+            .border(
+                1.dp,
+                if (selected) OpalColors.Accent.copy(alpha = 0.55f) else Color.White.copy(alpha = 0.09f),
+                RoundedCornerShape(14.dp)
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(emoji, fontSize = 15.sp)
+        Spacer(Modifier.width(9.dp))
+        Text(
+            label,
+            fontSize = 12.5.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            color = if (selected) OpalColors.MintLight else OpalColors.TextSecondary,
+            modifier = Modifier.weight(1f)
+        )
+        Box(
+            Modifier
+                .size(18.dp)
+                .clip(CircleShape)
+                .background(if (selected) OpalColors.Accent else Color.White.copy(alpha = 0.10f)),
+            contentAlignment = Alignment.Center
+        ) {
+            if (selected) OpalIcons(OpalIcon.Check, Color(0xFF052E16), Modifier.size(11.dp))
+        }
+    }
+}
+
+@Composable
+private fun AppPicker(
+    apps: List<InstalledApp>,
+    selected: Set<String>,
+    onToggle: (String) -> Unit
+) {
+    if (apps.isEmpty()) {
+        Text("Ilovalar yuklanmoqda…", fontSize = 12.sp, color = OpalColors.TextTertiary)
+        return
+    }
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(max = 150.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color.White.copy(alpha = 0.04f))
+            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(14.dp))
+            .verticalScroll(rememberScrollState())
+    ) {
+        apps.forEach { app ->
+            val on = app.packageName in selected
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { onToggle(app.packageName) }
+                    .padding(horizontal = 10.dp, vertical = 7.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    Modifier
+                        .size(28.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.White.copy(alpha = 0.06f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val ic = app.icon
+                    if (ic != null) {
+                        Image(bitmap = ic, contentDescription = null, modifier = Modifier.size(26.dp))
+                    } else {
+                        Text("📱", fontSize = 13.sp)
+                    }
+                }
+                Spacer(Modifier.width(9.dp))
+                Text(
+                    app.label,
+                    fontSize = 12.5.sp,
+                    color = OpalColors.TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                Box(
+                    Modifier
+                        .size(19.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(if (on) OpalColors.Accent else Color.Transparent)
+                        .border(
+                            1.dp,
+                            if (on) OpalColors.Accent else Color.White.copy(alpha = 0.25f),
+                            RoundedCornerShape(6.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (on) OpalIcons(OpalIcon.Check, Color(0xFF052E16), Modifier.size(12.dp))
+                }
+            }
+        }
     }
 }

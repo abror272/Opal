@@ -34,3 +34,9 @@ actual fun inGrace(packageName: String): Boolean {
     val now = (NSDate().timeIntervalSince1970 * 1000).toLong()
     return until > now
 }
+
+actual fun recordAppOpen(packageName: String) {}
+
+actual fun appOpensToday(packageName: String): Int = 0
+
+actual fun installedSocialPackages(): Set<String> = emptySet()

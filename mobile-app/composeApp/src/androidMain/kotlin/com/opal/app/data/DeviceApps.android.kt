@@ -146,3 +146,56 @@ actual fun inGrace(packageName: String): Boolean {
     val until = prefs().getLong("grace_$packageName", 0L)
     return until > System.currentTimeMillis()
 }
+
+/* ---------- Kunlik ochish hisobi ---------- */
+
+private fun todayKey(): String {
+    val c = java.util.Calendar.getInstance()
+    return "%04d%02d%02d".format(c.get(java.util.Calendar.YEAR), c.get(java.util.Calendar.MONTH) + 1, c.get(java.util.Calendar.DAY_OF_MONTH))
+}
+
+actual fun appOpensToday(packageName: String): Int {
+    val p = prefs()
+    if (p.getString("opens_day", null) != todayKey()) return 0
+    return p.getInt("opens_$packageName", 0)
+}
+
+actual fun recordAppOpen(packageName: String) {
+    val p = prefs()
+    val today = todayKey()
+    val now = System.currentTimeMillis()
+    // Bir xil paketni 20 sekund ichida qayta sanamaymiz (WINDOW_STATE_CHANGED ko'p marta keladi).
+    if (p.getString("last_open_pkg", null) == packageName && now - p.getLong("last_open_at", 0L) < 20_000L) return
+    val edit = p.edit()
+    if (p.getString("opens_day", null) != today) {
+        p.all.keys.filter { it.startsWith("opens_") && it != "opens_day" }.forEach { edit.remove(it) }
+        edit.putString("opens_day", today)
+    }
+    val prev = if (p.getString("opens_day", null) == today) p.getInt("opens_$packageName", 0) else 0
+    edit.putInt("opens_$packageName", prev + 1)
+    edit.putString("last_open_pkg", packageName)
+    edit.putLong("last_open_at", now)
+    edit.apply()
+}
+
+private var socialCache: Set<String>? = null
+
+actual fun installedSocialPackages(): Set<String> {
+    socialCache?.let { return it }
+    val pm = opalContext().packageManager
+    val out = HashSet<String>()
+    for (p in SOCIAL_PACKAGES) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                pm.getApplicationInfo(p, PackageManager.ApplicationInfoFlags.of(0L))
+            } else {
+                @Suppress("DEPRECATION")
+                pm.getApplicationInfo(p, 0)
+            }
+            out += p
+        } catch (_: Throwable) {
+        }
+    }
+    socialCache = out
+    return out
+}

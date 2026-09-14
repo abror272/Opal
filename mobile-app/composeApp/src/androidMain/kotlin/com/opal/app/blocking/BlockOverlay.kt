@@ -28,6 +28,9 @@ class BlockOverlay(private val service: AccessibilityService) {
     private var currentIcon: Drawable? = null
     private var dismissCb: () -> Unit = {}
     private var allowCb: () -> Unit = {}
+    private var reasonTitle: String = ""
+    private var reasonDetail: String = ""
+    private var strictMode: Boolean = false
 
     var blockedPackage: String? = null
         private set
@@ -46,12 +49,18 @@ class BlockOverlay(private val service: AccessibilityService) {
         packageName: String,
         label: String,
         icon: Drawable?,
+        reasonTitle: String,
+        reasonDetail: String,
+        strict: Boolean,
         onDismiss: () -> Unit,
         onAllow: () -> Unit
     ) {
         currentPkg = packageName
         currentLabel = label
         currentIcon = icon
+        this.reasonTitle = reasonTitle
+        this.reasonDetail = reasonDetail
+        strictMode = strict
         dismissCb = onDismiss
         allowCb = onAllow
         blockedPackage = packageName
@@ -131,6 +140,21 @@ class BlockOverlay(private val service: AccessibilityService) {
         column.addView(text("Opal tomonidan bloklandi", 24f, true, "#F2FFFFFF"))
         column.addView(space(14f))
 
+        // Sabab chipi (qoida nomi yoki "Bloklangan ilova")
+        if (reasonTitle.isNotEmpty()) {
+            column.addView(
+                text(reasonTitle, 11.5f, true, "#9FE8B5").apply {
+                    background = GradientDrawable().apply {
+                        cornerRadius = dpf(50f)
+                        setColor(AColor.parseColor("#1F86EFAC"))
+                        setStroke(dp(1f), AColor.parseColor("#40A7F3D0"))
+                    }
+                    setPadding(dp(14f), dp(7f), dp(14f), dp(7f))
+                }
+            )
+            column.addView(space(10f))
+        }
+
         val witty = WITTY[currentLabel.length % WITTY.size]
         column.addView(
             text(witty, 13f, false, "#73FFFFFF").apply {
@@ -139,19 +163,28 @@ class BlockOverlay(private val service: AccessibilityService) {
             }
         )
 
+        if (reasonDetail.isNotEmpty()) {
+            column.addView(space(8f))
+            column.addView(text(reasonDetail, 11f, false, "#5CFFFFFF"))
+        }
+
         column.addView(space(46f))
 
         val close = pill("Yopish", filled = true)
         close.setOnClickListener { dismissCb() }
         column.addView(close, LinearLayout.LayoutParams(dp(250f), dp(52f)))
 
-        column.addView(space(14f))
-
-        val allow = text("Baribir ochish · 🧮 Battle Math", 11.5f, true, "#59FFFFFF").apply {
-            setPadding(dp(14f), dp(8f), dp(14f), dp(8f))
-            setOnClickListener { renderMath(root) }
+        if (!strictMode) {
+            column.addView(space(14f))
+            val allow = text("Baribir ochish · 🧮 Battle Math", 11.5f, true, "#59FFFFFF").apply {
+                setPadding(dp(14f), dp(8f), dp(14f), dp(8f))
+                setOnClickListener { renderMath(root) }
+            }
+            column.addView(allow)
+        } else {
+            column.addView(space(14f))
+            column.addView(text("Qat'iy rejim — ochish yo'q", 11f, true, "#7AFFB4B4"))
         }
-        column.addView(allow)
     }
 
     /* ==================== Battle Math ==================== */

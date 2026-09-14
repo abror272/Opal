@@ -35,3 +35,14 @@ expect fun openBlockingSettings()
 /** Bloklangan ilovaga vaqtincha ruxsat (millisekund). */
 expect fun grantGrace(packageName: String, millis: Long)
 expect fun inGrace(packageName: String): Boolean
+
+/* ---------- Kunlik ochish hisobi ("limit" qoidalari uchun) ---------- */
+
+/** Ilova ochilganini qayd etish (bir xil paket 20s ichida takror sanalmaydi). */
+expect fun recordAppOpen(packageName: String)
+
+/** Shu paket bugun necha marta ochilgan. */
+expect fun appOpensToday(packageName: String): Int
+
+/** Qurilmada mavjud bo'lgan mashhur chalg'ituvchi ilovalar (qoida nishonlari). */
+expect fun installedSocialPackages(): Set<String>
