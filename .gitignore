@@ -1,6 +1,4 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
+# ===== Dependencies =====
 node_modules
 /.pnp
 .pnp.*
@@ -10,34 +8,49 @@ node_modules
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
+# ===== Build outputs =====
+/build
+**/build/
+.gradle/
+**/.gradle/
+.kotlin/
+**/.kotlin/
+/out/
+**/out/
 
-# next.js
+# ===== Next.js =====
 /.next/
 /out/
 
-# production
-/build
+# ===== IDEs =====
+.idea/
+**/.idea/
+*.iml
+.vscode/
+*.swp
 
-# misc
+# ===== Android / Gradle =====
+local.properties
+**/local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# ===== AI tool artifacts =====
+**/.artifacts/
+
+# ===== Env =====
+.env*
+!.env.example
+
+# ===== Misc =====
 .DS_Store
 *.pem
-
-# debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
 .vercel
-
-
-# typescript
 *.tsbuildinfo
 next-env.d.ts
 local-*
@@ -48,7 +61,5 @@ dev.log
 dev.out.log
 test
 prompt
-
 server.log
-# Skills directory
 /skills/
