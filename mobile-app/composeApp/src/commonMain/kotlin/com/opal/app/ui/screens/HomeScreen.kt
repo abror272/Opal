@@ -41,6 +41,7 @@ import com.opal.app.theme.OpalSpacing
 import com.opal.app.ui.OpalIcon
 import com.opal.app.ui.OpalIcons
 import com.opal.app.ui.components.AllowedPill
+import com.opal.app.ui.components.GlassButton
 import com.opal.app.ui.components.OpalGem
 import com.opal.app.ui.components.ScoreGauge
 import com.opal.app.ui.components.StatRingPill
@@ -242,27 +243,12 @@ private fun RecommendationCard(
             Spacer(Modifier.height(OpalSpacing.lg))
 
             // asosiy CTA
-            Pressable(onClick = onAction, modifier = Modifier.fillMaxWidth()) {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(50))
-                        .background(OpalGradient)
-                        .padding(vertical = 14.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        OpalIcons(OpalIcon.Play, Color(0xFF04241A), Modifier.size(15.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            action,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF04241A)
-                        )
-                    }
-                }
-            }
+            GlassButton(
+                text = action,
+                modifier = Modifier.fillMaxWidth(),
+                icon = OpalIcon.Play,
+                onClick = onAction
+            )
 
             Spacer(Modifier.height(OpalSpacing.sm))
 

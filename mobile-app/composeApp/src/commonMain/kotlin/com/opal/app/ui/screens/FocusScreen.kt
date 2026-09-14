@@ -32,6 +32,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,7 +49,7 @@ import com.opal.app.theme.OpalRadius
 import com.opal.app.theme.OpalSpacing
 import com.opal.app.ui.OpalIcon
 import com.opal.app.ui.OpalIcons
-import com.opal.app.ui.components.GradientButton
+import com.opal.app.ui.components.GlassButton
 import kotlinx.coroutines.launch
 
 @Composable
@@ -77,7 +79,7 @@ fun FocusScreen() {
 
         Text(
             "Timer",
-            fontSize = 26.sp,
+            fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = OpalColors.TextPrimary,
             letterSpacing = (-0.3).sp
@@ -86,38 +88,42 @@ fun FocusScreen() {
         Spacer(Modifier.height(OpalSpacing.lg))
 
         // ---- Scoreboard ----
+        val digit = TextStyle(
+            fontSize = 62.sp,
+            fontWeight = FontWeight.Bold,
+            color = OpalColors.MintLight,
+            letterSpacing = 2.sp,
+            shadow = Shadow(color = OpalColors.Accent.copy(alpha = 0.55f), blurRadius = 26f)
+        )
         GlassPane(Modifier.fillMaxWidth().height(150.dp), radius = OpalRadius.lg, base = 0.06f) {
+            // tashqi ramka (scoreboard frame)
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .border(1.6.dp, Color.White.copy(alpha = 0.16f), RoundedCornerShape(OpalRadius.lg))
+            )
             Box(Modifier.matchParentSize().padding(horizontal = 22.dp), contentAlignment = Alignment.Center) {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            formatClock(minutes * 60L).substringBefore(":"),
-                            fontSize = 64.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = OpalColors.MintLight,
-                            letterSpacing = 2.sp
-                        )
+                        Text(formatClock(minutes * 60L).substringBefore(":"), style = digit)
                         Text(
                             " : ",
-                            fontSize = 58.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = OpalColors.MintLight.copy(alpha = 0.55f)
+                            style = TextStyle(
+                                fontSize = 56.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = OpalColors.MintLight.copy(alpha = 0.5f),
+                                shadow = Shadow(color = OpalColors.Accent.copy(alpha = 0.5f), blurRadius = 24f)
+                            )
                         )
-                        Text(
-                            formatClock(minutes * 60L).substringAfter(":"),
-                            fontSize = 64.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = OpalColors.MintLight,
-                            letterSpacing = 2.sp
-                        )
+                        Text(formatClock(minutes * 60L).substringAfter(":"), style = digit)
                     }
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(12.dp))
                     Box(
                         Modifier
-                            .fillMaxWidth(0.42f)
-                            .height(3.dp)
+                            .fillMaxWidth(0.62f)
+                            .height(2.dp)
                             .clip(RoundedCornerShape(50))
-                            .background(OpalColors.MintLight.copy(alpha = 0.35f))
+                            .background(Color.White.copy(alpha = 0.28f))
                     )
                 }
             }
@@ -202,7 +208,7 @@ fun FocusScreen() {
         Spacer(Modifier.height(OpalSpacing.xl))
 
         // ---- Start ----
-        GradientButton(
+        GlassButton(
             text = "Start Timer",
             modifier = Modifier.fillMaxWidth(),
             icon = OpalIcon.Play,
@@ -300,8 +306,8 @@ private fun TogglePill(
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(50))
-                .background(if (on) OpalColors.SuccessSoft else Color.White.copy(alpha = 0.05f))
-                .border(1.dp, if (on) tint.copy(alpha = 0.4f) else Color.White.copy(alpha = 0.10f), RoundedCornerShape(50))
+                .background(Color.White.copy(alpha = 0.03f))
+                .border(1.2.dp, if (on) tint.copy(alpha = 0.55f) else Color.White.copy(alpha = 0.12f), RoundedCornerShape(50))
                 .padding(vertical = 12.dp),
             contentAlignment = Alignment.Center
         ) {

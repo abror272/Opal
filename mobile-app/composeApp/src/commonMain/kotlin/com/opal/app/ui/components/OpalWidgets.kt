@@ -10,6 +10,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -298,5 +299,43 @@ fun AllowedPill(
         )
         Spacer(Modifier.width(4.dp))
         OpalIcons(OpalIcon.ChevronRight, OpalColors.TextSecondary, Modifier.size(14.dp))
+    }
+}
+
+/**
+ * To'q shisha tugma — haqiqiy Opal uslubi (mint gradient emas).
+ * Yumshoq oq gradient + nozik chegara + oq matn.
+ */
+@Composable
+fun GlassButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    icon: OpalIcon = OpalIcon.Play,
+    onClick: () -> Unit
+) {
+    val content = if (enabled) Color.White else Color.White.copy(alpha = 0.45f)
+    Box(
+        modifier
+            .clip(RoundedCornerShape(50))
+            .background(
+                if (enabled) Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.13f), Color.White.copy(alpha = 0.05f)))
+                else Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.05f), Color.White.copy(alpha = 0.03f)))
+            )
+            .border(1.dp, Color.White.copy(alpha = if (enabled) 0.20f else 0.10f), RoundedCornerShape(50))
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(vertical = 16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OpalIcons(icon, content, Modifier.size(16.dp))
+            Spacer(Modifier.width(9.dp))
+            Text(
+                text,
+                fontSize = 15.5.sp,
+                fontWeight = FontWeight.Bold,
+                color = content
+            )
+        }
     }
 }
