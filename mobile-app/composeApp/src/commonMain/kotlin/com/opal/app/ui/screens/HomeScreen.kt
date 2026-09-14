@@ -1,5 +1,6 @@
 package com.opal.app.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,6 +25,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -33,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -88,7 +91,8 @@ fun HomeScreen(
     onStartFocus: () -> Unit,
     onOpenProfile: () -> Unit,
     onOpenStats: () -> Unit,
-    onBreathe: () -> Unit
+    onBreathe: () -> Unit,
+    onOpenApps: () -> Unit = {}
 ) {
     val repo = remember { AppGraph.repo }
     val scope = rememberCoroutineScope()
@@ -96,6 +100,10 @@ fun HomeScreen(
     val stats by repo.stats.collectAsState()
     val apps by repo.apps.collectAsState()
     val sessions by repo.sessions.collectAsState()
+    val installed by repo.installedApps.collectAsState()
+    val blockedPkgs by repo.blockedPackages.collectAsState()
+
+    LaunchedEffect(Unit) { repo.loadDeviceData() }
 
     val scores = remember(profile, stats, sessions) { computeScores(profile, stats, sessions) }
     val today = stats.today
@@ -299,7 +307,7 @@ fun HomeScreen(
         Spacer(Modifier.height(OpalSpacing.xl))
 
         // ---- My Apps strip ----
-        Pressable(onClick = onOpenStats, modifier = Modifier.fillMaxWidth()) {
+        Pressable(onClick = onOpenApps, modifier = Modifier.fillMaxWidth()) {
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -310,17 +318,39 @@ fun HomeScreen(
             }
         }
         Spacer(Modifier.height(OpalSpacing.md))
-        if (blocked.isNotEmpty()) {
+        val myBlocked = remember(installed, blockedPkgs) {
+            installed.filter { blockedPkgs.contains(it.packageName) }
+        }
+        if (myBlocked.isNotEmpty()) {
             Row(
                 Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(OpalSpacing.md)
             ) {
-                blocked.take(8).forEach { app ->
+                myBlocked.take(10).forEach { app ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Box {
-                            GlassPane(Modifier.size(54.dp), radius = 18.dp, base = 0.05f) {
-                                Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) {
-                                    Text(app.emoji, fontSize = 24.sp)
+                            Box(
+                                Modifier
+                                    .size(54.dp)
+                                    .clip(RoundedCornerShape(17.dp))
+                                    .background(Color.White.copy(alpha = 0.05f))
+                                    .border(1.dp, Color.White.copy(alpha = 0.09f), RoundedCornerShape(17.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (app.icon != null) {
+                                    Image(
+                                        bitmap = app.icon,
+                                        contentDescription = app.label,
+                                        contentScale = ContentScale.Fit,
+                                        modifier = Modifier.size(46.dp)
+                                    )
+                                } else {
+                                    Text(
+                                        app.label.take(1).uppercase(),
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
                                 }
                             }
                             Box(
@@ -334,16 +364,24 @@ fun HomeScreen(
                                 OpalIcons(OpalIcon.Lock, OpalColors.Accent, Modifier.size(10.dp))
                             }
                         }
-                        Text(
-                            "Ochish",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = OpalColors.Accent,
-                            modifier = Modifier.padding(top = 6.dp)
-                        )
+                        Pressable(onClick = { repo.setPackageBlocked(app.packageName, false) }) {
+                            Text(
+                                "Ochish",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = OpalColors.Accent,
+                                modifier = Modifier.padding(top = 6.dp)
+                            )
+                        }
                     }
                 }
             }
+        } else {
+            Text(
+                "Hali bloklangan ilova yo'q — Ilovalarim bo'limida tanlang",
+                fontSize = 12.sp,
+                color = OpalColors.TextTertiary
+            )
         }
 
         Spacer(Modifier.height(OpalSpacing.xl))

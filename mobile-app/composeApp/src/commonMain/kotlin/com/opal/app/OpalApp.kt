@@ -151,7 +151,8 @@ private fun MainShell() {
                             onStartFocus = { tab = TabKey.TIMER },
                             onOpenProfile = { overlay = OpalOverlay.PROFILE },
                             onOpenStats = { overlay = OpalOverlay.STATS },
-                            onBreathe = { breathingOpen = true }
+                            onBreathe = { breathingOpen = true },
+                            onOpenApps = { tab = TabKey.APPS }
                         )
                         TabKey.APPS -> AppsScreen()
                         TabKey.TIMER -> FocusScreen()
