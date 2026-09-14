@@ -206,4 +206,12 @@ class OpalRepository(private val client: HttpClient = createHttpClient()) {
 
     /** Qisqa sessiya tarixi (5 ta). */
     fun recentSessions(): List<FocusSessionDto> = sessions.value.take(5)
+
+    /** Foydalanuvchi bahosini sessiyaga yozish (Focus Score). */
+    fun rescoreSession(label: String, score: Int) {
+        sessions.update { list ->
+            val idx = list.indexOfFirst { it.label == label }.takeIf { it >= 0 } ?: 0
+            list.mapIndexed { i, s -> if (i == idx) s.copy(focusScore = score) else s }
+        }
+    }
 }

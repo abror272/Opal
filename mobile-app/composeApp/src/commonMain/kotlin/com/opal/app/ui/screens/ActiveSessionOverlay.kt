@@ -45,8 +45,10 @@ import com.opal.app.theme.OpalRadius
 import com.opal.app.theme.OpalSpacing
 import com.opal.app.ui.OpalIcon
 import com.opal.app.ui.OpalIcons
+import com.opal.app.ui.components.FocusRatingCard
 import com.opal.app.ui.components.GradientButton
 import com.opal.app.ui.components.ProgressRing
+import com.opal.app.ui.components.RATING_LEVELS
 
 /** Faol sessiya to'liq ekran overlay — running yoki completion holati. */
 @Composable
@@ -286,6 +288,7 @@ private fun CompletionView(
     completedFully: Boolean,
     streakAfter: Int
 ) {
+    var picked by remember { mutableStateOf<Int?>(null) }
     Column(
         Modifier.fillMaxSize().padding(horizontal = OpalSpacing.xxl),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -342,5 +345,17 @@ private fun CompletionView(
                 )
             }
         }
+
+        Spacer(Modifier.height(30.dp))
+
+        // ---- Fokus baholash ----
+        FocusRatingCard(
+            early = !completedFully,
+            picked = picked,
+            onPick = { idx ->
+                picked = idx
+                AppGraph.repo.rescoreSession(label, RATING_LEVELS[idx].score)
+            }
+        )
     }
 }
