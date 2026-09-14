@@ -54,6 +54,7 @@ import com.opal.app.ui.OpalIcon
 import com.opal.app.ui.OpalIcons
 import com.opal.app.ui.components.AnimatedCount
 import com.opal.app.ui.components.StatRingPill
+import com.opal.app.ui.components.WeeklyReportCard
 
 private enum class Metric(val title: String, val desc: String) {
     SLEEP("Uyqu", "Uyqu ko'rsatkichi kechqurun, uyqu paytida va ertalab sodir bo'ladigan holatlarni va ularning keyingi kuningizga ta'sirini o'lchaydi."),
@@ -177,6 +178,11 @@ fun StatsScreen(onClose: () -> Unit) {
                     }
                 }
             }
+
+            Spacer(Modifier.height(OpalSpacing.xl))
+
+            // ---- Haftalik hisobot ----
+            WeeklyReportCard(stats = stats, profile = profile)
 
             Spacer(Modifier.height(insets.calculateBottomPadding() + OpalSpacing.xxxl))
         }

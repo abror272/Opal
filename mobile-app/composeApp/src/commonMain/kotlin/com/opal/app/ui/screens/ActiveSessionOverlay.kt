@@ -3,6 +3,7 @@ package com.opal.app.ui.screens
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,9 +58,12 @@ fun ActiveSessionOverlay() {
     val sessionCtl = remember { AppGraph.sessions }
     val active by sessionCtl.active.collectAsState()
     val completion by sessionCtl.completion.collectAsState()
-    val apps by AppGraph.repo.apps.collectAsState()
+    val installed by AppGraph.repo.installedApps.collectAsState()
+    val blockedPkgs by AppGraph.repo.blockedPackages.collectAsState()
 
     var confirmExit by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) { AppGraph.repo.loadDeviceData() }
 
     Box(
         Modifier
@@ -153,7 +158,7 @@ fun ActiveSessionOverlay() {
                                     OpalIcons(OpalIcon.Shield, OpalColors.Success, Modifier.size(12.dp))
                                     Spacer(Modifier.width(6.dp))
                                     Text(
-                                        "${apps.count { it.blocked }} ta ilova blokda",
+                                        "${blockedPkgs.size} ta ilova blokda",
                                         fontSize = 11.5.sp,
                                         color = OpalColors.TextSecondary
                                     )
@@ -168,15 +173,34 @@ fun ActiveSessionOverlay() {
                         Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(OpalSpacing.sm)
                     ) {
-                        apps.filter { it.blocked }.take(6).forEach { app ->
-                            Box(
+                        installed.filter { blockedPkgs.contains(it.packageName) }.take(8).forEach { app ->
+                            Row(
                                 Modifier
                                     .clip(RoundedCornerShape(50))
                                     .background(Color.White.copy(alpha = 0.06f))
-                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                                    .padding(horizontal = 10.dp, vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("${app.emoji} ${app.name}", fontSize = 11.5.sp, color = OpalColors.TextSecondary)
+                                val ic = app.icon
+                                if (ic != null) {
+                                    Image(
+                                        bitmap = ic,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(17.dp).clip(RoundedCornerShape(5.dp))
+                                    )
+                                } else {
+                                    Text("📱", fontSize = 11.sp)
+                                }
+                                Spacer(Modifier.width(6.dp))
+                                Text(app.label, fontSize = 11.5.sp, color = OpalColors.TextSecondary, maxLines = 1)
                             }
+                        }
+                        if (blockedPkgs.isEmpty()) {
+                            Text(
+                                "Bloklangan ilova yo'q — Ilovalarim bo'limida tanlang",
+                                fontSize = 11.sp,
+                                color = OpalColors.TextTertiary
+                            )
                         }
                     }
 

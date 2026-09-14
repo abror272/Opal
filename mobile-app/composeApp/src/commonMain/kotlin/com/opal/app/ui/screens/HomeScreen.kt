@@ -108,8 +108,9 @@ fun HomeScreen(
     val scores = remember(profile, stats, sessions) { computeScores(profile, stats, sessions) }
     val today = stats.today
     val overGoal = today != null && today.screenTimeMinutes > today.goalMinutes
-    val allowed = apps.filter { !it.blocked }
-    val blocked = apps.filter { it.blocked }
+    val allowedReal = remember(installed, blockedPkgs) {
+        installed.filterNot { blockedPkgs.contains(it.packageName) }
+    }
     val hour = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).hour }
     val sug = remember(hour, overGoal) { suggestionFor(hour, overGoal) }
     val hadSleep = remember(sessions) { sessions.any { it.type == "SLEEP" } }
@@ -192,7 +193,7 @@ fun HomeScreen(
         Spacer(Modifier.height(OpalSpacing.xl))
 
         // ---- Tavsiya kartasi ----
-        RecommendationCard(sug = sug, allowed = allowed, onAction = onStartFocus, onDetails = onOpenStats, onAllowed = onOpenStats)
+        RecommendationCard(sug = sug, allowedCount = allowedReal.size, allowedIcons = allowedReal.take(3).map { it.icon }, onAction = onStartFocus, onDetails = onOpenStats, onAllowed = onOpenApps)
 
         Spacer(Modifier.height(OpalSpacing.xxl))
 
@@ -444,7 +445,8 @@ fun HomeScreen(
 @Composable
 private fun RecommendationCard(
     sug: Suggestion,
-    allowed: List<com.opal.app.data.BlockAppDto>,
+    allowedCount: Int,
+    allowedIcons: List<androidx.compose.ui.graphics.ImageBitmap?>,
     onAction: () -> Unit,
     onDetails: () -> Unit,
     onAllowed: () -> Unit
@@ -507,7 +509,7 @@ private fun RecommendationCard(
         }
 
         Box(Modifier.align(Alignment.BottomCenter).offset(y = 16.dp)) {
-            AllowedPill(count = allowed.size, emojis = allowed.map { it.emoji }, onClick = onAllowed)
+            AllowedPill(count = allowedCount, icons = allowedIcons, onClick = onAllowed)
         }
     }
 }

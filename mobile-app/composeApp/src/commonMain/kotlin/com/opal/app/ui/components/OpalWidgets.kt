@@ -264,11 +264,11 @@ fun StatRingPill(
     }
 }
 
-/** "N allowed" pill — ruxsat etilgan ilovalar. */
+/** "N allowed" pill — ruxsat etilgan ilovalar (haqiqiy ikonlar). */
 @Composable
 fun AllowedPill(
     count: Int,
-    emojis: List<String>,
+    icons: List<androidx.compose.ui.graphics.ImageBitmap?>,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
@@ -280,17 +280,25 @@ fun AllowedPill(
             .padding(horizontal = 12.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        emojis.take(3).forEachIndexed { i, e ->
+        icons.take(3).forEachIndexed { i, bmp ->
             Box(
                 Modifier
                     .size(22.dp)
-                    .clip(CircleShape)
+                    .clip(RoundedCornerShape(7.dp))
                     .background(Color(0xFF1B201C)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(e, fontSize = 12.sp)
+                if (bmp != null) {
+                    androidx.compose.foundation.Image(
+                        bitmap = bmp,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else {
+                    Text("📱", fontSize = 11.sp)
+                }
             }
-            if (i != emojis.take(3).lastIndex) Spacer(Modifier.width(2.dp))
+            if (i != icons.take(3).lastIndex) Spacer(Modifier.width(2.dp))
         }
         Spacer(Modifier.width(8.dp))
         Text(

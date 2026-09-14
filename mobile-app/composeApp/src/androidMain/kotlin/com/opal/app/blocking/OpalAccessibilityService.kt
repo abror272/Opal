@@ -29,6 +29,7 @@ import com.opal.app.data.recordAppOpen
 class OpalAccessibilityService : AccessibilityService() {
 
     private val overlay by lazy { BlockOverlay(this) }
+    private val notifier by lazy { RuleNotifier(this) }
     private var lastPackage: String? = null
     private var lastAt = 0L
     private var foregroundPkg: String? = null
@@ -38,6 +39,8 @@ class OpalAccessibilityService : AccessibilityService() {
     private val ticker = object : Runnable {
         override fun run() {
             try {
+                val rules = loadRules()
+                notifier.sync(rules, nowMinutes())
                 foregroundPkg?.let { evaluate(it, recordOpens = false) }
             } catch (_: Throwable) {
             }
@@ -49,6 +52,8 @@ class OpalAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         beat(force = true)
         handler.removeCallbacks(ticker)
+        // Birinchi snapshot: hozir faol qoidalar uchun bildirishnoma chiqarmaymiz.
+        runCatching { notifier.sync(loadRules(), nowMinutes()) }
         handler.postDelayed(ticker, 15_000L)
     }
 
