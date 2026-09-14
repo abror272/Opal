@@ -62,8 +62,8 @@ fun OpalWordmark(textSize: Int = 20, boxSize: Dp = 21.dp) {
             val sw = 2.9f * (size.minDimension / 22f)
             drawArc(
                 color = Color.White,
-                startAngle = -72f,
-                sweepAngle = 324f,
+                startAngle = -75f,
+                sweepAngle = 330f,
                 useCenter = false,
                 topLeft = Offset(sw / 2f, sw / 2f),
                 size = Size(size.width - sw, size.height - sw),
