@@ -15,27 +15,67 @@ import androidx.compose.ui.unit.dp
  * mint-yashil aksent (#86EFAC → #5EEAD4), oltin olov (streak), shisha yuzalar.
  */
 object OpalColors {
-    val Bg = Color(0xFF05060F)
-    val BgElevated = Color(0xFF0A0F16)
+    val Bg = Color(0xFF020308)         // Yanada chuqur qora (obsidian)
+    val BgElevated = Color(0xFF080A12)
 
-    val Accent = Color(0xFF86EFAC)      // mint — asosiy aksent (web #86efac)
-    val AccentDeep = Color(0xFF5EEAD4)  // teal-mint — gradient ikkinchi rangi
-    val MintLight = Color(0xFFC9FBDC)   // yorqin mint matn (web #c9fbdc)
-    val Success = Color(0xFF9FE8B5)     // ijobiy ko'rsatkichlar (web #9fe8b5)
-    val Danger = Color(0xFFFF6B8B)      // rose — erta chiqish / o'chirish
-    val Amber = Color(0xFFFFC46B)       // oltin olov — streak (web #ffc46b)
+    val Accent = Color(0xFF98FFD9)      // Neon mint — asosiy aksent
+    val AccentDeep = Color(0xFF5EEAD4)
+    val MintLight = Color(0xFFC9FBDC)
+    val Success = Color(0xFF86EFAC)
+    val Danger = Color(0xFFFF4D77)
+    val Amber = Color(0xFFFFD166)
 
-    val TextPrimary = Color(0xFFF4F7F5)
-    val TextSecondary = Color(0x99FFFFFF)
-    val TextTertiary = Color(0x5CFFFFFF)
+    val TextPrimary = Color(0xFFFFFFFF)
+    val TextSecondary = Color(0xB3FFFFFF)
+    val TextTertiary = Color(0x66FFFFFF)
 
-    val Card = Color(0x12FFFFFF)
-    val CardBorder = Color(0x22FFFFFF)
+    val Card = Color(0x0AFFFFFF)       // Shishasimon shaffoflik
+    val CardBorder = Color(0x1AFFFFFF)
+    val Glow = Color(0x3398FFD9)       // Aksent glow
+
+    // Ikontayllar / badge fonlari uchun yumshoq semantik tuslar
+    val AccentSoft = Color(0x1F98FFD9)
+    val SuccessSoft = Color(0x1F86EFAC)
+    val DangerSoft = Color(0x1FFF4D77)
+    val AmberSoft = Color(0x1FFFD166)
+    val Track = Color(0x0DFFFFFF)      // progress track
+    val Divider = Color(0x0FFFFFFF)    // ingichka ajratuvchi chiziq
 }
 
-/** Haqiqiy Opal mint gradienti (CTA tugmalar, progress ringlar) */
+/** Izchil vertical/gorizontal oraliq tizimi. */
+object OpalSpacing {
+    val xs = 4.dp
+    val sm = 8.dp
+    val md = 12.dp
+    val lg = 16.dp
+    val xl = 20.dp
+    val xxl = 24.dp
+    val xxxl = 32.dp
+}
+
+/** Burchak radiusi tizimi. */
+object OpalRadius {
+    val sm = 14.dp
+    val md = 20.dp
+    val lg = 26.dp
+    val xl = 32.dp
+    val pill = 999.dp
+}
+
+/** Haqiqiy Opal neon gradienti */
 val OpalGradient = Brush.linearGradient(
-    listOf(Color(0xFF86EFAC), Color(0xFF5EEAD4), Color(0xFFB7F5CD))
+    listOf(Color(0xFF98FFD9), Color(0xFF5EEAD4))
+)
+
+/** Gemstone rainbow gradienti (faceted effekt uchun) */
+val GemRainbowGradient = Brush.linearGradient(
+    listOf(
+        Color(0xFF86EFAC),
+        Color(0xFF38BDF8),
+        Color(0xFFC084FC),
+        Color(0xFFFB7185),
+        Color(0xFFFBBF24)
+    )
 )
 
 /** Countdown ring sweep — mint oila */

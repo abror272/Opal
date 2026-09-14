@@ -6,7 +6,9 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -14,13 +16,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -31,20 +36,25 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.clickable
+import com.opal.app.glass.GlassPane
+import com.opal.app.glass.Pressable
 import com.opal.app.theme.OpalColors
 import com.opal.app.theme.OpalGradient
+import com.opal.app.theme.OpalRadius
+import com.opal.app.theme.OpalSpacing
 import com.opal.app.theme.OpalSweep
 import com.opal.app.theme.accentBrushFor
+import com.opal.app.ui.OpalIcon
+import com.opal.app.ui.OpalIcons
+import kotlin.math.abs
 
 /** Raqam silliq "count-up" animatsiya bilan o'zgaradi. */
 @Composable
@@ -78,43 +88,63 @@ fun GradientCircle(
     )
 }
 
-/** Ijobiy/negativ trend badge (▼ 8% yashil, ▲ 12% qizil — ekran vaqti kamayishi yaxshi). */
+/** Ijobiy/negativ trend badge — ekran vaqti kamayishi yaxshi (yashil pastga strelka). */
 @Composable
 fun TrendBadge(percent: Int, modifier: Modifier = Modifier, invertGood: Boolean = true) {
     val good = if (invertGood) percent <= 0 else percent >= 0
     val color = if (good) OpalColors.Success else OpalColors.Danger
-    val arrow = if (percent <= 0) "▼" else "▲"
+    val icon = if (percent <= 0) OpalIcon.TrendDown else OpalIcon.TrendUp
     Box(
         modifier
             .clip(RoundedCornerShape(50))
-            .background(color.copy(alpha = 0.14f))
-            .padding(horizontal = 9.dp, vertical = 4.dp)
+            .background(color.copy(alpha = 0.15f))
+            .padding(horizontal = 9.dp, vertical = 5.dp)
     ) {
-        Text(
-            "$arrow ${kotlin.math.abs(percent)}%",
-            color = color,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OpalIcons(icon, color, Modifier.size(12.dp))
+            Spacer(Modifier.width(4.dp))
+            Text(
+                "${abs(percent)}%",
+                color = color,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
     }
 }
 
-/** Qisqa statistika chipi (emoji + qiymat + yorliq). */
+/** Qisqa statistika chipi — vektor ikon + qiymat + yorliq. */
 @Composable
-fun StatChip(emoji: String, value: String, label: String, modifier: Modifier = Modifier) {
-    com.opal.app.glass.GlassPane(modifier, radius = 20.dp, base = 0.06f) {
+fun StatChip(
+    icon: OpalIcon,
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier,
+    tint: Color = OpalColors.Accent
+) {
+    GlassPane(modifier, radius = OpalRadius.md, base = 0.06f) {
         Column(
-            Modifier.matchParentSize().padding(vertical = 12.dp, horizontal = 8.dp),
+            Modifier
+                .matchParentSize()
+                .padding(vertical = 10.dp, horizontal = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(emoji, fontSize = 17.sp)
+            Box(
+                Modifier
+                    .size(26.dp)
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(tint.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                OpalIcons(icon, tint, Modifier.size(15.dp))
+            }
             Text(
                 value,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
                 color = OpalColors.TextPrimary,
-                modifier = Modifier.padding(top = 5.dp)
+                modifier = Modifier.padding(top = 7.dp)
             )
             Text(
                 label,
@@ -134,7 +164,7 @@ fun SectionTitle(
     trailing: @Composable () -> Unit = {}
 ) {
     Row(
-        modifier.fillMaxSize(),
+        modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -143,13 +173,13 @@ fun SectionTitle(
     }
 }
 
-/** Gradient primary tugma (press scale + glow shadow bilan). */
+/** Gradient primary tugma (press scale + ikon slot). */
 @Composable
 fun GradientButton(
     text: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    leading: (@Composable () -> Unit)? = null,
+    icon: OpalIcon? = null,
     onClick: () -> Unit
 ) {
     val src = remember { MutableInteractionSource() }
@@ -165,7 +195,7 @@ fun GradientButton(
                 scaleX = scale
                 scaleY = scale
             }
-            .clip(RoundedCornerShape(50))
+            .clip(RoundedCornerShape(OpalRadius.pill))
             .background(
                 if (enabled) OpalGradient
                 else Brush.linearGradient(listOf(Color.White.copy(0.10f), Color.White.copy(0.06f)))
@@ -175,7 +205,9 @@ fun GradientButton(
         contentAlignment = Alignment.Center
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            leading?.invoke()
+            if (icon != null) {
+                OpalIcons(icon, if (enabled) Color.White else Color.White.copy(alpha = 0.5f), Modifier.size(17.dp))
+            }
             Text(
                 text,
                 color = if (enabled) Color.White else Color.White.copy(alpha = 0.5f),
@@ -186,10 +218,7 @@ fun GradientButton(
     }
 }
 
-/**
- * Progress ring — gradient arc + silliq animatsiya.
- * progress 0..1.
- */
+/** Gradient progress ring — aylana bo'ylab animatsiyalanuvchi yoy. */
 @Composable
 fun ProgressRing(
     progress: Float,
@@ -200,7 +229,7 @@ fun ProgressRing(
     content: @Composable BoxScope.() -> Unit = {}
 ) {
     val shown = remember(progress) { androidx.compose.animation.core.Animatable(0f) }
-    androidx.compose.runtime.LaunchedEffect(progress) {
+    LaunchedEffect(progress) {
         shown.animateTo(progress.coerceIn(0f, 1f), tween(900, easing = FastOutSlowInEasing))
     }
     Box(modifier, contentAlignment = Alignment.Center) {

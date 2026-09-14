@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 
 /** 5 ta asosiy tab. Tartib GlassTabBar'lar bilan bir xil bo'lishi shart. */
 enum class TabKey(val title: String) {
-    HOME("Home"),
+    HOME("Asosiy"),
     FOCUS("Fokus"),
     STATS("Statistika"),
     APPS("Ilovalar"),

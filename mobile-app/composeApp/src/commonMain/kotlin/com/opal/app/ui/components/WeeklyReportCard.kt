@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -24,6 +25,8 @@ import com.opal.app.data.UserProfileDto
 import com.opal.app.data.formatMinutes
 import com.opal.app.glass.GlassCard
 import com.opal.app.theme.OpalColors
+import com.opal.app.ui.OpalIcon
+import com.opal.app.ui.OpalIcons
 import androidx.compose.foundation.background
 
 /**
@@ -118,7 +121,7 @@ fun WeeklyReportCard(
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("🏆", fontSize = 15.sp)
+                    OpalIcons(OpalIcon.Trophy, OpalColors.Amber, Modifier.size(15.dp))
                     Spacer(Modifier.width(9.dp))
                     Text(
                         "Eng yaxshi kun — ${formatMinutes(savedValues[bestIdx])}",
@@ -127,8 +130,10 @@ fun WeeklyReportCard(
                         color = OpalColors.Amber,
                         modifier = Modifier.weight(1f)
                     )
+                    OpalIcons(OpalIcon.Flame, OpalColors.Amber, Modifier.size(12.dp))
+                    Spacer(Modifier.width(4.dp))
                     Text(
-                        "${profile.streakDays} kunlik streak 🔥",
+                        "${profile.streakDays} kun",
                         fontSize = 11.sp,
                         color = OpalColors.TextSecondary
                     )

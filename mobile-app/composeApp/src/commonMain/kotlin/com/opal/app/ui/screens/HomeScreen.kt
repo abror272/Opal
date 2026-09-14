@@ -15,8 +15,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -28,7 +28,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -36,9 +35,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.opal.app.data.AppGraph
 import com.opal.app.data.formatMinutes
+import com.opal.app.data.weekdayLabelUz
 import com.opal.app.glass.GlassCard
 import com.opal.app.glass.GlassPane
 import com.opal.app.theme.OpalColors
+import com.opal.app.theme.OpalRadius
+import com.opal.app.theme.OpalSpacing
+import com.opal.app.ui.OpalIcon
+import com.opal.app.ui.OpalIcons
 import com.opal.app.ui.components.AnimatedCount
 import com.opal.app.ui.components.Avatar
 import com.opal.app.ui.components.GradientButton
@@ -47,7 +51,6 @@ import com.opal.app.ui.components.SectionTitle
 import com.opal.app.ui.components.StatChip
 import com.opal.app.ui.components.TrendBadge
 import com.opal.app.ui.components.WeekBarChart
-import com.opal.app.data.weekdayLabelUz
 import kotlinx.coroutines.launch
 
 @Composable
@@ -71,9 +74,9 @@ fun HomeScreen(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp)
+            .padding(horizontal = OpalSpacing.xl)
     ) {
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(OpalSpacing.sm))
 
         // ---- Header ----
         Row(
@@ -83,13 +86,14 @@ fun HomeScreen(
         ) {
             Column {
                 Text(
-                    "Salom, ${profile.name} 👋",
-                    fontSize = 23.sp,
+                    "Salom, ${profile.name}",
+                    fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    color = OpalColors.TextPrimary
+                    color = OpalColors.TextPrimary,
+                    letterSpacing = (-0.3).sp
                 )
                 Text(
-                    if (profile.protectionEnabled) "Himoya faol, bugun zo'r kun" else "Himoya o'chirilgan",
+                    if (profile.protectionEnabled) "Himoya faol — kun rejasi tayyor" else "Himoya o'chirilgan",
                     fontSize = 13.sp,
                     color = OpalColors.TextSecondary,
                     modifier = Modifier.padding(top = 3.dp)
@@ -98,66 +102,60 @@ fun HomeScreen(
             Avatar(profile.name)
         }
 
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(OpalSpacing.xl))
 
-        // ---- Score / himoya kartasi ----
-        GlassCard(Modifier.fillMaxWidth(), radius = 28.dp, padding = 18.dp) {
+        // ---- Himoya / maqsad kartasi ----
+        GlassCard(Modifier.fillMaxWidth(), radius = OpalRadius.xl, padding = 20.dp) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ProgressRing(
                     progress = goalFrac,
-                    modifier = Modifier.size(118.dp),
+                    modifier = Modifier.size(122.dp),
                     strokeWidth = 11.dp
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         AnimatedCount(
                             value = today?.savedMinutes ?: 0,
-                            style = TextStyle(fontSize = 21.sp, fontWeight = FontWeight.Bold, color = OpalColors.TextPrimary)
+                            style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Bold, color = OpalColors.TextPrimary)
                         )
                         Text("daqiqa", fontSize = 10.sp, color = OpalColors.TextTertiary)
                         Text("tejaldi", fontSize = 10.sp, color = OpalColors.TextTertiary)
                     }
                 }
 
-                Spacer(Modifier.width(18.dp))
+                Spacer(Modifier.width(OpalSpacing.xl))
 
                 Column(Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Himoya", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = OpalColors.TextPrimary)
                         Spacer(Modifier.width(8.dp))
-                        Box(
-                            Modifier
-                                .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
-                                .background(
-                                    if (profile.protectionEnabled) OpalColors.Success.copy(alpha = 0.15f)
-                                    else OpalColors.TextTertiary.copy(alpha = 0.15f)
-                                )
-                                .padding(horizontal = 8.dp, vertical = 3.dp)
-                        ) {
-                            Text(
-                                if (profile.protectionEnabled) "YONIQ" else "O'CHIQ",
-                                fontSize = 9.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (profile.protectionEnabled) OpalColors.Success else OpalColors.TextSecondary
-                            )
-                        }
+                        StatusPill(active = profile.protectionEnabled)
                     }
-                    Text(
-                        "🔥 ${profile.streakDays} kunlik streak",
-                        fontSize = 12.5.sp,
-                        color = OpalColors.Amber,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(top = 6.dp)
-                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        OpalIcons(OpalIcon.Flame, OpalColors.Amber, Modifier.size(14.dp))
+                        Spacer(Modifier.width(5.dp))
+                        Text(
+                            "${profile.streakDays} kunlik streak",
+                            fontSize = 12.5.sp,
+                            color = OpalColors.Amber,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
                     Text(
                         "Maqsad: ${formatMinutes(stats.goalMinutes)} / kun",
                         fontSize = 12.sp,
                         color = OpalColors.TextSecondary,
-                        modifier = Modifier.padding(top = 4.dp)
+                        modifier = Modifier.padding(top = 5.dp)
                     )
+
                     Switch(
                         checked = profile.protectionEnabled,
                         onCheckedChange = { checked -> scope.launch { repo.setProtection(checked) } },
-                        modifier = Modifier.padding(top = 8.dp),
+                        modifier = Modifier.padding(top = 10.dp),
                         colors = SwitchDefaults.colors(
                             checkedTrackColor = OpalColors.Accent,
                             checkedThumbColor = Color.White,
@@ -170,48 +168,54 @@ fun HomeScreen(
             }
         }
 
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(OpalSpacing.md))
 
         // ---- Stat chips ----
-        Row(Modifier.fillMaxWidth().height(84.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatChip("⏳", formatMinutes(today?.screenTimeMinutes ?: 0), "Ekran vaqti", Modifier.weight(1f))
-            StatChip("🛡️", formatMinutes(today?.savedMinutes ?: 0), "Tejaldi", Modifier.weight(1f))
-            StatChip("👆", "${today?.pickups ?: 0}", "Olishlar", Modifier.weight(1f))
+        Row(
+            Modifier.fillMaxWidth().height(92.dp),
+            horizontalArrangement = Arrangement.spacedBy(OpalSpacing.sm)
+        ) {
+            StatChip(OpalIcon.Clock, formatMinutes(today?.screenTimeMinutes ?: 0), "Ekran vaqti", Modifier.weight(1f), OpalColors.Accent)
+            StatChip(OpalIcon.Shield, formatMinutes(today?.savedMinutes ?: 0), "Tejaldi", Modifier.weight(1f), OpalColors.Success)
+            StatChip(OpalIcon.Phone, "${today?.pickups ?: 0}", "Olishlar", Modifier.weight(1f), OpalColors.MintLight)
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(OpalSpacing.lg))
 
         // ---- CTA ----
         GradientButton(
-            text = "Tez fokusni boshlash",
+            text = "Fokusni boshlash",
             modifier = Modifier.fillMaxWidth(),
-            leading = { Text("⚡", fontSize = 16.sp) }
+            icon = OpalIcon.Play
         ) { onStartFocus() }
 
-        Spacer(Modifier.height(22.dp))
+        Spacer(Modifier.height(OpalSpacing.xxl))
 
-        // ---- Bloklangan ilovalar strip ----
+        // ---- Bloklangan ilovalar ----
         SectionTitle(
             "Bloklangan ilovalar",
             trailing = {
-                Text(
-                    "${blocked.size} ta",
-                    fontSize = 12.sp,
-                    color = OpalColors.TextSecondary
-                )
+                Text("${blocked.size} ta", fontSize = 12.sp, color = OpalColors.TextSecondary)
             }
         )
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(OpalSpacing.md))
         if (blocked.isEmpty()) {
-            GlassCard(Modifier.fillMaxWidth(), padding = 14.dp) {
-                Text("Hammasi ochiq ✨", fontSize = 13.sp, color = OpalColors.TextSecondary)
+            GlassCard(Modifier.fillMaxWidth(), padding = 16.dp) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OpalIcons(OpalIcon.Check, OpalColors.Success, Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Hammasi ochiq", fontSize = 13.sp, color = OpalColors.TextSecondary)
+                }
             }
         } else {
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                blocked.forEachIndexed { i, app ->
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(OpalSpacing.md)
+            ) {
+                blocked.forEach { app ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Box {
-                            GlassPane(Modifier.size(64.dp), radius = 22.dp, base = 0.05f) {
+                            GlassPane(Modifier.size(62.dp), radius = 20.dp, base = 0.05f) {
                                 Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) {
                                     Text(app.emoji, fontSize = 24.sp)
                                 }
@@ -221,9 +225,10 @@ fun HomeScreen(
                                     .align(Alignment.TopEnd)
                                     .size(20.dp)
                                     .clip(CircleShape)
-                                    .background(OpalColors.AccentDeep)
-                            , contentAlignment = Alignment.Center) {
-                                Text("🔒", fontSize = 9.sp)
+                                    .background(OpalColors.AccentDeep),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                OpalIcons(OpalIcon.Lock, Color(0xFF04241A), Modifier.size(11.dp))
                             }
                         }
                         Text(
@@ -237,10 +242,10 @@ fun HomeScreen(
             }
         }
 
-        Spacer(Modifier.height(22.dp))
+        Spacer(Modifier.height(OpalSpacing.xxl))
 
-        // ---- Haftalik mini chart (Stats tabga olib boradi) ----
-        GlassCard(Modifier.fillMaxWidth(), radius = 26.dp, padding = 16.dp, onClick = onOpenStats) {
+        // ---- Haftalik mini chart ----
+        GlassCard(Modifier.fillMaxWidth(), radius = OpalRadius.lg, padding = 16.dp, onClick = onOpenStats) {
             Column {
                 Row(
                     Modifier.fillMaxWidth(),
@@ -248,7 +253,7 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Bu hafta", fontSize = 14.sp, color = OpalColors.TextSecondary)
+                        Text("Bu hafta", fontSize = 13.sp, color = OpalColors.TextSecondary)
                         AnimatedCount(
                             value = stats.weekSavedMinutes,
                             suffix = " daqiqa",
@@ -258,7 +263,7 @@ fun HomeScreen(
                     }
                     TrendBadge(stats.trendPercent)
                 }
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(OpalSpacing.md))
                 WeekBarChart(
                     values = stats.days.map { it.screenTimeMinutes },
                     labels = stats.days.map { weekdayLabelUz(it.date) },
@@ -268,6 +273,33 @@ fun HomeScreen(
             }
         }
 
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(OpalSpacing.xxxl))
+    }
+}
+
+@Composable
+private fun StatusPill(active: Boolean) {
+    val color = if (active) OpalColors.Success else OpalColors.TextTertiary
+    Box(
+        Modifier
+            .clip(RoundedCornerShape(50))
+            .background(color.copy(alpha = 0.15f))
+            .padding(horizontal = 8.dp, vertical = 3.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier
+                    .size(5.dp)
+                    .clip(CircleShape)
+                    .background(color)
+            )
+            Spacer(Modifier.width(5.dp))
+            Text(
+                if (active) "Yoniq" else "O'chiq",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                color = color
+            )
+        }
     }
 }

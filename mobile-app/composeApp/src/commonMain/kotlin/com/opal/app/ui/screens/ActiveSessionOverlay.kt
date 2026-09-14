@@ -4,6 +4,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,10 +16,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -37,11 +37,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.opal.app.data.AppGraph
 import com.opal.app.data.formatClock
-import com.opal.app.data.formatMinutes
 import com.opal.app.glass.GlassCard
 import com.opal.app.glass.GlassPane
 import com.opal.app.glass.Pressable
 import com.opal.app.theme.OpalColors
+import com.opal.app.theme.OpalRadius
+import com.opal.app.theme.OpalSpacing
+import com.opal.app.ui.OpalIcon
+import com.opal.app.ui.OpalIcons
 import com.opal.app.ui.components.GradientButton
 import com.opal.app.ui.components.ProgressRing
 
@@ -80,7 +83,6 @@ fun ActiveSessionOverlay() {
                 val elapsed by sessionCtl.elapsedSeconds.collectAsState()
                 val remaining = (a.totalSeconds - elapsed).coerceAtLeast(0)
 
-                // Har sekundda silliq (linear interpolatsiyali) sweep
                 val frac by animateFloatAsState(
                     targetValue = sessionCtl.progressFraction,
                     animationSpec = tween(1000, easing = LinearEasing),
@@ -90,19 +92,26 @@ fun ActiveSessionOverlay() {
                 Column(
                     Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 24.dp),
+                        .padding(horizontal = OpalSpacing.xxl),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(OpalSpacing.md))
 
-                    // sarlavha
-                    GlassPane(Modifier.fillMaxWidth(), radius = 22.dp, base = 0.05f) {
+                    GlassPane(Modifier.fillMaxWidth(), radius = OpalRadius.lg, base = 0.05f) {
                         Row(
                             Modifier.matchParentSize().padding(horizontal = 16.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(a.preset.emoji, fontSize = 22.sp)
-                            Spacer(Modifier.width(10.dp))
+                            Box(
+                                Modifier
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(13.dp))
+                                    .background(Color.White.copy(alpha = 0.07f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(a.preset.emoji, fontSize = 20.sp)
+                            }
+                            Spacer(Modifier.width(OpalSpacing.md))
                             Column {
                                 Text(a.preset.label, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = OpalColors.TextPrimary)
                                 Text("Fokus sessiyasi davom etmoqda", fontSize = 11.5.sp, color = OpalColors.TextTertiary)
@@ -112,7 +121,6 @@ fun ActiveSessionOverlay() {
 
                     Spacer(Modifier.weight(1f))
 
-                    // Countdown ring
                     ProgressRing(
                         progress = frac,
                         modifier = Modifier.size(250.dp),
@@ -132,28 +140,31 @@ fun ActiveSessionOverlay() {
                                 color = OpalColors.TextTertiary,
                                 modifier = Modifier.padding(top = 4.dp)
                             )
-                            Spacer(Modifier.height(10.dp))
+                            Spacer(Modifier.height(OpalSpacing.md))
                             Box(
                                 Modifier
                                     .clip(RoundedCornerShape(50))
                                     .background(Color.White.copy(alpha = 0.07f))
                                     .padding(horizontal = 12.dp, vertical = 5.dp)
                             ) {
-                                Text(
-                                    "🛡️ ${apps.count { it.blocked }} ta ilova blokda",
-                                    fontSize = 11.5.sp,
-                                    color = OpalColors.TextSecondary
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    OpalIcons(OpalIcon.Shield, OpalColors.Success, Modifier.size(12.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        "${apps.count { it.blocked }} ta ilova blokda",
+                                        fontSize = 11.5.sp,
+                                        color = OpalColors.TextSecondary
+                                    )
+                                }
                             }
                         }
                     }
 
                     Spacer(Modifier.weight(1f))
 
-                    // Bloklangan ilovalar chiplari
                     Row(
                         Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(OpalSpacing.sm)
                     ) {
                         apps.filter { it.blocked }.take(6).forEach { app ->
                             Box(
@@ -167,18 +178,19 @@ fun ActiveSessionOverlay() {
                         }
                     }
 
-                    Spacer(Modifier.height(22.dp))
+                    Spacer(Modifier.height(OpalSpacing.xxl))
 
                     GradientButton(
                         text = "Sessiyani yakunlash",
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        icon = OpalIcon.Check
                     ) { confirmExit = true }
 
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(OpalSpacing.md))
 
-                    Pressable(onClick = { /* placeholder: davom etish — hech narsa */ }, modifier = Modifier.fillMaxWidth()) {
+                    Pressable(onClick = { }, modifier = Modifier.fillMaxWidth()) {
                         Text(
-                            "Davom etish 💪",
+                            "Davom etish",
                             fontSize = 13.5.sp,
                             color = OpalColors.TextSecondary,
                             textAlign = TextAlign.Center,
@@ -186,7 +198,7 @@ fun ActiveSessionOverlay() {
                         )
                     }
 
-                    Spacer(Modifier.height(26.dp))
+                    Spacer(Modifier.height(OpalSpacing.xxl))
                 }
             }
         }
@@ -199,15 +211,23 @@ fun ActiveSessionOverlay() {
                     .background(Color.Black.copy(alpha = 0.55f)),
                 contentAlignment = Alignment.Center
             ) {
-                GlassCard(Modifier.padding(horizontal = 32.dp).fillMaxWidth(), radius = 28.dp, padding = 22.dp) {
+                GlassCard(Modifier.padding(horizontal = OpalSpacing.xxxl).fillMaxWidth(), radius = OpalRadius.xl, padding = 22.dp) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("🚪", fontSize = 30.sp)
+                        Box(
+                            Modifier
+                                .size(52.dp)
+                                .clip(CircleShape)
+                                .background(OpalColors.DangerSoft),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            OpalIcons(OpalIcon.TrendDown, OpalColors.Danger, Modifier.size(24.dp))
+                        }
                         Text(
                             "Erta chiqmoqchimisiz?",
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
                             color = OpalColors.TextPrimary,
-                            modifier = Modifier.padding(top = 10.dp)
+                            modifier = Modifier.padding(top = OpalSpacing.md)
                         )
                         Text(
                             "Erta chiqish streak'ni 1 ga kamaytiradi.",
@@ -217,8 +237,8 @@ fun ActiveSessionOverlay() {
                             lineHeight = 17.sp,
                             modifier = Modifier.padding(top = 6.dp)
                         )
-                        Spacer(Modifier.height(16.dp))
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Spacer(Modifier.height(OpalSpacing.lg))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(OpalSpacing.sm)) {
                             Pressable(
                                 onClick = { confirmExit = false },
                                 modifier = Modifier.weight(1f)
@@ -267,7 +287,7 @@ private fun CompletionView(
     streakAfter: Int
 ) {
     Column(
-        Modifier.fillMaxSize().padding(horizontal = 28.dp),
+        Modifier.fillMaxSize().padding(horizontal = OpalSpacing.xxl),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -281,7 +301,11 @@ private fun CompletionView(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            Text(if (completedFully) "✓" else "↓", fontSize = 44.sp, color = Color.White, fontWeight = FontWeight.Bold)
+            OpalIcons(
+                if (completedFully) OpalIcon.Check else OpalIcon.TrendDown,
+                Color.White,
+                Modifier.size(44.dp)
+            )
         }
 
         Text(
@@ -298,19 +322,25 @@ private fun CompletionView(
             modifier = Modifier.padding(top = 4.dp)
         )
         Text(
-            if (completedFully) "+$savedMinutes daqiqa tejaldi 🎉" else "Streak: $streakAfter 🔥",
+            if (completedFully) "+$savedMinutes daqiqa tejaldi" else "Streak: $streakAfter",
             fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold,
             color = if (completedFully) OpalColors.Success else OpalColors.Amber,
-            modifier = Modifier.padding(top = 12.dp)
+            modifier = Modifier.padding(top = OpalSpacing.md)
         )
         if (completedFully) {
-            Text(
-                "Streak: $streakAfter 🔥",
-                fontSize = 13.sp,
-                color = OpalColors.TextSecondary,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(top = 6.dp)
-            )
+            ) {
+                OpalIcons(OpalIcon.Flame, OpalColors.Amber, Modifier.size(13.dp))
+                Spacer(Modifier.width(5.dp))
+                Text(
+                    "Streak: $streakAfter",
+                    fontSize = 13.sp,
+                    color = OpalColors.TextSecondary
+                )
+            }
         }
     }
 }

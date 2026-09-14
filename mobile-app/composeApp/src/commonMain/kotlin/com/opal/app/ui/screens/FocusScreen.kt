@@ -28,7 +28,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -41,6 +40,11 @@ import com.opal.app.glass.GlassPane
 import com.opal.app.glass.Pressable
 import com.opal.app.theme.OpalColors
 import com.opal.app.theme.OpalGradient
+import com.opal.app.theme.OpalRadius
+import com.opal.app.theme.OpalSpacing
+import com.opal.app.ui.OpalIcon
+import com.opal.app.ui.OpalIcons
+import com.opal.app.ui.components.GradientCircle
 
 @Composable
 fun FocusScreen() {
@@ -55,11 +59,11 @@ fun FocusScreen() {
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp)
+            .padding(horizontal = OpalSpacing.xl)
     ) {
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(OpalSpacing.sm))
 
-        Text("Fokus sessiyasi", fontSize = 23.sp, fontWeight = FontWeight.Bold, color = OpalColors.TextPrimary)
+        Text("Fokus sessiyasi", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = OpalColors.TextPrimary, letterSpacing = (-0.3).sp)
         Text(
             "Rejim tanlang — chalg'ituvchilar darhol bloklanadi",
             fontSize = 13.sp,
@@ -67,13 +71,16 @@ fun FocusScreen() {
             modifier = Modifier.padding(top = 4.dp)
         )
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(OpalSpacing.lg))
 
         if (active != null) {
-            GlassCard(Modifier.fillMaxWidth(), radius = 24.dp, padding = 16.dp) {
+            GlassCard(Modifier.fillMaxWidth(), radius = OpalRadius.lg, padding = 16.dp) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
-                        Modifier.size(10.dp).clip(CircleShape).background(OpalColors.Success)
+                        Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(OpalColors.Success)
                     )
                     Spacer(Modifier.width(10.dp))
                     Text(
@@ -84,13 +91,16 @@ fun FocusScreen() {
                     )
                 }
             }
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(OpalSpacing.lg))
         }
 
-        // ---- Davomiylik tanlash (CUSTOM uchun) ----
-        Text("Maxsus davomiylik", fontSize = 13.sp, color = OpalColors.TextTertiary)
-        Spacer(Modifier.height(8.dp))
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        // ---- Maxsus davomiylik ----
+        Text("Davomiylik", fontSize = 13.sp, color = OpalColors.TextTertiary)
+        Spacer(Modifier.height(OpalSpacing.sm))
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(OpalSpacing.sm)
+        ) {
             SESSION_DURATIONS.forEach { d ->
                 val selected = d == customMinutes
                 Pressable(onClick = { customMinutes = d }) {
@@ -103,59 +113,53 @@ fun FocusScreen() {
                             }
                             .border(
                                 0.5.dp,
-                                if (selected) Color.Transparent else Color.White.copy(alpha = 0.16f),
+                                if (selected) Color.Transparent else Color.White.copy(alpha = 0.14f),
                                 RoundedCornerShape(50)
                             )
-                            .padding(horizontal = 14.dp, vertical = 7.dp)
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
                         Text(
                             "${d}d",
                             fontSize = 12.5.sp,
                             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (selected) Color.White else OpalColors.TextSecondary
+                            color = if (selected) Color(0xFF04241A) else OpalColors.TextSecondary
                         )
                     }
                 }
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(OpalSpacing.lg))
 
         // ---- Preset grid ----
         val rows = SESSION_PRESETS.chunked(2)
         rows.forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                row.forEach { preset ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(OpalSpacing.md)) {
+                row.forEachIndexed { i, preset ->
                     val minutes = if (preset.type == "CUSTOM") customMinutes else preset.minutes
                     val isCustom = preset.type == "CUSTOM"
                     val isActive = active?.preset?.type == preset.type
 
                     Pressable(
                         onClick = {
-                            if (active == null) {
-                                sessionCtl.start(preset.copy(minutes = minutes))
-                            }
+                            if (active == null) sessionCtl.start(preset.copy(minutes = minutes))
                         },
                         modifier = Modifier.weight(1f)
                     ) {
                         GlassPane(
-                            Modifier
-                                .fillMaxWidth()
-                                .height(158.dp),
-                            radius = 24.dp,
-                            base = if (isActive) 0.12f else 0.06f
+                            Modifier.fillMaxWidth().height(168.dp),
+                            radius = OpalRadius.lg,
+                            base = if (isActive) 0.13f else 0.06f
                         ) {
                             if (isCustom) {
                                 Box(
                                     Modifier
                                         .matchParentSize()
-                                        .border(1.dp, OpalGradient, RoundedCornerShape(24.dp))
+                                        .border(1.dp, OpalGradient, RoundedCornerShape(OpalRadius.lg))
                                 )
                             }
                             Column(
-                                Modifier
-                                    .matchParentSize()
-                                    .padding(15.dp),
+                                Modifier.matchParentSize().padding(15.dp),
                                 verticalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Row(
@@ -163,7 +167,9 @@ fun FocusScreen() {
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.Top
                                 ) {
-                                    Text(preset.emoji, fontSize = 30.sp)
+                                    GradientCircle(index = i, modifier = Modifier.size(46.dp)) {
+                                        Text(preset.emoji, fontSize = 22.sp)
+                                    }
                                     if (isActive) {
                                         Box(
                                             Modifier
@@ -205,18 +211,35 @@ fun FocusScreen() {
                     Spacer(Modifier.weight(1f))
                 }
             }
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(OpalSpacing.md))
         }
 
         // ---- Tarix ----
-        Spacer(Modifier.height(10.dp))
-        Text("Yaqinda", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = OpalColors.TextPrimary)
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(OpalSpacing.sm))
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Yaqinda", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = OpalColors.TextPrimary)
+            if (history.isNotEmpty()) {
+                Text("${history.size} sessiya", fontSize = 11.5.sp, color = OpalColors.TextTertiary)
+            }
+        }
+        Spacer(Modifier.height(OpalSpacing.md))
         history.take(5).forEach { s ->
-            GlassCard(Modifier.fillMaxWidth(), radius = 20.dp, padding = 13.dp) {
+            GlassCard(Modifier.fillMaxWidth(), radius = OpalRadius.md, padding = 13.dp) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(s.emoji, fontSize = 20.sp)
-                    Spacer(Modifier.width(12.dp))
+                    Box(
+                        Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(13.dp))
+                            .background(Color.White.copy(alpha = 0.06f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(s.emoji, fontSize = 18.sp)
+                    }
+                    Spacer(Modifier.width(OpalSpacing.md))
                     Column(Modifier.weight(1f)) {
                         Text(s.label, fontSize = 13.5.sp, fontWeight = FontWeight.Medium, color = OpalColors.TextPrimary)
                         Text(
@@ -226,17 +249,25 @@ fun FocusScreen() {
                             modifier = Modifier.padding(top = 2.dp)
                         )
                     }
-                    Text(
-                        if (s.completed) "+${s.savedMinutes}d" else "↓ ${s.savedMinutes}d",
-                        fontSize = 12.5.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (s.completed) OpalColors.Success else OpalColors.Danger
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OpalIcons(
+                            if (s.completed) OpalIcon.Check else OpalIcon.TrendDown,
+                            if (s.completed) OpalColors.Success else OpalColors.Danger,
+                            Modifier.size(13.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            "${s.savedMinutes}d",
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (s.completed) OpalColors.Success else OpalColors.Danger
+                        )
+                    }
                 }
             }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(OpalSpacing.sm))
         }
 
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(OpalSpacing.xxxl))
     }
 }

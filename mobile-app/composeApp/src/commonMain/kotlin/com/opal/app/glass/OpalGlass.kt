@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -44,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.opal.app.theme.OpalColors
 import com.opal.app.ui.TabKey
 import com.opal.app.ui.OpalTabIcon
 
@@ -133,87 +135,86 @@ fun ComposeGlassTabBar(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    GlassPane(modifier = modifier, radius = 30.dp, base = 0.06f) {
-        BoxWithConstraints(Modifier.matchParentSize()) {
-            val count = TabKey.entries.size
-            val itemW = maxWidth / count
-            val pillX by animateDpAsState(
-                targetValue = itemW * selectedIndex,
-                animationSpec = spring(dampingRatio = 0.72f, stiffness = 380f),
-                label = "pillX"
-            )
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(84.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Floating pill
+        GlassPane(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .height(68.dp),
+            radius = 34.dp,
+            base = 0.08f
+        ) {
+            BoxWithConstraints(Modifier.matchParentSize()) {
+                val count = TabKey.entries.size
+                val itemW = maxWidth / count
+                val pillX by animateDpAsState(
+                    targetValue = itemW * selectedIndex,
+                    animationSpec = spring(dampingRatio = 0.72f, stiffness = 400f),
+                    label = "pillX"
+                )
 
-            // Silliq sirg'aluvchi "liquid glass" pill
-            Box(
-                Modifier
-                    .offset(x = pillX + 4.dp)
-                    .width(itemW - 8.dp)
-                    .fillMaxHeight()
-                    .padding(vertical = 5.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(Color.White.copy(alpha = 0.16f), Color.White.copy(alpha = 0.07f))
-                        ),
-                        RoundedCornerShape(20.dp)
-                    )
-                    .border(
-                        BorderStroke(0.5.dp, Color.White.copy(alpha = 0.25f)),
-                        RoundedCornerShape(20.dp)
-                    )
-            )
+                // Liquid indicator shadow/glow
+                Box(
+                    Modifier
+                        .offset(x = pillX)
+                        .width(itemW)
+                        .fillMaxHeight()
+                        .background(
+                            Brush.radialGradient(
+                                listOf(OpalColors.Accent.copy(alpha = 0.12f), Color.Transparent)
+                            )
+                        )
+                )
 
-            Row(Modifier.fillMaxSize()) {
-                TabKey.entries.forEachIndexed { index, tab ->
-                    val selected = index == selectedIndex
-                    val iconScale by animateFloatAsState(
-                        targetValue = if (selected) 1.15f else 1f,
-                        animationSpec = spring(dampingRatio = 0.55f, stiffness = 600f),
-                        label = "iconScale"
-                    )
-                    val tint by animateColorAsState(
-                        targetValue = if (selected) Color.White else Color.White.copy(alpha = 0.42f),
-                        animationSpec = tween(240),
-                        label = "tint"
-                    )
-                    val src = remember { MutableInteractionSource() }
-                    val pressed by src.collectIsPressedAsState()
-                    val pressScale by animateFloatAsState(
-                        targetValue = if (pressed) 0.88f else 1f,
-                        animationSpec = spring(dampingRatio = 0.5f, stiffness = 800f),
-                        label = "tabPress"
-                    )
+                // Floating indicator
+                Box(
+                    Modifier
+                        .offset(x = pillX + (itemW - 48.dp) / 2)
+                        .align(Alignment.CenterStart)
+                        .size(48.dp)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color.White.copy(alpha = 0.15f), Color.White.copy(alpha = 0.05f))
+                            ),
+                            androidx.compose.foundation.shape.CircleShape
+                        )
+                        .border(
+                            0.5.dp, Color.White.copy(alpha = 0.25f),
+                            androidx.compose.foundation.shape.CircleShape
+                        )
+                )
 
-                    Column(
-                        Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .graphicsLayer {
-                                scaleX = pressScale
-                                scaleY = pressScale
-                            }
-                            .clickable(interactionSource = src, indication = null) { onSelect(index) },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Box(
-                            Modifier.graphicsLayer {
-                                scaleX = iconScale
-                                scaleY = iconScale
-                            }
+                Row(Modifier.fillMaxSize()) {
+                    TabKey.entries.forEachIndexed { index, tab ->
+                        val selected = index == selectedIndex
+                        val tint by animateColorAsState(
+                            targetValue = if (selected) Color.White else Color.White.copy(alpha = 0.4f),
+                            animationSpec = tween(250),
+                            label = "tint"
+                        )
+                        
+                        Column(
+                            Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) { onSelect(index) },
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            OpalTabIcon(tab, tint, Modifier.size(23.dp))
-                        }
-                        AnimatedVisibility(
-                            visible = selected,
-                            enter = fadeIn(tween(200)) + expandVertically(tween(200)),
-                            exit = fadeOut(tween(120)) + shrinkVertically(tween(120))
-                        ) {
+                            OpalTabIcon(tab, tint, Modifier.size(24.dp))
                             Text(
                                 tab.title,
-                                fontSize = 9.sp,
-                                lineHeight = 11.sp,
-                                color = Color.White.copy(alpha = 0.85f),
-                                fontWeight = FontWeight.Medium,
+                                fontSize = 10.sp,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                color = tint,
                                 modifier = Modifier.padding(top = 4.dp)
                             )
                         }

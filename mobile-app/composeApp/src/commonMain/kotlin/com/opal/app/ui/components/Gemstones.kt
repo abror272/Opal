@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.sp
 import com.opal.app.data.UserProfileDto
 import com.opal.app.glass.GlassCard
 import com.opal.app.theme.OpalColors
+import com.opal.app.ui.OpalIcon
+import com.opal.app.ui.OpalIcons
 
 /**
  * GEMSTONES — haqiqiy Opal profil to'plami (web bilan bir xil 8 tosh).
@@ -132,7 +134,7 @@ private fun GemBlob(gem: OpalGem, sizeDp: Dp) {
             )
         }
         if (!gem.unlocked) {
-            Text("🔒", fontSize = (sizeDp.value * 0.32f).sp)
+            OpalIcons(OpalIcon.Lock, Color.White.copy(alpha = 0.75f), Modifier.size(sizeDp * 0.38f))
         }
     }
 }
