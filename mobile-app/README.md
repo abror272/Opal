@@ -93,31 +93,58 @@ Talablar: **Android Studio Ladybug+**, Android SDK 35. JDK alohida o'rnatish sha
 
 ## 🍎 iOS qurish (macOS)
 
-Talablar:
-- **macOS** + **Xcode 15+**
-- **JDK 17+** (`java -version` bilan tekshiring). Agar `JAVA_HOME` bo'sh bo'lsa:
-  `export JAVA_HOME=$(/usr/libexec/java_home -v 17)`
-- [XcodeGen](https://github.com/yonaskolb/XcodeGen): `brew install xcodegen`
+> **Faqat iOS qurmoqchi bo'lsangiz Android SDK SHART EMAS.** `composeApp/build.gradle.kts`
+> Android SDK'ni avtomatik qidiradi (`ANDROID_HOME`, `local.properties`, Android Studio'ning
+> standart SDK joylari). Topilmasa — Android target umuman qo'shilmaydi va iOS buildlar
+> ishlayveradi ("SDK location not found" xatosi yo'qoladi).
 
-1. Repo'ni klon qilgach, wrapper'ni executable qiling (bir marta):
+Talablar:
+- **macOS** + **Xcode 15+** (`xcode-select -p` ishlashi kerak)
+- **JDK 17+**. Xcode'ning build skriptida `JAVA_HOME` bo'lmaydi — shu sababli
+  `iosApp/project.yml`dagi skript uni o'zi qidiradi (`java_home -v 21/17`,
+  Android Studio JBR, Homebrew `openjdk@21`). Hech narsa topilmasa:
+  `brew install openjdk@21`
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen): `brew install xcodegen`
+  (repo'da `iosApp.xcodeproj` yo'q — u generatsiya qilinadi)
+
+1. Repo'ni klon qilgach wrapper'ni executable qiling (bir marta):
    ```bash
    cd mobile-app
    chmod +x gradlew
    ```
-2. Xcode project'ini generatsiya qiling:
+2. Avval Gradle o'zini tekshiring (Xcode'siz, eng tez diagnostika):
+   ```bash
+   ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 --console=plain
+   # BUILD SUCCESSFUL bo'lsa -> Gradle tomoni tayyor
+   ```
+3. Xcode project'ini generatsiya qiling:
    ```bash
    cd iosApp
    xcodegen generate      # iosApp.xcodeproj yaratadi
    open iosApp.xcodeproj
    ```
-3. Scheme: **iosApp** → Run ▶ (iPhone simulyator)
+4. Scheme: **iosApp** → Run ▶ (iPhone simulyator)
    - Pre-build script avtomatik `ComposeApp.framework`ni Kotlin'dan quradi
      (`composeApp/build/xcode-frameworks/<CONFIGURATION>/<SDK_NAME>`)
    - **Real qurilma** uchun: Signing & Capabilities → Team tanlang.
      `project.yml`da hech narsani o'zgartirish shart emas — skript barcha
      arxitekturalar (arm64, simulator arm64/x64) uchun ishlaydi.
-4. Agar Xcode "Sandbox: bash deny file-read-data" bersa — bu allaqachon
-   `ENABLE_USER_SCRIPT_SANDBOXING: NO` bilan tuzatilgan (`project.yml`).
+
+### 🧯 macOS'da eng ko'p uchraydigan Gradle xatolari
+
+| Xato | Sabab / yechim |
+|---|---|
+| `Unable to locate a Java Runtime` | Xcode skriptida JDK yo'q. Endi skript o'zi topadi; bo'lmasa `brew install openjdk@21` |
+| `No matching toolchains found for requested specification: {languageVersion=21, vendor=any}` | `gradle/gradle-daemon-jvm.properties` JDK 21 talab qiladi. Skript topilgan JDK'larni Gradle'ga beradi; yoki `brew install openjdk@21` |
+| `SDK location not found` | Android SDK yo'q — endi Android target avtomatik o'chadi (faqat Android qurmoqchi bo'lsangiz `local.properties`ga `sdk.dir=...` yozing) |
+| `Sandbox: bash(...) deny file-read-data` | Xcode 15+ run-script sandbox — `ENABLE_USER_SCRIPT_SANDBOXING: NO` bilan allaqachon tuzatilgan |
+| `framework 'ComposeApp' not found` | Xcode DerivedData eski: `Product → Clean Build Folder` + `rm -rf ~/Library/Developer/Xcode/DerivedData/iosApp-*` |
+| Gradle daemon JDK 25 bilan yiqiladi (`IllegalArgumentException: 25.0.4`) | AGP 8.7.3 JDK 25'ni tushunmaydi — JDK 17/21 ishlating |
+
+Android target'ni majburan o'chirish (masalan macOS'da faqat iOS uchun):
+```bash
+./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 -Popal.skipAndroid=true
+```
 
 ## ⚠️ Cheklovlar va keyingi qadamlar
 
