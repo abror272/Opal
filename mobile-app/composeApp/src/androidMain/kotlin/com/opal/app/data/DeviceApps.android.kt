@@ -1,9 +1,12 @@
 package com.opal.app.data
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.net.Uri
+import android.os.PowerManager
 import android.view.accessibility.AccessibilityManager
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.graphics.Canvas
@@ -93,8 +96,9 @@ actual fun isBlockingServiceEnabled(): Boolean {
     val context = opalContext()
 
     // 1) Xizmat "heartbeat"i — eng ishonchli (MIUI cheklovlaridan mustaqil).
+    //    30 sekundlik oyna: xizmat o'ldirilishi bilan UI darhol rostni ko'rsatadi.
     val hb = prefs().getLong("svc_hb", 0L)
-    if (hb > 0L && System.currentTimeMillis() - hb < 120_000L) return true
+    if (hb > 0L && System.currentTimeMillis() - hb < 30_000L) return true
 
     // 2) Secure settings (ba'zi qurilmalarda ishlaydi)
     try {
@@ -134,6 +138,79 @@ actual fun openBlockingSettings() {
     try {
         context.startActivity(intent)
     } catch (_: Throwable) {
+    }
+}
+
+/** MIUI / EMUI / ColorOS / OnePlus / Samsung "autostart" ekranlari. */
+private val AUTOSTART_COMPONENTS = listOf(
+    ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity"),
+    ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"),
+    ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.appcontrol.activity.StartupAppControlActivity"),
+    ComponentName("com.coloros.safecenter", "com.coloros.safecenter.permission.startup.StartupAppListActivity"),
+    ComponentName("com.coloros.safecenter", "com.coloros.safecenter.startupapp.StartupAppListActivity"),
+    ComponentName("com.oppo.safe", "com.oppo.safe.permission.startup.StartupAppListActivity"),
+    ComponentName("com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"),
+    ComponentName("com.iqoo.secure", "com.iqoo.secure.ui.phoneoptimize.AddWhiteListActivity"),
+    ComponentName("com.oneplus.security", "com.oneplus.security.chainlaunch.view.ChainLaunchAppListActivity"),
+    ComponentName("com.samsung.android.lool", "com.samsung.android.sm.ui.battery.BatteryActivity"),
+    ComponentName("com.letv.android.letvsafe", "com.letv.android.letvsafe.AutobootManageActivity"),
+    ComponentName("com.asus.mobilemanager", "com.asus.mobilemanager.autostart.AutoStartActivity"),
+)
+
+actual fun openAutostartSettings(): Boolean {
+    val context = opalContext()
+    val pm = context.packageManager
+    for (component in AUTOSTART_COMPONENTS) {
+        try {
+            val intent = Intent().apply {
+                this.component = component
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            if (pm.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
+                context.startActivity(intent)
+                return true
+            }
+        } catch (_: Throwable) {
+        }
+    }
+    // Zaxira: ilova sozlamalari sahifasi.
+    return try {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.fromParts("package", context.packageName, null)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+        true
+    } catch (_: Throwable) {
+        false
+    }
+}
+
+actual fun isIgnoringBatteryOptimizations(): Boolean {
+    return try {
+        val pm = opalContext().getSystemService(Context.POWER_SERVICE) as? PowerManager
+        pm?.isIgnoringBatteryOptimizations(opalContext().packageName) ?: true
+    } catch (_: Throwable) {
+        true
+    }
+}
+
+actual fun requestIgnoreBatteryOptimizations() {
+    val context = opalContext()
+    try {
+        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+            data = Uri.fromParts("package", context.packageName, null)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+    } catch (_: Throwable) {
+        try {
+            context.startActivity(
+                Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        } catch (_: Throwable) {
+        }
     }
 }
 

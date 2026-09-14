@@ -28,8 +28,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,6 +40,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -54,6 +58,8 @@ import com.opal.app.theme.OpalSpacing
 import com.opal.app.ui.OpalIcon
 import com.opal.app.ui.OpalIcons
 import com.opal.app.ui.components.AllowedPill
+import com.opal.app.ui.components.BlockingGuardBanner
+import com.opal.app.ui.components.BlockingSetupCard
 import com.opal.app.ui.components.CrystalHero
 import com.opal.app.ui.components.GemImage
 import com.opal.app.ui.components.GlassButton
@@ -102,7 +108,9 @@ fun HomeScreen(
     val sessions by repo.sessions.collectAsState()
     val installed by repo.installedApps.collectAsState()
     val blockedPkgs by repo.blockedPackages.collectAsState()
+    val serviceOn by repo.blockingServiceOn.collectAsState()
 
+    var showSetup by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { repo.loadDeviceData() }
 
     val scores = remember(profile, stats, sessions) { computeScores(profile, stats, sessions) }
@@ -148,6 +156,13 @@ fun HomeScreen(
         }
 
         Spacer(Modifier.height(OpalSpacing.xs))
+
+        // ---- Bloklash ogohlantirishi (MIUI xizmatni o'chirsa) ----
+        BlockingGuardBanner(
+            visible = !serviceOn,
+            onAdvanced = { showSetup = true }
+        )
+        if (!serviceOn) Spacer(Modifier.height(OpalSpacing.md))
 
         // ---- Kristall qahramon ----
         CrystalHero(onClick = onStartFocus, modifier = Modifier.align(Alignment.CenterHorizontally))
@@ -434,6 +449,17 @@ fun HomeScreen(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(top = 6.dp)
                     )
+                }
+            }
+        }
+
+        if (showSetup) {
+            Dialog(
+                onDismissRequest = { showSetup = false },
+                properties = DialogProperties(usePlatformDefaultWidth = false)
+            ) {
+                Box(Modifier.fillMaxWidth().padding(18.dp)) {
+                    BlockingSetupCard()
                 }
             }
         }

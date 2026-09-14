@@ -24,6 +24,12 @@ actual fun isBlockingServiceEnabled(): Boolean = false
 
 actual fun openBlockingSettings() {}
 
+actual fun openAutostartSettings(): Boolean = false
+
+actual fun isIgnoringBatteryOptimizations(): Boolean = true
+
+actual fun requestIgnoreBatteryOptimizations() {}
+
 actual fun grantGrace(packageName: String, millis: Long) {
     val until = (NSDate().timeIntervalSince1970 * 1000).toLong() + millis
     NSUserDefaults.standardUserDefaults.setInteger(until.toLong(), "grace_$packageName")

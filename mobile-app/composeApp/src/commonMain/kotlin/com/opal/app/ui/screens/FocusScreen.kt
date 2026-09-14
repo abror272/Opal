@@ -43,9 +43,13 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.opal.app.data.AppGraph
 import com.opal.app.data.SessionPreset
 import com.opal.app.data.formatClock
+import com.opal.app.data.openBlockingSettings
+import com.opal.app.glass.GlassCard
 import com.opal.app.glass.Pressable
 import com.opal.app.theme.OpalGradient
 import com.opal.app.theme.OpalColors
@@ -53,6 +57,7 @@ import com.opal.app.theme.OpalRadius
 import com.opal.app.theme.OpalSpacing
 import com.opal.app.ui.OpalIcon
 import com.opal.app.ui.OpalIcons
+import com.opal.app.ui.components.BlockingGuardBanner
 import com.opal.app.ui.components.GlassButton
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
@@ -73,12 +78,14 @@ fun FocusScreen() {
     val active by sessionCtl.active.collectAsState()
     val repo = remember { AppGraph.repo }
     val profile by repo.profile.collectAsState()
+    val serviceOn by repo.blockingServiceOn.collectAsState()
     val scope = rememberCoroutineScope()
 
     var selected by remember { mutableStateOf(TIMER_PRESETS.first()) }
     var duration by remember { mutableIntStateOf(45) }
     var blockOn by remember { mutableStateOf(true) }
     var strict by remember { mutableStateOf(false) }
+    var warnBlock by remember { mutableStateOf(false) }
 
     Box(Modifier.fillMaxSize()) {
         // ---- Immersiv fon ----
@@ -136,7 +143,10 @@ fun FocusScreen() {
                 color = OpalColors.TextPrimary.copy(alpha = 0.9f)
             )
 
-            Spacer(Modifier.height(OpalSpacing.xxl))
+            Spacer(Modifier.height(OpalSpacing.md))
+
+            BlockingGuardBanner(visible = !serviceOn)
+            if (!serviceOn) Spacer(Modifier.height(OpalSpacing.md))
 
             // ---- LCD soat ----
             TimerClock(
@@ -212,6 +222,73 @@ fun FocusScreen() {
 
             Spacer(Modifier.height(OpalSpacing.lg))
 
+            // ---- Bloklash o'chiq bo'lsa ogohlantirish ----
+            if (warnBlock) {
+                Dialog(
+                    onDismissRequest = { warnBlock = false },
+                    properties = DialogProperties(usePlatformDefaultWidth = false)
+                ) {
+                    Box(Modifier.fillMaxWidth().padding(24.dp)) {
+                        GlassCard(Modifier.fillMaxWidth(), radius = OpalRadius.lg, padding = 20.dp) {
+                            Column {
+                                Text(
+                                    "⚠️ Bloklash o'chirilgan",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = OpalColors.TextPrimary
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    "Hozir sessiya boshlasangiz ham ilovalar bloklanmaydi, chunki tizim Opal bloklash xizmatini o'chirib qo'ygan.",
+                                    fontSize = 12.5.sp,
+                                    lineHeight = 18.sp,
+                                    color = OpalColors.TextSecondary
+                                )
+                                Spacer(Modifier.height(16.dp))
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(50))
+                                        .background(OpalColors.Accent)
+                                        .clickable {
+                                            warnBlock = false
+                                            openBlockingSettings()
+                                        }
+                                        .padding(vertical = 12.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        "Bloklashni yoqish",
+                                        fontSize = 13.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF08120B)
+                                    )
+                                }
+                                Spacer(Modifier.height(8.dp))
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(50))
+                                        .clickable {
+                                            warnBlock = false
+                                            sessionCtl.start(selected.copy(minutes = duration))
+                                        }
+                                        .padding(vertical = 11.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        "Baribir boshlash",
+                                        fontSize = 12.5.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = OpalColors.TextTertiary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             // ---- Start ----
             GlassButton(
                 text = "Taymerni boshlash",
@@ -219,7 +296,7 @@ fun FocusScreen() {
                 icon = OpalIcon.Play,
                 enabled = active == null
             ) {
-                sessionCtl.start(selected.copy(minutes = duration))
+                if (!serviceOn) warnBlock = true else sessionCtl.start(selected.copy(minutes = duration))
             }
 
             Spacer(Modifier.height(OpalSpacing.md))

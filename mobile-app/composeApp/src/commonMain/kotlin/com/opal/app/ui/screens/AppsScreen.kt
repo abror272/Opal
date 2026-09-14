@@ -59,6 +59,7 @@ import com.opal.app.theme.OpalSpacing
 import com.opal.app.theme.accentBrushFor
 import com.opal.app.ui.OpalIcon
 import com.opal.app.ui.OpalIcons
+import com.opal.app.ui.components.BlockingSetupCard
 import com.opal.app.ui.components.HexAvatar
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.DrawableResource
@@ -330,6 +331,8 @@ private fun StrictBlockCard(
                         color = OpalColors.MintLight
                     )
                 }
+                Spacer(Modifier.height(14.dp))
+                BlockingSetupCard()
             }
         }
     }

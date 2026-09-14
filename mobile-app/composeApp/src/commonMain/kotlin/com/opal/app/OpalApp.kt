@@ -87,6 +87,14 @@ private fun MainShell() {
 
     LaunchedEffect(Unit) { repo.refreshAll() }
 
+    // Bloklash xizmati holatini doimiy kuzatish — MIUI uni jimgina o'chirib qo'yadi.
+    LaunchedEffect(Unit) {
+        while (true) {
+            repo.refreshBlockingService()
+            kotlinx.coroutines.delay(2000)
+        }
+    }
+
     var tab by remember { mutableStateOf(TabKey.HOME) }
     var overlay by remember { mutableStateOf<OpalOverlay?>(null) }
     var breathingOpen by remember { mutableStateOf(false) }

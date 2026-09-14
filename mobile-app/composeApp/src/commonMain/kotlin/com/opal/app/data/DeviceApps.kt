@@ -32,6 +32,15 @@ expect fun isBlockingServiceEnabled(): Boolean
 /** Bloklash xizmatini yoqish uchun tizim sozlamalarini ochish. */
 expect fun openBlockingSettings()
 
+/** Ishlab chiqaruvchi (MIUI/EMUI/ColorOS...) "avtostart" sozlamalarini ochadi. */
+expect fun openAutostartSettings(): Boolean
+
+/** Batareya optimizatsiyasidan ozod qilinganmi (fon xizmati o'ldirilmasligi uchun). */
+expect fun isIgnoringBatteryOptimizations(): Boolean
+
+/** Batareya optimizatsiyasidan ozod qilish so'rovini ko'rsatish. */
+expect fun requestIgnoreBatteryOptimizations()
+
 /** Bloklangan ilovaga vaqtincha ruxsat (millisekund). */
 expect fun grantGrace(packageName: String, millis: Long)
 expect fun inGrace(packageName: String): Boolean

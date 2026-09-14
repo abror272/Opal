@@ -36,6 +36,11 @@ class OpalAccessibilityService : AccessibilityService() {
     private var lastBeat = 0L
 
     private val handler = Handler(Looper.getMainLooper())
+
+    companion object {
+        private const val KEEP_ALIVE_ID = 0x0A12
+        private const val KEEP_ALIVE_CHANNEL = "opal_service"
+    }
     private val ticker = object : Runnable {
         override fun run() {
             try {
@@ -51,6 +56,7 @@ class OpalAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         beat(force = true)
+        startKeepAlive()
         handler.removeCallbacks(ticker)
         // Birinchi snapshot: hozir faol qoidalar uchun bildirishnoma chiqarmaymiz.
         runCatching { notifier.sync(loadRules(), nowMinutes()) }
@@ -59,14 +65,68 @@ class OpalAccessibilityService : AccessibilityService() {
 
     override fun onUnbind(intent: Intent?): Boolean {
         clearHeartbeat()
+        stopKeepAlive()
         return super.onUnbind(intent)
     }
 
     override fun onDestroy() {
         clearHeartbeat()
+        stopKeepAlive()
         handler.removeCallbacks(ticker)
         overlay.hide()
         super.onDestroy()
+    }
+
+    /**
+     * MIUI/HyperOS agressiv fon tozalashiga qarshi: xizmatni foreground
+     * xizmatga aylantiramiz — jarayon tizim tomonidan o'ldirilmaydi.
+     */
+    private fun startKeepAlive() {
+        try {
+            val nm = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                if (nm.getNotificationChannel(KEEP_ALIVE_CHANNEL) == null) {
+                    nm.createNotificationChannel(
+                        android.app.NotificationChannel(
+                            KEEP_ALIVE_CHANNEL,
+                            "Opal himoyasi",
+                            android.app.NotificationManager.IMPORTANCE_MIN
+                        ).apply { description = "Bloklash xizmati faol" }
+                    )
+                }
+            }
+            val nm2 = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+                checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+                android.content.pm.PackageManager.PERMISSION_GRANTED
+            ) {
+                return
+            }
+            val intent = android.content.Intent(this, com.opal.app.MainActivity::class.java)
+            val pi = android.app.PendingIntent.getActivity(
+                this, 0, intent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or
+                    (if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M)
+                        android.app.PendingIntent.FLAG_IMMUTABLE else 0)
+            )
+            val n = androidx.core.app.NotificationCompat.Builder(this, KEEP_ALIVE_CHANNEL)
+                .setSmallIcon(com.opal.app.R.drawable.ic_notify)
+                .setContentTitle("Opal himoyasi faol")
+                .setContentText("Bloklangan ilovalar kuzatilmoqda")
+                .setOngoing(true)
+                .setPriority(androidx.core.app.NotificationCompat.PRIORITY_MIN)
+                .setContentIntent(pi)
+                .build()
+            startForeground(KEEP_ALIVE_ID, n)
+        } catch (_: Throwable) {
+        }
+    }
+
+    private fun stopKeepAlive() {
+        try {
+            stopForeground(true)
+        } catch (_: Throwable) {
+        }
     }
 
     private fun clearHeartbeat() {
