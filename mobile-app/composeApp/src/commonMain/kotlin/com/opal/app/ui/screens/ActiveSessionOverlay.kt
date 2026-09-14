@@ -99,7 +99,7 @@ fun ActiveSessionOverlay() {
 
                     GlassPane(Modifier.fillMaxWidth(), radius = OpalRadius.lg, base = 0.05f) {
                         Row(
-                            Modifier.matchParentSize().padding(horizontal = 16.dp, vertical = 12.dp),
+                            Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(

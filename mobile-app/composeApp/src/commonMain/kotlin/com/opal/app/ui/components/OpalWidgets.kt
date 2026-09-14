@@ -92,34 +92,58 @@ fun OpalGem(modifier: Modifier = Modifier, size: Dp = 190.dp) {
             )
 
             rotate(tilt, Offset(cx, cy)) {
+                // iridescent play-of-color gradient
+                val iridescent = Brush.linearGradient(
+                    0.00f to Color(0xFFBDF6D4),
+                    0.20f to Color(0xFF7FE7D0),
+                    0.42f to Color(0xFF8FB4FF),
+                    0.60f to Color(0xFFC79BFF),
+                    0.78f to Color(0xFFFF9EC7),
+                    1.00f to Color(0xFFFFD98A),
+                    start = Offset(cx - r, cy - r),
+                    end = Offset(cx + r, cy + r)
+                )
                 // gem body (faceted)
                 val body = Path().apply {
                     moveTo(cx, cy - r)
-                    lineTo(cx + r * 0.82f, cy - r * 0.34f)
-                    lineTo(cx + r * 0.66f, cy + r * 0.72f)
-                    lineTo(cx, cy + r * 1.02f)
-                    lineTo(cx - r * 0.66f, cy + r * 0.72f)
-                    lineTo(cx - r * 0.82f, cy - r * 0.34f)
+                    cubicTo(cx + r * 0.5f, cy - r * 0.82f, cx + r * 0.9f, cy - r * 0.5f, cx + r * 0.86f, cy - r * 0.22f)
+                    lineTo(cx + r * 0.72f, cy + r * 0.66f)
+                    cubicTo(cx + r * 0.5f, cy + r * 1.08f, cx - r * 0.5f, cy + r * 1.08f, cx - r * 0.72f, cy + r * 0.66f)
+                    lineTo(cx - r * 0.86f, cy - r * 0.22f)
+                    cubicTo(cx - r * 0.9f, cy - r * 0.5f, cx - r * 0.5f, cy - r * 0.82f, cx, cy - r)
                     close()
                 }
-                drawPath(body, GemRainbowGradient, alpha = 0.95f)
+                drawPath(body, iridescent, alpha = 0.96f)
+
+                // ichki nur (play of color)
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        listOf(Color(0x887FE7D0), Color(0x33C79BFF), Color.Transparent),
+                        center = Offset(cx + r * 0.15f, cy + r * 0.1f),
+                        radius = r * 0.9f
+                    ),
+                    radius = r * 0.9f,
+                    center = Offset(cx + r * 0.15f, cy + r * 0.1f)
+                )
 
                 // internal facets
-                val facet = Color.White.copy(alpha = 0.16f * shimmer)
+                val facet = Color.White.copy(alpha = 0.18f * shimmer)
                 drawLine(facet, Offset(cx, cy - r), Offset(cx, cy + r * 1.02f), strokeWidth = 1.4f)
-                drawLine(facet, Offset(cx - r * 0.82f, cy - r * 0.34f), Offset(cx + r * 0.66f, cy + r * 0.72f), strokeWidth = 1.1f)
-                drawLine(facet, Offset(cx + r * 0.82f, cy - r * 0.34f), Offset(cx - r * 0.66f, cy + r * 0.72f), strokeWidth = 1.1f)
-                drawLine(facet, Offset(cx - r * 0.82f, cy - r * 0.34f), Offset(cx + r * 0.82f, cy - r * 0.34f), strokeWidth = 1.0f)
+                drawLine(facet, Offset(cx - r * 0.86f, cy - r * 0.22f), Offset(cx + r * 0.72f, cy + r * 0.66f), strokeWidth = 1.1f)
+                drawLine(facet, Offset(cx + r * 0.86f, cy - r * 0.22f), Offset(cx - r * 0.72f, cy + r * 0.66f), strokeWidth = 1.1f)
+                drawLine(facet, Offset(cx - r * 0.86f, cy - r * 0.22f), Offset(cx + r * 0.86f, cy - r * 0.22f), strokeWidth = 1.0f)
+                drawLine(facet, Offset(cx, cy - r), Offset(cx - r * 0.86f, cy - r * 0.22f), strokeWidth = 1.0f)
+                drawLine(facet, Offset(cx, cy - r), Offset(cx + r * 0.86f, cy - r * 0.22f), strokeWidth = 1.0f)
 
                 // specular highlight
                 drawCircle(
                     brush = Brush.radialGradient(
-                        listOf(Color.White.copy(alpha = 0.55f * shimmer), Color.Transparent),
-                        center = Offset(cx - r * 0.28f, cy - r * 0.42f),
-                        radius = r * 0.7f
+                        listOf(Color.White.copy(alpha = 0.6f * shimmer), Color.Transparent),
+                        center = Offset(cx - r * 0.30f, cy - r * 0.44f),
+                        radius = r * 0.66f
                     ),
-                    radius = r * 0.7f,
-                    center = Offset(cx - r * 0.28f, cy - r * 0.42f)
+                    radius = r * 0.66f,
+                    center = Offset(cx - r * 0.30f, cy - r * 0.44f)
                 )
             }
 

@@ -88,13 +88,13 @@ fun GlassCard(
 ) {
     if (onClick != null) {
         Pressable(onClick = onClick, modifier = modifier) {
-            GlassPane(Modifier.matchParentSize(), radius = radius) {
-                Box(Modifier.matchParentSize().padding(padding), content = content)
+            GlassPane(Modifier, radius = radius) {
+                Box(Modifier.padding(padding), content = content)
             }
         }
     } else {
         GlassPane(modifier, radius = radius) {
-            Box(Modifier.matchParentSize().padding(padding), content = content)
+            Box(Modifier.padding(padding), content = content)
         }
     }
 }

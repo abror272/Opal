@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import com.opal.app.data.AppGraph
 import com.opal.app.glass.GlassCard
 import com.opal.app.glass.Pressable
+import com.opal.app.platform.rememberSafePadding
 import com.opal.app.theme.OpalColors
 import com.opal.app.theme.OpalRadius
 import com.opal.app.theme.OpalSpacing
@@ -46,6 +47,7 @@ import com.opal.app.ui.components.GemstonesSection
 @Composable
 fun ProfileScreen(onClose: () -> Unit) {
     val repo = remember { AppGraph.repo }
+    val insets = rememberSafePadding()
     val profile by repo.profile.collectAsState()
     val sessions by repo.sessions.collectAsState()
     val hadSleep = remember(sessions) { sessions.any { it.type == "SLEEP" } }
@@ -64,7 +66,7 @@ fun ProfileScreen(onClose: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = OpalSpacing.xl)
         ) {
-            Spacer(Modifier.height(OpalSpacing.md))
+            Spacer(Modifier.height(insets.calculateTopPadding() + OpalSpacing.md))
 
             // ---- Header ----
             Row(
@@ -141,7 +143,7 @@ fun ProfileScreen(onClose: () -> Unit) {
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
-            Spacer(Modifier.height(OpalSpacing.xxxl))
+            Spacer(Modifier.height(insets.calculateBottomPadding() + OpalSpacing.xxxl))
         }
     }
 }
