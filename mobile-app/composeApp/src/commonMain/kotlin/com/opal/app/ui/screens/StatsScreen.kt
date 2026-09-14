@@ -101,8 +101,8 @@ fun StatsScreen(onClose: () -> Unit) {
             // ---- Arc gauge ----
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 ArcScoreGauge(
-                    score = scores.overall,
-                    improving = scores.improving,
+                    score = scores.score,
+                    improving = scores.delta >= 0,
                     modifier = Modifier.fillMaxWidth().height(170.dp)
                 )
             }

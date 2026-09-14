@@ -1,44 +1,66 @@
 package com.opal.app.data
 
-/** Opal Score + Sleep/Focus/Rest ko'rsatkichlari (0..100). */
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
+import kotlin.math.max
+
+/** Opal Score + Sleep/Focus/Rest + kunlik o'zgarish (web `computeScores` bilan bir xil). */
 data class OpalScores(
-    val overall: Int,
-    val sleep: Int,
+    val score: Int,
     val focus: Int,
     val rest: Int,
-    val improving: Boolean
+    val sleep: Int,
+    val delta: Int
 )
 
-/**
- * Mavjud statistikadan Opal ko'rsatkichlarini hosil qiladi.
- * (Backend'da alohida maydonlar yo'q — shuning uchun mantiqiy formula.)
- */
 fun computeScores(
     profile: UserProfileDto,
     stats: StatsResponseDto,
     sessions: List<FocusSessionDto>
 ): OpalScores {
     val today = stats.today
-    val goal = stats.goalMinutes.coerceAtLeast(1)
+    val screen = today?.screenTimeMinutes ?: 180
+    val saved = today?.savedMinutes ?: 0
+    val goal = stats.goalMinutes.takeIf { it > 0 } ?: 240
 
-    // Focus — bugun tejalgan vaqt maqsadga nisbatan
-    val focusFrac = ((today?.savedMinutes ?: 0).toFloat() / goal).coerceIn(0f, 1f)
-    // Rest — ekran vaqti maqsadga nisbatan kam bo'lsa yaxshi
-    val screen = today?.screenTimeMinutes ?: 0
-    val restFrac = (1f - (screen.toFloat() / (goal * 2f))).coerceIn(0f, 1f)
-    // Sleep — uyqu sessiyasi bo'lsa yuqori
-    val sleepFrac = if (sessions.any { it.type == "SLEEP" }) 0.92f else 0.62f
+    val todayIso = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
+    val todays = sessions.filter { (it.endedAt ?: it.startedAt).take(10) == todayIso }
+    val completed = todays.count { it.completed }
 
-    val focus = (focusFrac * 100f).toInt().coerceIn(0, 100)
-    val rest = (restFrac * 100f).toInt().coerceIn(0, 100)
-    val sleep = (sleepFrac * 100f).toInt().coerceIn(0, 100)
-    val overall = ((sleep + focus + rest) / 3f).toInt().coerceIn(0, 100)
+    val over = max(screen - goal, 0)
+    val score = (88f - over * 0.1f + saved * 0.18f).coerceIn(42f, 99f).toInt()
+    val focus = (52f + completed * 11f + saved * 0.09f).coerceIn(38f, 98f).toInt()
+    val rest = (95f - screen * 0.1f).coerceIn(44f, 97f).toInt()
+    val sleep = lastSleepMinutes(sessions)?.let { sleepScoreFromMinutes(it) }
+        ?: (80f - screen * 0.04f).coerceIn(55f, 82f).toInt()
 
-    return OpalScores(
-        overall = overall,
-        sleep = sleep,
-        focus = focus,
-        rest = rest,
-        improving = stats.trendPercent <= 0
-    )
+    val trend = stats.trendPercent
+    val delta = when {
+        trend == 0 -> 0
+        trend > 0 -> -minOf(trend / 8, 6)
+        else -> minOf(-trend / 8, 6)
+    }
+
+    return OpalScores(score = score, focus = focus, rest = rest, sleep = sleep, delta = delta)
 }
+
+/** Oxirgi 32 soat ichida tugagan SLEEP sessiyasi (daqiqa). */
+private fun lastSleepMinutes(sessions: List<FocusSessionDto>): Int? {
+    val now = Clock.System.now()
+    val cands = sessions
+        .filter { it.type == "SLEEP" && it.endedAt != null }
+        .sortedByDescending { it.endedAt }
+    for (s in cands) {
+        val end = runCatching { Instant.parse(s.endedAt!!) }.getOrNull() ?: continue
+        if ((now - end).inWholeHours <= 32) {
+            val start = runCatching { Instant.parse(s.startedAt) }.getOrNull() ?: continue
+            return ((end - start).inWholeMinutes).coerceIn(0, 720).toInt()
+        }
+    }
+    return null
+}
+
+private fun sleepScoreFromMinutes(minutes: Int): Int =
+    (40f + minutes * 0.108f).coerceIn(40f, 97f).toInt()

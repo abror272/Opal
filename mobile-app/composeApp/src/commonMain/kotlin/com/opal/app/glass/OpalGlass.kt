@@ -138,70 +138,74 @@ fun ComposeGlassTabBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(84.dp),
+            .height(82.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Floating pill
+        // Floating glass pill
         GlassPane(
             modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .height(68.dp),
-            radius = 34.dp,
-            base = 0.08f
+                .fillMaxWidth(0.92f)
+                .height(64.dp),
+            radius = 32.dp,
+            base = 0.09f
         ) {
-            BoxWithConstraints(Modifier.matchParentSize()) {
+            BoxWithConstraints(Modifier.matchParentSize().padding(6.dp)) {
                 val count = TabKey.entries.size
                 val itemW = maxWidth / count
-                val pillX by animateDpAsState(
+                // silliq sirg'aluvchi glow indikator
+                val indicatorX by animateDpAsState(
                     targetValue = itemW * selectedIndex,
-                    animationSpec = spring(dampingRatio = 0.72f, stiffness = 400f),
-                    label = "pillX"
+                    animationSpec = spring(dampingRatio = 0.74f, stiffness = 340f),
+                    label = "tabIndicatorX"
                 )
 
-                // Liquid indicator shadow/glow
+                // orqadagi mint nur
                 Box(
                     Modifier
-                        .offset(x = pillX)
+                        .offset(x = indicatorX)
                         .width(itemW)
                         .fillMaxHeight()
                         .background(
                             Brush.radialGradient(
-                                listOf(OpalColors.Accent.copy(alpha = 0.12f), Color.Transparent)
+                                listOf(OpalColors.Accent.copy(alpha = 0.16f), Color.Transparent)
                             )
                         )
                 )
 
-                // Floating indicator
+                // glow pill indikator
                 Box(
                     Modifier
-                        .offset(x = pillX + (itemW - 48.dp) / 2)
-                        .align(Alignment.CenterStart)
-                        .size(48.dp)
+                        .offset(x = indicatorX)
+                        .width(itemW)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(50))
                         .background(
                             Brush.verticalGradient(
-                                listOf(Color.White.copy(alpha = 0.15f), Color.White.copy(alpha = 0.05f))
-                            ),
-                            androidx.compose.foundation.shape.CircleShape
+                                listOf(Color.White.copy(alpha = 0.14f), Color.White.copy(alpha = 0.05f))
+                            )
                         )
-                        .border(
-                            0.5.dp, Color.White.copy(alpha = 0.25f),
-                            androidx.compose.foundation.shape.CircleShape
-                        )
+                        .border(0.5.dp, Color.White.copy(alpha = 0.16f), RoundedCornerShape(50))
                 )
 
                 Row(Modifier.fillMaxSize()) {
                     TabKey.entries.forEachIndexed { index, tab ->
                         val selected = index == selectedIndex
                         val tint by animateColorAsState(
-                            targetValue = if (selected) Color.White else Color.White.copy(alpha = 0.4f),
-                            animationSpec = tween(250),
-                            label = "tint"
+                            targetValue = if (selected) OpalColors.MintLight else Color.White.copy(alpha = 0.42f),
+                            animationSpec = tween(220),
+                            label = "tabTint"
                         )
-                        
+                        val iconScale by androidx.compose.animation.core.animateFloatAsState(
+                            targetValue = if (selected) 1.08f else 1f,
+                            animationSpec = spring(dampingRatio = 0.6f, stiffness = 500f),
+                            label = "tabIconScale"
+                        )
+
                         Column(
                             Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
+                                .clip(RoundedCornerShape(50))
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null
@@ -209,13 +213,20 @@ fun ComposeGlassTabBar(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
-                            OpalTabIcon(tab, tint, Modifier.size(24.dp))
+                            androidx.compose.foundation.layout.Box(
+                                Modifier.graphicsLayer {
+                                    scaleX = iconScale
+                                    scaleY = iconScale
+                                }
+                            ) {
+                                OpalTabIcon(tab, tint, Modifier.size(22.dp))
+                            }
                             Text(
                                 tab.title,
-                                fontSize = 10.sp,
+                                fontSize = 9.5.sp,
                                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                                 color = tint,
-                                modifier = Modifier.padding(top = 4.dp)
+                                modifier = Modifier.padding(top = 3.dp)
                             )
                         }
                     }

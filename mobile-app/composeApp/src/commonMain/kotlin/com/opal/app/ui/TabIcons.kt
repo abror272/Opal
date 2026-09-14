@@ -46,12 +46,13 @@ private fun DrawScope.drawTabIcon(tab: TabKey, c: Color) {
         }
 
         TabKey.APPS -> {
-            // 4 nuqta (2x2)
-            val r = 3.2f * s
-            drawCircle(c, radius = r, center = pt(7.6f, 7.6f))
-            drawCircle(c, radius = r, center = pt(16.4f, 7.6f))
-            drawCircle(c, radius = r, center = pt(7.6f, 16.4f))
-            drawCircle(c, radius = r, center = pt(16.4f, 16.4f))
+            // 9 nuqta (3x3) — haqiqiy Opal "My Apps" ikonkasi
+            val r = 1.9f * s
+            listOf(4.4f, 11f, 17.6f).forEach { x ->
+                listOf(4.4f, 11f, 17.6f).forEach { y ->
+                    drawCircle(c, radius = r, center = pt(x, y))
+                }
+            }
         }
 
         TabKey.TIMER -> {

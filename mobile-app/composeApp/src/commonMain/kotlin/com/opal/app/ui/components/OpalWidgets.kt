@@ -207,7 +207,8 @@ fun StatRingPill(
     value: Int,
     label: String,
     progress: Float,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     val animated by animateFloatAsState(
         targetValue = progress.coerceIn(0f, 1f),
@@ -220,7 +221,8 @@ fun StatRingPill(
                 .fillMaxWidth()
                 .height(50.dp)
                 .clip(RoundedCornerShape(50))
-                .background(Color.White.copy(alpha = 0.045f)),
+                .background(Color.White.copy(alpha = 0.045f))
+                .clickable(onClick = onClick),
             contentAlignment = Alignment.Center
         ) {
             Canvas(Modifier.matchParentSize()) {
