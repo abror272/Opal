@@ -45,6 +45,7 @@ import com.opal.app.theme.OpalTheme
 import com.opal.app.ui.TabKey
 import com.opal.app.ui.screens.ActiveSessionOverlay
 import com.opal.app.ui.screens.AppsScreen
+import com.opal.app.ui.screens.BreathingOverlay
 import com.opal.app.ui.screens.FocusScreen
 import com.opal.app.ui.screens.HomeScreen
 import com.opal.app.ui.screens.OnboardingScreen
@@ -87,6 +88,7 @@ private fun MainShell() {
 
     var tab by remember { mutableStateOf(TabKey.HOME) }
     var overlay by remember { mutableStateOf<OpalOverlay?>(null) }
+    var breathingOpen by remember { mutableStateOf(false) }
 
     // Tab o'tish glass veil
     val veil = remember { Animatable(0f) }
@@ -148,7 +150,8 @@ private fun MainShell() {
                         TabKey.HOME -> HomeScreen(
                             onStartFocus = { tab = TabKey.TIMER },
                             onOpenProfile = { overlay = OpalOverlay.PROFILE },
-                            onOpenStats = { overlay = OpalOverlay.STATS }
+                            onOpenStats = { overlay = OpalOverlay.STATS },
+                            onBreathe = { breathingOpen = true }
                         )
                         TabKey.APPS -> AppsScreen()
                         TabKey.TIMER -> FocusScreen()
@@ -184,6 +187,15 @@ private fun MainShell() {
             exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(tween(200))
         ) {
             StatsScreen(onClose = { overlay = null })
+        }
+
+        // Nafas mashqi overlay
+        AnimatedVisibility(
+            visible = breathingOpen,
+            enter = fadeIn(tween(260)),
+            exit = fadeOut(tween(200))
+        ) {
+            BreathingOverlay(onClose = { breathingOpen = false })
         }
 
         // Faol sessiya overlay

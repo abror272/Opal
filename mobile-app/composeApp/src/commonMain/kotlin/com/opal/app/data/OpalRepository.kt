@@ -7,10 +7,12 @@ import io.ktor.client.request.get
 import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
@@ -26,6 +28,64 @@ class OpalRepository(private val client: HttpClient = createHttpClient()) {
     val stats = MutableStateFlow(DemoData.stats())
     val sessions = MutableStateFlow<List<FocusSessionDto>>(DemoData.sessions)
     val online = MutableStateFlow(false)
+
+    /* ---------- Qurilmadagi haqiqiy ilovalar + qat'iy bloklash ---------- */
+
+    val installedApps = MutableStateFlow<List<InstalledApp>>(emptyList())
+    val blockedPackages = MutableStateFlow<Set<String>>(emptySet())
+    val strictBlocking = MutableStateFlow(false)
+    val blockingServiceOn = MutableStateFlow(false)
+    val rules = MutableStateFlow(DEFAULT_RULES)
+    val appsLoading = MutableStateFlow(false)
+    val deviceLoaded = MutableStateFlow(false)
+
+    /** O'rnatilgan ilovalar, bloklangan paketlar va qoidalarni yuklash. */
+    suspend fun loadDeviceData() {
+        if (appsLoading.value) return
+        appsLoading.value = true
+        rules.value = loadRules()
+        blockedPackages.value = loadBlockedPackages()
+        strictBlocking.value = isStrictBlocking()
+        blockingServiceOn.value = isBlockingServiceEnabled()
+        val loaded = withContext(Dispatchers.Default) { runCatching { loadInstalledApps() }.getOrDefault(emptyList()) }
+        installedApps.value = loaded
+        deviceLoaded.value = true
+        appsLoading.value = false
+    }
+
+    fun toggleBlockedPackage(pkg: String) {
+        val next = blockedPackages.value.toMutableSet()
+        if (!next.add(pkg)) next.remove(pkg)
+        blockedPackages.value = next
+        runCatching { saveBlockedPackages(next) }
+    }
+
+    fun setPackageBlocked(pkg: String, blocked: Boolean) {
+        val next = blockedPackages.value.toMutableSet()
+        if (blocked) next.add(pkg) else next.remove(pkg)
+        blockedPackages.value = next
+        runCatching { saveBlockedPackages(next) }
+    }
+
+    fun setStrictBlocking(on: Boolean) {
+        strictBlocking.value = on
+        runCatching { com.opal.app.data.setStrictBlocking(on) }
+    }
+
+    fun refreshBlockingService() {
+        blockingServiceOn.value = runCatching { isBlockingServiceEnabled() }.getOrDefault(false)
+    }
+
+    fun updateRule(rule: RuleSpec) {
+        val next = rules.value.map { if (it.id == rule.id) rule else it }
+        rules.value = next
+        persistRules(next)
+    }
+
+    fun resetRules() {
+        rules.value = DEFAULT_RULES
+        persistRules(DEFAULT_RULES)
+    }
 
     /** Barcha ma'lumotlarni backend'dan yangilash. */
     suspend fun refreshAll() {

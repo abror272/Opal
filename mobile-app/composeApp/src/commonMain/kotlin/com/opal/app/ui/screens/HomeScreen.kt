@@ -2,6 +2,7 @@ package com.opal.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -86,7 +87,8 @@ private fun suggestionFor(hour: Int, overGoal: Boolean): Suggestion = when {
 fun HomeScreen(
     onStartFocus: () -> Unit,
     onOpenProfile: () -> Unit,
-    onOpenStats: () -> Unit
+    onOpenStats: () -> Unit,
+    onBreathe: () -> Unit
 ) {
     val repo = remember { AppGraph.repo }
     val scope = rememberCoroutineScope()
@@ -270,13 +272,29 @@ fun HomeScreen(
 
         Spacer(Modifier.height(OpalSpacing.md))
 
-        // ---- Start Timer CTA ----
-        GlassButton(
-            text = "Taymerni boshlash",
-            modifier = Modifier.fillMaxWidth(),
-            icon = OpalIcon.Play,
-            onClick = onStartFocus
-        )
+        // ---- Start Timer CTA + nafas mashqi ----
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(OpalSpacing.sm)) {
+            Box(Modifier.weight(1.5f)) {
+                GlassButton(
+                    text = "Taymerni boshlash",
+                    modifier = Modifier.fillMaxWidth(),
+                    icon = OpalIcon.Play,
+                    onClick = onStartFocus
+                )
+            }
+            Box(
+                Modifier
+                    .weight(1f)
+                    .height(50.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(Color.White.copy(alpha = 0.05f))
+                    .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(50))
+                    .clickable(onClick = onBreathe),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("🌿 1 daq", fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.8f))
+            }
+        }
 
         Spacer(Modifier.height(OpalSpacing.xl))
 

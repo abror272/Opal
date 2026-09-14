@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="opal_accessibility_label">Opal bloklash</string>
+    <string name="opal_accessibility_summary">Chalg\'ituvchi ilovalarni bloklaydi</string>
+    <string name="opal_accessibility_desc">Opal qat\'iy rejimda bloklangan ilovalar ochilishini to\'xtatadi. Bu xizmat faqat qaysi ilova ochilganini aniqlaydi.</string>
+</resources>
