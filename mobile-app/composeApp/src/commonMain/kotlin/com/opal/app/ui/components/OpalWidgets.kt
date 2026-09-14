@@ -294,7 +294,7 @@ fun AllowedPill(
         }
         Spacer(Modifier.width(8.dp))
         Text(
-            "$count allowed",
+            "$count ta ruxsat",
             fontSize = 13.5.sp,
             fontWeight = FontWeight.SemiBold,
             color = OpalColors.TextPrimary

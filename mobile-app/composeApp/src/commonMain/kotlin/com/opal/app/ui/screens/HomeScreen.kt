@@ -143,7 +143,7 @@ fun HomeScreen(
 
         // ---- Score ----
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Score", fontSize = 12.5.sp, fontWeight = FontWeight.Medium, color = OpalColors.TextSecondary, letterSpacing = 0.5.sp)
+            Text("Ball", fontSize = 12.5.sp, fontWeight = FontWeight.Medium, color = OpalColors.TextSecondary, letterSpacing = 0.5.sp)
             Row(verticalAlignment = Alignment.Top) {
                 Text(
                     "${scores.score}",
@@ -174,9 +174,9 @@ fun HomeScreen(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(OpalSpacing.md)
         ) {
-            StatRingPill(OpalIcon.Moon, scores.sleep, "Sleep", scores.sleep / 100f, Modifier.weight(1f), onOpenStats)
-            StatRingPill(OpalIcon.Hourglass, scores.focus, "Focus", scores.focus / 100f, Modifier.weight(1f), onOpenStats)
-            StatRingPill(OpalIcon.Plant, scores.rest, "Rest", scores.rest / 100f, Modifier.weight(1f), onOpenStats)
+            StatRingPill(OpalIcon.Moon, scores.sleep, "Uyqu", scores.sleep / 100f, Modifier.weight(1f), onOpenStats)
+            StatRingPill(OpalIcon.Hourglass, scores.focus, "Fokus", scores.focus / 100f, Modifier.weight(1f), onOpenStats)
+            StatRingPill(OpalIcon.Plant, scores.rest, "Dam", scores.rest / 100f, Modifier.weight(1f), onOpenStats)
         }
 
         Spacer(Modifier.height(OpalSpacing.xl))
@@ -200,7 +200,7 @@ fun HomeScreen(
                             color = OpalColors.TextPrimary
                         )
                         Spacer(Modifier.width(6.dp))
-                        Text("Screen Time", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = OpalColors.TextTertiary)
+                        Text("Ekran vaqti", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = OpalColors.TextTertiary)
                     }
                     Spacer(Modifier.height(OpalSpacing.sm))
                     val avg = stats.avgDailyScreenMinutes
@@ -272,7 +272,7 @@ fun HomeScreen(
 
         // ---- Start Timer CTA ----
         GlassButton(
-            text = "Start Timer",
+            text = "Taymerni boshlash",
             modifier = Modifier.fillMaxWidth(),
             icon = OpalIcon.Play,
             onClick = onStartFocus
@@ -287,7 +287,7 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("My Apps", fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = OpalColors.TextPrimary)
+                Text("Ilovalarim", fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = OpalColors.TextPrimary)
                 OpalIcons(OpalIcon.ChevronRight, OpalColors.TextTertiary, Modifier.size(15.dp))
             }
         }
@@ -317,7 +317,7 @@ fun HomeScreen(
                             }
                         }
                         Text(
-                            "Unblock",
+                            "Ochish",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = OpalColors.Accent,
@@ -337,7 +337,7 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Gemstones", fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = OpalColors.TextPrimary)
+                Text("Toshlar", fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = OpalColors.TextPrimary)
                 Text(
                     "${gems.count { it.unlocked }}/${gems.size}",
                     fontSize = 11.sp,

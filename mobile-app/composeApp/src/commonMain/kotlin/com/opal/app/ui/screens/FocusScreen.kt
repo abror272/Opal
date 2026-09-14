@@ -130,7 +130,7 @@ fun FocusScreen() {
             Spacer(Modifier.height(OpalSpacing.sm))
 
             Text(
-                "Timer",
+                "Taymer",
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
                 color = OpalColors.TextPrimary.copy(alpha = 0.9f)
@@ -214,7 +214,7 @@ fun FocusScreen() {
 
             // ---- Start ----
             GlassButton(
-                text = "Start Timer",
+                text = "Taymerni boshlash",
                 modifier = Modifier.fillMaxWidth(),
                 icon = OpalIcon.Play,
                 enabled = active == null
@@ -232,7 +232,7 @@ fun FocusScreen() {
             ) {
                 TimerToggle(
                     icon = OpalIcon.Lock,
-                    label = "Block Apps ${if (blockOn) "On" else "Off"}",
+                    label = "Bloklash ${if (blockOn) "yoniq" else "o'chiq"}",
                     on = blockOn,
                     onColor = OpalColors.Accent
                 ) {
@@ -242,7 +242,7 @@ fun FocusScreen() {
                 Spacer(Modifier.width(OpalSpacing.sm))
                 TimerToggle(
                     icon = OpalIcon.Zap,
-                    label = "Strict ${if (strict) "On" else "Off"}",
+                    label = "Qat'iy ${if (strict) "yoniq" else "o'chiq"}",
                     on = strict,
                     onColor = OpalColors.Danger
                 ) {

@@ -116,9 +116,9 @@ fun ProfileScreen(onClose: () -> Unit) {
 
             // ---- 3 stat ----
             Row(Modifier.fillMaxWidth()) {
-                ProfileStat("$focusHours", "FOCUS HOURS", OpalIcon.Hourglass, OpalColors.Accent, Modifier.weight(1f))
-                ProfileStat("${profile.streakDays}", "DAY STREAK", OpalIcon.Flame, OpalColors.Amber, Modifier.weight(1f))
-                ProfileStat("Top $topPercent%", "WORLDWIDE", OpalIcon.Globe, OpalColors.MintLight, Modifier.weight(1f))
+                ProfileStat("$focusHours", "FOKUS SOAT", OpalIcon.Hourglass, OpalColors.Accent, Modifier.weight(1f))
+                ProfileStat("${profile.streakDays}", "KUNLIK STREAK", OpalIcon.Flame, OpalColors.Amber, Modifier.weight(1f))
+                ProfileStat("Top $topPercent%", "DUNYO BO'YICHA", OpalIcon.Globe, OpalColors.MintLight, Modifier.weight(1f))
             }
 
             Spacer(Modifier.height(OpalSpacing.xxl))

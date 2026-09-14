@@ -66,10 +66,10 @@ private data class Rule(
 )
 
 private val RULES = listOf(
-    Rule("10 Unblock Daily", "Har kuni", "TikTok, Instagram +3", "7 left", listOf(Color(0xFF2A3B5C), Color(0xFF141C30)), "🔓", null),
-    Rule("Sleep Time", "10PM — 8AM", "Block All", null, listOf(Color(0xFF1A1F3D), Color(0xFF0A0D20)), "🌙", Res.drawable.routine_sleep),
-    Rule("Deep Work", "9AM — 5PM", "Block All, Except Productivity", null, listOf(Color(0xFF26221C), Color(0xFF0F0D0A)), "💻", Res.drawable.routine_deepwork),
-    Rule("Lunch Break", "12—1PM", "Unblock Snapchat if blocked", null, listOf(Color(0xFF1C2626), Color(0xFF0A1010)), "🍽️", Res.drawable.routine_family)
+    Rule("Kunlik 10 ochish", "Har kuni", "TikTok, Instagram +3", "7 ta qoldi", listOf(Color(0xFF2A3B5C), Color(0xFF141C30)), "🔓", null),
+    Rule("Uyqu vaqti", "22:00 — 08:00", "Hammasini bloklash", null, listOf(Color(0xFF1A1F3D), Color(0xFF0A0D20)), "🌙", Res.drawable.routine_sleep),
+    Rule("Chuqur ish", "09:00 — 17:00", "Faqat ish ilovalari", null, listOf(Color(0xFF26221C), Color(0xFF0F0D0A)), "💻", Res.drawable.routine_deepwork),
+    Rule("Tushlik tanaffusi", "12:00 — 13:00", "Snapchat ochiladi", null, listOf(Color(0xFF1C2626), Color(0xFF0A1010)), "🍽️", Res.drawable.routine_family)
 )
 
 @Composable
@@ -96,7 +96,7 @@ fun AppsScreen() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "Apps",
+                "Ilovalar",
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
                 color = OpalColors.TextPrimary,
@@ -108,7 +108,7 @@ fun AppsScreen() {
         Spacer(Modifier.height(OpalSpacing.lg))
 
         // ---- Blocked grid ----
-        Text("Blocked", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = OpalColors.TextPrimary)
+        Text("Bloklangan", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = OpalColors.TextPrimary)
         Spacer(Modifier.height(OpalSpacing.md))
         if (blocked.isEmpty()) {
             Text("Hozircha bloklangan ilova yo'q", fontSize = 13.sp, color = OpalColors.TextTertiary)
@@ -132,7 +132,7 @@ fun AppsScreen() {
 
         // ---- Rules bento ----
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Rules", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = OpalColors.TextPrimary.copy(alpha = 0.85f))
+            Text("Qoidalar", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = OpalColors.TextPrimary.copy(alpha = 0.85f))
             Spacer(Modifier.width(4.dp))
             OpalIcons(OpalIcon.ChevronRight, OpalColors.TextTertiary, Modifier.size(15.dp))
         }
@@ -148,7 +148,7 @@ fun AppsScreen() {
         Spacer(Modifier.height(OpalSpacing.sm))
 
         // ---- Apps (allowed) ----
-        Text("Apps", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = OpalColors.TextPrimary.copy(alpha = 0.85f))
+        Text("Boshqa ilovalar", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = OpalColors.TextPrimary.copy(alpha = 0.85f))
         Spacer(Modifier.height(OpalSpacing.md))
         allowed.chunked(4).forEach { row ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(OpalSpacing.sm)) {
@@ -201,7 +201,7 @@ private fun BlockedTile(emoji: String, name: String, modifier: Modifier = Modifi
             modifier = Modifier.padding(top = 7.dp)
         )
         Pressable(onClick = onUnblock) {
-            Text("Unblock", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = OpalColors.Accent)
+            Text("Ochish", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = OpalColors.Accent)
         }
     }
 }

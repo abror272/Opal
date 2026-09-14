@@ -56,9 +56,9 @@ import com.opal.app.ui.components.AnimatedCount
 import com.opal.app.ui.components.StatRingPill
 
 private enum class Metric(val title: String, val desc: String) {
-    SLEEP("Sleep", "Uyqu ko'rsatkichi kechqurun, uyqu paytida va ertalab sodir bo'ladigan holatlarni va ularning keyingi kuningizga ta'sirini o'lchaydi."),
-    FOCUS("Focus", "Fokus ko'rsatkichi chalg'ituvchi ilovalarsiz o'tkazgan vaqtni va fokus sessiyalari sifatini o'lchaydi."),
-    REST("Rest", "Dam ko'rsatkichi ekran vaqtini kamaytirish, tanaffuslar va tiklanishni o'lchaydi.")
+    SLEEP("Uyqu", "Uyqu ko'rsatkichi kechqurun, uyqu paytida va ertalab sodir bo'ladigan holatlarni va ularning keyingi kuningizga ta'sirini o'lchaydi."),
+    FOCUS("Fokus", "Fokus ko'rsatkichi chalg'ituvchi ilovalarsiz o'tkazgan vaqtni va fokus sessiyalari sifatini o'lchaydi."),
+    REST("Dam", "Dam ko'rsatkichi ekran vaqtini kamaytirish, tanaffuslar va tiklanishni o'lchaydi.")
 }
 
 @Composable
@@ -110,15 +110,15 @@ fun StatsScreen(onClose: () -> Unit) {
 
             // ---- Selectable pills ----
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(OpalSpacing.md)) {
-                StatRingPill(OpalIcon.Moon, scores.sleep, "Sleep", scores.sleep / 100f, Modifier.weight(1f)) { metric = Metric.SLEEP }
-                StatRingPill(OpalIcon.Hourglass, scores.focus, "Focus", scores.focus / 100f, Modifier.weight(1f)) { metric = Metric.FOCUS }
-                StatRingPill(OpalIcon.Plant, scores.rest, "Rest", scores.rest / 100f, Modifier.weight(1f)) { metric = Metric.REST }
+                StatRingPill(OpalIcon.Moon, scores.sleep, "Uyqu", scores.sleep / 100f, Modifier.weight(1f)) { metric = Metric.SLEEP }
+                StatRingPill(OpalIcon.Hourglass, scores.focus, "Fokus", scores.focus / 100f, Modifier.weight(1f)) { metric = Metric.FOCUS }
+                StatRingPill(OpalIcon.Plant, scores.rest, "Dam", scores.rest / 100f, Modifier.weight(1f)) { metric = Metric.REST }
             }
 
             Spacer(Modifier.height(OpalSpacing.xl))
 
             // ---- What is X Score? ----
-            Text("What is ${metric.title} Score?", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = OpalColors.TextPrimary)
+            Text("${metric.title} ko'rsatkichi nima?", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = OpalColors.TextPrimary)
             Text(
                 metric.desc,
                 fontSize = 13.sp,
@@ -133,8 +133,8 @@ fun StatsScreen(onClose: () -> Unit) {
                 Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(OpalSpacing.xl)) {
                     when (metric) {
                         Metric.SLEEP -> {
-                            MetricRow("Sleep", "0d", "Qisqa", 4f, 78f)
-                            MetricRow("Pickups", "$pickups marta", rating(pickups, 12, 30), (100 - pickups * 2).toFloat().coerceIn(6f, 100f), 42f)
+                            MetricRow("Uyqu", "0d", "Qisqa", 4f, 78f)
+                            MetricRow("Olishlar", "$pickups marta", rating(pickups, 12, 30), (100 - pickups * 2).toFloat().coerceIn(6f, 100f), 42f)
                             MetricRow("Ekran vaqti (kech)", formatMinutes((today?.screenTimeMinutes ?: 0) * 3 / 10), if ((today?.screenTimeMinutes ?: 0) < 200) "Ajoyib" else "Yaxshi", (100 - (today?.screenTimeMinutes ?: 0) / 5f).coerceIn(8f, 100f), 55f)
                         }
                         Metric.FOCUS -> {
@@ -153,7 +153,7 @@ fun StatsScreen(onClose: () -> Unit) {
             Spacer(Modifier.height(OpalSpacing.xl))
 
             // ---- Highlights ----
-            Text("TODAY'S HIGHLIGHTS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = OpalColors.TextTertiary, letterSpacing = 1.6.sp)
+            Text("BUGUNGI NATIJALAR", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = OpalColors.TextTertiary, letterSpacing = 1.6.sp)
             Spacer(Modifier.height(OpalSpacing.md))
             GlassCard(Modifier.fillMaxWidth(), radius = OpalRadius.lg, padding = 16.dp) {
                 Row(
@@ -254,7 +254,7 @@ private fun ScoreArc(score: Int, delta: Int, modifier: Modifier = Modifier) {
                     modifier = Modifier.padding(top = 6.dp)
                 )
             }
-            Text("Opal Score", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = OpalColors.TextTertiary)
+            Text("Opal balli", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = OpalColors.TextTertiary)
         }
     }
 }
@@ -307,7 +307,7 @@ private fun MetricRow(title: String, value: String, ratingLabel: String, positio
                     .background(Color(0xFF1A201C))
                     .padding(horizontal = 8.dp, vertical = 2.dp)
             ) {
-                Text("AVG", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = OpalColors.TextSecondary)
+                Text("O'RT", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = OpalColors.TextSecondary)
             }
         }
     }

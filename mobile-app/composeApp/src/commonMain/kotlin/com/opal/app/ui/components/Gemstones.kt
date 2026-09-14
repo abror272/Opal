@@ -67,7 +67,7 @@ fun GemstonesCarousel(gems: List<OpalGem>, modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Gemstones", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = OpalColors.TextPrimary)
+            Text("Toshlar", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = OpalColors.TextPrimary)
             Text(
                 "$unlockedCount/${gems.size} to'plandi",
                 fontSize = 11.5.sp,
@@ -106,7 +106,7 @@ fun GemstonesCarousel(gems: List<OpalGem>, modifier: Modifier = Modifier) {
                         textAlign = TextAlign.Center
                     )
                     Text(
-                        "Owned by ${gem.ownedPct}%",
+                        "${gem.ownedPct}% egalik",
                         fontSize = 9.5.sp,
                         color = OpalColors.TextTertiary,
                         textAlign = TextAlign.Center
