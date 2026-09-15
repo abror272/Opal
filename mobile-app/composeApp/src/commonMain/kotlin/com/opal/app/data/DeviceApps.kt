@@ -41,6 +41,39 @@ expect fun isIgnoringBatteryOptimizations(): Boolean
 /** Batareya optimizatsiyasidan ozod qilish so'rovini ko'rsatish. */
 expect fun requestIgnoreBatteryOptimizations()
 
+/* ---------- Ikkinchi bloklash dvigateli (watchdog) ---------- */
+
+/** Kuzatuvchi (overlay + usage) xizmati ishlayaptimi. */
+expect fun watchdogRunning(): Boolean
+
+/** Kuzatuvchi xizmatini ishga tushirish. */
+expect fun startWatchdog()
+
+/** "Boshqa ilovalar ustida ko'rsatish" ruxsati. */
+expect fun canDrawOverlays(): Boolean
+expect fun openOverlaySettings()
+
+/** "Foydalanish tarixi" ruxsati (UsageStats). */
+expect fun hasUsageAccess(): Boolean
+expect fun openUsageAccessSettings()
+
+/** WRITE_SECURE_SETTINGS (adb bilan beriladi) — xizmatni o'zi qayta ulay oladimi. */
+expect fun canWriteSecureSettings(): Boolean
+
+/** Accessibility bog'lanishini majburiy qayta tiklash. */
+expect fun forceRebindAccessibility(): Boolean
+
+/* ---------- HAQIQIY statistika (UsageStats) ---------- */
+
+/** Bugungi haqiqiy ekran vaqti (daqiqa). */
+expect fun realScreenTimeToday(): Int
+
+/** Oxirgi [days] kun uchun haqiqiy ekran vaqti (kalit: yyyy-MM-dd). */
+expect fun realScreenTimeByDay(days: Int): Map<String, Int>
+
+/** Bugungi haqiqiy ilova ochishlar soni. */
+expect fun realPickupsToday(): Int
+
 /** Bloklangan ilovaga vaqtincha ruxsat (millisekund). */
 expect fun grantGrace(packageName: String, millis: Long)
 expect fun inGrace(packageName: String): Boolean

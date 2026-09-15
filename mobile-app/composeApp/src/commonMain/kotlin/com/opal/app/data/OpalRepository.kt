@@ -4,30 +4,48 @@ import com.opal.app.network.createHttpClient
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
-import io.ktor.client.request.patch
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
+import kotlinx.datetime.toLocalDateTime
 
 /**
- * Web backend bilan ishlaydigan repository.
- * API band bo'lmasa — offline demo ma'lumotlari bilan davom etadi (graceful fallback).
+ * OPAL repository — MAHALLIY BIRINCHI (local-first).
+ *
+ * Hamma raqam qurilmadan olinadi:
+ *  - ekran vaqti / pickup'lar  -> Android UsageStats (`realScreenTimeByDay`, `realPickupsToday`)
+ *  - fokus sessiyalari         -> qurilmada saqlangan haqiqiy sessiyalar (`StoredSession`)
+ *  - streak / jami statistika  -> shu saqlangan ma'lumotlardan hisoblanadi
+ *
+ * Demo (soxta) ma'lumot YO'Q.
  */
 class OpalRepository(private val client: HttpClient = createHttpClient()) {
 
+    /* ---------- Mahalliy haqiqiy ombor ---------- */
+
+    private val storedDays: MutableMap<String, StoredDay> = loadStoredDays().toMutableMap()
+    private val storedSessions: MutableList<StoredSession> = loadStoredSessions().toMutableList()
+    private val pending: MutableMap<String, StoredSession> = mutableMapOf()
+
+    private var screenCache: Map<String, Int> = emptyMap()
+    private var screenCacheAt = 0L
+
+    var goalMinutes: Int = 240
+        private set
+
+    /* ---------- StateFlow'lar ---------- */
+
     val apps = MutableStateFlow<List<BlockAppDto>>(DemoData.apps)
-    val profile = MutableStateFlow(DemoData.profile)
-    val stats = MutableStateFlow(DemoData.stats())
-    val sessions = MutableStateFlow<List<FocusSessionDto>>(DemoData.sessions)
+    val profile = MutableStateFlow(realProfile())
+    val stats = MutableStateFlow(realStats())
+    val sessions = MutableStateFlow(storedSessions.sortedByDescending { it.startedAtMs }.map { it.toDto() })
     val online = MutableStateFlow(false)
+
+    /** Bugun kamida 1 ta haqiqiy sessiya bo'lganmi (gems uchun). */
+    val usedToday = MutableStateFlow(false)
 
     /* ---------- Qurilmadagi haqiqiy ilovalar + qat'iy bloklash ---------- */
 
@@ -35,22 +53,143 @@ class OpalRepository(private val client: HttpClient = createHttpClient()) {
     val blockedPackages = MutableStateFlow<Set<String>>(emptySet())
     val strictBlocking = MutableStateFlow(false)
     val blockingServiceOn = MutableStateFlow(false)
+    val watchdogOn = MutableStateFlow(false)
+    val overlayPerm = MutableStateFlow(false)
+    val usagePerm = MutableStateFlow(false)
+    val secureSettings = MutableStateFlow(false)
     val rules = MutableStateFlow(DEFAULT_RULES)
     val appsLoading = MutableStateFlow(false)
     val deviceLoaded = MutableStateFlow(false)
 
-    /** O'rnatilgan ilovalar, bloklangan paketlar va qoidalarni yuklash. */
+    /* ==================== HAQIQIY STATISTIKA ==================== */
+
+    private fun nowMs(): Long = Clock.System.now().toEpochMilliseconds()
+
+    /** UsageStats'dan ekran vaqti (60 soniya kesh). */
+    private fun screenTimes(force: Boolean = false): Map<String, Int> {
+        val now = nowMs()
+        if (!force && screenCache.isNotEmpty() && now - screenCacheAt < 60_000L) return screenCache
+        screenCache = runCatching { realScreenTimeByDay(35) }.getOrDefault(emptyMap())
+        screenCacheAt = now
+        return screenCache
+    }
+
+    private fun realStats(): StatsResponseDto = buildRealStats(
+        screenByDay = screenTimes(),
+        stored = storedDays,
+        goalMinutes = goalMinutes
+    )
+
+    private fun realProfile(): UserProfileDto {
+        val base = DemoData.profile
+        return base.copy(
+            streakDays = computeStreak(storedDays),
+            totalSavedMinutes = storedSessions.sumOf { it.savedMinutes },
+            totalSessions = storedSessions.size,
+            strictMode = runCatching { isStrictBlocking() }.getOrDefault(false),
+            goalMinutes = goalMinutes
+        )
+    }
+
+    /** Haqiqiy statistikani qayta hisoblash (UsageStats + saqlangan kunlar). */
+    fun refreshRealStats(force: Boolean = false) {
+        val today = todayKey()
+        val realPickups = runCatching { realPickupsToday() }.getOrDefault(0)
+        if (realPickups > 0 && (storedDays[today]?.pickups ?: 0) != realPickups) {
+            storedDays[today] = (storedDays[today] ?: StoredDay(today)).copy(pickups = realPickups)
+            saveStoredDays(storedDays)
+        }
+        screenTimes(force)
+        stats.value = realStats()
+        profile.value = realProfile()
+        sessions.value = storedSessions.sortedByDescending { it.startedAtMs }.map { it.toDto() }
+        usedToday.value = (storedDays[today]?.sessions ?: 0) > 0
+    }
+
+    /** Bugun haqiqiy ma'lumot bormi (UI bo'sh holat uchun). */
+    fun hasAnyRealData(): Boolean = storedSessions.isNotEmpty() || storedDays.values.any { it.savedMinutes > 0 }
+
+    /* ==================== SESSIYALAR (haqiqiy) ==================== */
+
+    /** Yangi sessiya boshlash — mahalliy ID qaytaradi. */
+    fun startSession(preset: SessionPreset): FocusSessionDto {
+        val now = nowMs()
+        val id = "s-$now"
+        val s = StoredSession(
+            id = id,
+            type = preset.type,
+            label = preset.label,
+            emoji = preset.emoji,
+            durationMinutes = preset.minutes,
+            startedAtMs = now,
+            blockedCount = blockedPackages.value.size
+        )
+        pending[id] = s
+        return s.toDto()
+    }
+
+    /**
+     * Sessiyani yakunlash. [savedMinutes] — SessionController hisoblagan haqiqiy qiymat.
+     * Natija darhol qurilmaga yoziladi va statistika qayta hisoblanadi.
+     */
+    fun completeSession(id: String, early: Boolean, savedMinutes: Int, focusScore: Int = 0) {
+        val p = pending.remove(id) ?: return
+        val endMs = nowMs()
+        val elapsedMin = ((endMs - p.startedAtMs) / 60_000L).toInt().coerceAtLeast(0)
+        val done = p.copy(
+            endedAtMs = endMs,
+            completed = !early,
+            savedMinutes = savedMinutes,
+            focusScore = focusScore,
+            blockedCount = blockedPackages.value.size
+        )
+        storedSessions.add(done)
+
+        val date = Instant.fromEpochMilliseconds(p.startedAtMs)
+            .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+        val day = storedDays[date] ?: StoredDay(date)
+        storedDays[date] = day.copy(
+            focusMinutes = day.focusMinutes + elapsedMin,
+            savedMinutes = day.savedMinutes + savedMinutes,
+            sessions = day.sessions + 1
+        )
+
+        saveStoredSessions(storedSessions)
+        saveStoredDays(storedDays)
+        refreshRealStats(force = true)
+    }
+
+    /** Foydalanuvchi bahosini saqlash (Focus Score). */
+    fun rescoreSession(id: String, score: Int) {
+        val idx = storedSessions.indexOfFirst { it.id == id }
+        if (idx < 0) return
+        storedSessions[idx] = storedSessions[idx].copy(focusScore = score)
+        saveStoredSessions(storedSessions)
+        sessions.value = storedSessions.sortedByDescending { it.startedAtMs }.map { it.toDto() }
+    }
+
+    /** Sessiyani ID bo'yicha topish. */
+    fun sessionById(id: String): StoredSession? = storedSessions.firstOrNull { it.id == id }
+
+    fun recentSessions(): List<FocusSessionDto> =
+        storedSessions.sortedByDescending { it.startedAtMs }.take(5).map { it.toDto() }
+
+    /* ==================== QURILMA / BLOKLASH ==================== */
+
     suspend fun loadDeviceData() {
         if (appsLoading.value) return
         appsLoading.value = true
         rules.value = loadRules()
         blockedPackages.value = loadBlockedPackages()
         strictBlocking.value = isStrictBlocking()
-        blockingServiceOn.value = isBlockingServiceEnabled()
-        val loaded = withContext(Dispatchers.Default) { runCatching { loadInstalledApps() }.getOrDefault(emptyList()) }
+        refreshBlockingService()
+        val loaded = withContext(Dispatchers.Default) {
+            runCatching { loadInstalledApps() }.getOrDefault(emptyList())
+        }
         installedApps.value = loaded
         deviceLoaded.value = true
         appsLoading.value = false
+        refreshRealStats()
     }
 
     fun toggleBlockedPackage(pkg: String) {
@@ -70,10 +209,33 @@ class OpalRepository(private val client: HttpClient = createHttpClient()) {
     fun setStrictBlocking(on: Boolean) {
         strictBlocking.value = on
         runCatching { com.opal.app.data.setStrictBlocking(on) }
+        profile.value = profile.value.copy(strictMode = on)
+        if (on) runCatching { startWatchdog() }
+    }
+
+    /** "Bloklash" yoqish/o'chirish (Timer ekranidagi toggle). */
+    fun setProtection(enabled: Boolean) {
+        profile.value = profile.value.copy(protectionEnabled = enabled)
+        if (enabled) ensureBlockingEngine()
+    }
+
+    /** "Qat'iy rejim" toggle. */
+    fun setStrict(enabled: Boolean) {
+        setStrictBlocking(enabled)
     }
 
     fun refreshBlockingService() {
         blockingServiceOn.value = runCatching { isBlockingServiceEnabled() }.getOrDefault(false)
+        watchdogOn.value = runCatching { watchdogRunning() }.getOrDefault(false)
+        overlayPerm.value = runCatching { canDrawOverlays() }.getOrDefault(false)
+        usagePerm.value = runCatching { hasUsageAccess() }.getOrDefault(false)
+        secureSettings.value = runCatching { canWriteSecureSettings() }.getOrDefault(false)
+    }
+
+    /** Bloklash tizimini ishga tayyorlash (ruxsatlar bo'lsa watchdog'ni yoqadi). */
+    fun ensureBlockingEngine() {
+        refreshBlockingService()
+        if (overlayPerm.value && usagePerm.value) runCatching { startWatchdog() }
     }
 
     fun updateRule(rule: RuleSpec) {
@@ -87,131 +249,24 @@ class OpalRepository(private val client: HttpClient = createHttpClient()) {
         persistRules(DEFAULT_RULES)
     }
 
-    /** Barcha ma'lumotlarni backend'dan yangilash. */
+    /* ==================== Backend (ixtiyoriy) ==================== */
+
     suspend fun refreshAll() {
+        refreshRealStats()
+        loadDeviceData()
         try {
-            coroutineScope {
-                val appsDef = async { client.get("/api/apps").body<List<BlockAppDto>>() }
-                val profileDef = async { client.get("/api/profile").body<UserProfileDto>() }
-                val statsDef = async { client.get("/api/stats").body<StatsResponseDto>() }
-                val sessionsDef = async { client.get("/api/sessions").body<List<FocusSessionDto>>() }
-
-                val newApps = appsDef.await()
-                val newProfile = profileDef.await()
-                val newStats = statsDef.await()
-                val newSessions = sessionsDef.await()
-
-                apps.value = newApps
-                profile.value = newProfile
-                stats.value = newStats
-                sessions.value = newSessions
-                online.value = true
-            }
+            val remote = client.get("/api/profile").body<UserProfileDto>()
+            // Backend mavjud bo'lsa faqat nom/handle'ni olamiz — raqamlar baribir mahalliy.
+            profile.value = profile.value.copy(name = remote.name, handle = remote.handle)
+            online.value = true
         } catch (_: Throwable) {
             online.value = false
         }
     }
 
-    /** Bloklashni optimistic o'zgartirish (switch darhol siljiy, keyin serverga yoziladi). */
-    suspend fun setBlocked(app: BlockAppDto, blocked: Boolean) {
-        apps.update { list -> list.map { if (it.id == app.id) it.copy(blocked = blocked) else it } }
-        try {
-            client.patch("/api/apps") {
-                setBody(AppPatchRequest(id = app.id, blocked = blocked))
-            }
-        } catch (_: Throwable) {
-        }
-    }
-
-    suspend fun setProtection(enabled: Boolean) {
-        profile.update { it.copy(protectionEnabled = enabled) }
-        patchProfile(ProfilePatchRequest(protectionEnabled = enabled))
-    }
-
-    suspend fun setStrict(enabled: Boolean) {
-        profile.update { it.copy(strictMode = enabled) }
-        patchProfile(ProfilePatchRequest(strictMode = enabled))
-    }
-
-    suspend fun setGoalMinutes(goal: Int) {
-        profile.update { it.copy(goalMinutes = goal) }
-        patchProfile(ProfilePatchRequest(goalMinutes = goal))
-    }
-
-    suspend fun setPlan(plan: String) {
-        profile.update { it.copy(plan = plan) }
-        patchProfile(ProfilePatchRequest(plan = plan))
-    }
-
-    private suspend fun patchProfile(body: ProfilePatchRequest) {
-        try {
-            val updated = client.patch("/api/profile") { setBody(body) }.body<UserProfileDto>()
-            profile.value = updated
-        } catch (_: Throwable) {
-        }
-    }
-
-    /** Yangi sessiya yaratish (backend'ga yozamiz, ID olamiz). */
-    suspend fun startSession(preset: SessionPreset): FocusSessionDto? = try {
-        client.post("/api/sessions") {
-            setBody(
-                SessionStartRequest(
-                    type = preset.type,
-                    durationMinutes = preset.minutes,
-                    emoji = preset.emoji
-                )
-            )
-        }.body<FocusSessionDto>()
-    } catch (_: Throwable) {
-        null
-    }
-
-    /**
-     * Sessiyani tugatish. early=true — erta chiqish (streak -1, saved = o'tgan vaqt-2).
-     * Server profil + statistikani yangilaydi; biz local holatni ham mirror qilamiz.
-     */
-    suspend fun completeSession(id: String, early: Boolean, focusScore: Int = 75): FocusSessionDto? = try {
-        val session = client.patch("/api/sessions") {
-            setBody(SessionPatchRequest(id = id, early = early, focusScore = focusScore))
-        }.body<FocusSessionDto>()
-        mirrorSessionResult(early, session.savedMinutes)
-        session
-    } catch (_: Throwable) {
-        // Offline: local hisobda mirror qilamiz
-        mirrorSessionResult(early, localSavedEstimate(early))
-        null
-    }
-
-    /** Backend'ga yozib bo'lmagan sessiya natijasini local holatga qo'llash. */
-    fun mirrorSessionResult(early: Boolean, savedMinutes: Int) {
-        profile.update {
-            it.copy(
-                totalSessions = it.totalSessions + 1,
-                totalSavedMinutes = it.totalSavedMinutes + savedMinutes,
-                streakDays = if (early) maxOf(it.streakDays - 1, 0) else it.streakDays + 1
-            )
-        }
-        stats.update { st ->
-            val today = st.today ?: st.days.lastOrNull()?.copy(
-                date = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
-            )
-            st.copy(
-                today = today?.copy(savedMinutes = today.savedMinutes + savedMinutes),
-                weekSavedMinutes = st.weekSavedMinutes + savedMinutes
-            )
-        }
-    }
-
-    private fun localSavedEstimate(early: Boolean): Int = if (early) 0 else 25
-
-    /** Qisqa sessiya tarixi (5 ta). */
-    fun recentSessions(): List<FocusSessionDto> = sessions.value.take(5)
-
-    /** Foydalanuvchi bahosini sessiyaga yozish (Focus Score). */
-    fun rescoreSession(label: String, score: Int) {
-        sessions.update { list ->
-            val idx = list.indexOfFirst { it.label == label }.takeIf { it >= 0 } ?: 0
-            list.mapIndexed { i, s -> if (i == idx) s.copy(focusScore = score) else s }
-        }
+    fun setGoalMinutes(goal: Int) {
+        goalMinutes = goal.coerceIn(30, 900)
+        stats.value = realStats()
+        profile.value = profile.value.copy(goalMinutes = goalMinutes)
     }
 }

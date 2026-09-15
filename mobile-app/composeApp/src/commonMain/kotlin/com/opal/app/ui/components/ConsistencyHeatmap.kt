@@ -51,8 +51,8 @@ import kotlinx.datetime.todayIn
 private val MONTHS_UZ = listOf("Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek")
 private val WEEKDAY_ROW = mapOf(0 to "Du", 2 to "Ch", 4 to "Ju")
 
-private fun levelOf(saved: Int): Int = when {
-    saved <= 0 -> 0
+private fun levelOf(saved: Int, sessions: Int = 0): Int = when {
+    saved <= 0 && sessions <= 0 -> 0
     saved < 45 -> 1
     saved < 90 -> 2
     saved < 150 -> 3
@@ -75,7 +75,9 @@ private data class HeatCell(
     val isFuture: Boolean,
     val isToday: Boolean
 ) {
+    val sessions: Int get() = stat?.sessions ?: 0
     val saved: Int get() = stat?.savedMinutes ?: 0
+    val active: Boolean get() = sessions > 0 || saved > 0
     val label: String get() = "${date.dayOfMonth} ${MONTHS_UZ[date.monthNumber - 1]}"
 }
 
@@ -117,7 +119,7 @@ fun ConsistencyHeatmap(days: List<DailyStatDto>, modifier: Modifier = Modifier) 
         out
     }
 
-    val activeDays = cells.count { !it.isFuture && it.saved > 0 }
+    val activeDays = cells.count { !it.isFuture && it.active }
     val totalSaved = cells.filter { !it.isFuture }.sumOf { it.saved }
 
     var selected by remember { mutableStateOf<LocalDate?>(null) }
@@ -183,7 +185,7 @@ fun ConsistencyHeatmap(days: List<DailyStatDto>, modifier: Modifier = Modifier) 
                                         Spacer(Modifier.height(13.dp))
                                     } else {
                                         val isSel = selected == c.date
-                                        val lvl = levelOf(c.saved)
+                                        val lvl = levelOf(c.saved, c.sessions)
                                         Box(
                                             Modifier
                                                 .fillMaxWidth()
@@ -237,15 +239,15 @@ fun ConsistencyHeatmap(days: List<DailyStatDto>, modifier: Modifier = Modifier) 
                                     Modifier
                                         .clip(RoundedCornerShape(50))
                                         .background(
-                                            if (levelOf(c.saved) >= 3) Color(0x2686EFAC) else Color(0x0FFFFFFF)
+                                            if (levelOf(c.saved, c.sessions) >= 3) Color(0x2686EFAC) else Color(0x0FFFFFFF)
                                         )
                                         .padding(horizontal = 8.dp, vertical = 2.dp)
                                 ) {
                                     Text(
-                                        LEVEL_NAMES[levelOf(c.saved)],
+                                        LEVEL_NAMES[levelOf(c.saved, c.sessions)],
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (levelOf(c.saved) >= 3) OpalColors.MintLight else OpalColors.TextTertiary
+                                        color = if (levelOf(c.saved, c.sessions) >= 3) OpalColors.MintLight else OpalColors.TextTertiary
                                     )
                                 }
                             }

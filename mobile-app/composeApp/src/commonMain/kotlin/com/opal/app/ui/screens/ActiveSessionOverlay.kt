@@ -81,7 +81,8 @@ fun ActiveSessionOverlay() {
                     emoji = completion!!.emoji,
                     savedMinutes = completion!!.savedMinutes,
                     completedFully = completion!!.completedFully,
-                    streakAfter = completion!!.streakAfter
+                    streakAfter = completion!!.streakAfter,
+                    sessionId = completion!!.sessionId
                 )
             }
 
@@ -310,7 +311,8 @@ private fun CompletionView(
     emoji: String,
     savedMinutes: Int,
     completedFully: Boolean,
-    streakAfter: Int
+    streakAfter: Int,
+    sessionId: String? = null
 ) {
     var picked by remember { mutableStateOf<Int?>(null) }
     Column(
@@ -378,7 +380,7 @@ private fun CompletionView(
             picked = picked,
             onPick = { idx ->
                 picked = idx
-                AppGraph.repo.rescoreSession(label, RATING_LEVELS[idx].score)
+                AppGraph.repo.rescoreSession(sessionId ?: label, RATING_LEVELS[idx].score)
             }
         )
     }

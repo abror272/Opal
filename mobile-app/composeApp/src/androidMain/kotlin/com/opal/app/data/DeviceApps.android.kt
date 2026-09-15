@@ -94,11 +94,15 @@ actual fun setStrictBlocking(active: Boolean) {
 
 actual fun isBlockingServiceEnabled(): Boolean {
     val context = opalContext()
+    val now = System.currentTimeMillis()
 
-    // 1) Xizmat "heartbeat"i — eng ishonchli (MIUI cheklovlaridan mustaqil).
-    //    30 sekundlik oyna: xizmat o'ldirilishi bilan UI darhol rostni ko'rsatadi.
+    // 1) Accessibility xizmati "heartbeat"i — eng ishonchli (MIUI cheklovlaridan mustaqil).
     val hb = prefs().getLong("svc_hb", 0L)
-    if (hb > 0L && System.currentTimeMillis() - hb < 30_000L) return true
+    if (hb > 0L && now - hb < 30_000L) return true
+
+    // 2) Watchdog (overlay + usage access) ishlayaptimi — MIUI accessibility'ni o'ldirsa ham bloklaydi.
+    val wd = prefs().getLong("wd_hb", 0L)
+    if (wd > 0L && now - wd < 30_000L && prefs().getBoolean("wd_ok", false)) return true
 
     // 2) Secure settings (ba'zi qurilmalarda ishlaydi)
     try {
@@ -193,6 +197,12 @@ actual fun isIgnoringBatteryOptimizations(): Boolean {
     } catch (_: Throwable) {
         true
     }
+}
+
+actual fun watchdogRunning(): Boolean = prefs().getBoolean("watchdog_on", false)
+
+actual fun startWatchdog() {
+    com.opal.app.blocking.WatchdogService.start(opalContext())
 }
 
 actual fun requestIgnoreBatteryOptimizations() {

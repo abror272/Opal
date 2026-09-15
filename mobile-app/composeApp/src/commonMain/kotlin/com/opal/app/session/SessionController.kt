@@ -31,7 +31,8 @@ class SessionController(private val repo: OpalRepository) {
         val emoji: String,
         val savedMinutes: Int,
         val completedFully: Boolean,
-        val streakAfter: Int
+        val streakAfter: Int,
+        val sessionId: String? = null
     )
 
     val active = MutableStateFlow<Active?>(null)
@@ -53,20 +54,14 @@ class SessionController(private val repo: OpalRepository) {
 
     fun start(preset: SessionPreset) {
         if (active.value != null) return
+        val created = repo.startSession(preset)
         active.value = Active(
             preset = preset,
             totalSeconds = preset.minutes * 60L,
-            startMark = TimeSource.Monotonic.markNow()
+            startMark = TimeSource.Monotonic.markNow(),
+            remoteId = created.id
         )
         elapsedSeconds.value = 0
-
-        // Backend'da sessiya yaratamiz (ID kerak bo'ladi)
-        scope.launch {
-            val created = repo.startSession(preset)
-            if (created != null) {
-                active.update { it?.copy(remoteId = it.remoteId ?: created.id) }
-            }
-        }
 
         // Sekundlik ticker
         scope.launch {
@@ -89,8 +84,13 @@ class SessionController(private val repo: OpalRepository) {
 
         val elapsedMin = a.startMark.elapsedNow().inWholeMinutes.toInt()
         val saved = if (early) maxOf(elapsedMin - 2, 0) else a.preset.minutes
-        val streakAfter = repo.profile.value.let {
-            if (early) maxOf(it.streakDays - 1, 0) else it.streakDays + 1
+
+        // HAQIQIY natijani qurilmaga yozamiz (streak/statistika shundan hisoblanadi)
+        val id = a.remoteId
+        if (id != null) {
+            repo.completeSession(id, early, saved)
+        } else {
+            repo.refreshRealStats(force = true)
         }
 
         completion.value = Completion(
@@ -98,17 +98,10 @@ class SessionController(private val repo: OpalRepository) {
             emoji = a.preset.emoji,
             savedMinutes = saved,
             completedFully = !early,
-            streakAfter = streakAfter
+            streakAfter = repo.profile.value.streakDays,
+            sessionId = id
         )
 
-        val rid = a.remoteId
-        scope.launch {
-            if (rid != null) {
-                repo.completeSession(rid, early)
-            } else {
-                repo.mirrorSessionResult(early, saved)
-            }
-        }
         scope.launch {
             delay(3600)
             completion.value = null

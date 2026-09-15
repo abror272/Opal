@@ -129,6 +129,15 @@ fun LiveLeaderboard(
                 OpalIcons(OpalIcon.Trophy, OpalColors.Amber, Modifier.size(16.dp))
                 Spacer(Modifier.width(8.dp))
                 Text("Do'stlar reytingi", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = OpalColors.TextPrimary)
+                Spacer(Modifier.width(6.dp))
+                Box(
+                    Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(OpalColors.Amber.copy(alpha = 0.16f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text("DEMO", fontSize = 8.5.sp, fontWeight = FontWeight.ExtraBold, color = OpalColors.Amber, letterSpacing = 0.4.sp)
+                }
             }
             LiveBadge()
         }

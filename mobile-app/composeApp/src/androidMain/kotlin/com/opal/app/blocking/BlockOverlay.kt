@@ -1,6 +1,7 @@
 package com.opal.app.blocking
 
 import android.accessibilityservice.AccessibilityService
+import android.content.Context
 import android.graphics.Color as AColor
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
@@ -16,10 +17,15 @@ import android.widget.TextView
 import kotlin.random.Random
 
 /**
- * TYPE_ACCESSIBILITY_OVERLAY orqali chiziladigan to'liq ekranli blok oynasi.
+ * To'liq ekranli blok oynasi. Ikkita rejimda ishlaydi:
+ *  - [WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY] — accessibility xizmati uchun
+ *  - [WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY] — "boshqa ilovalar ustida" ruxsati bilan
  * Fon-aktivlik cheklovlari (MIUI / Android 10+) bunga ta'sir qilmaydi.
  */
-class BlockOverlay(private val service: AccessibilityService) {
+class BlockOverlay(
+    private val service: Context,
+    private val windowType: Int = WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
+) {
 
     private var host: FrameLayout? = null
 
@@ -43,7 +49,7 @@ class BlockOverlay(private val service: AccessibilityService) {
         TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v, service.resources.displayMetrics).toInt()
 
     private fun wm(): WindowManager =
-        service.getSystemService(AccessibilityService.WINDOW_SERVICE) as WindowManager
+        service.getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
     fun show(
         packageName: String,
@@ -87,7 +93,7 @@ class BlockOverlay(private val service: AccessibilityService) {
         val p = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+            windowType,
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                 WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,

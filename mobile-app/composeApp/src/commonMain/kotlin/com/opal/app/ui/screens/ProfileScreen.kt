@@ -57,7 +57,7 @@ fun ProfileScreen(onClose: () -> Unit) {
     val hadSleep = remember(sessions) { sessions.any { it.type == "SLEEP" } }
 
     val focusHours = profile.totalSavedMinutes / 60
-    val topPercent = (100 - (focusHours + profile.streakDays) * 2).coerceIn(3, 50)
+    val avgFocus = if (profile.totalSessions > 0) profile.totalSavedMinutes / profile.totalSessions else 0
 
     Box(
         Modifier
@@ -122,7 +122,7 @@ fun ProfileScreen(onClose: () -> Unit) {
             Row(Modifier.fillMaxWidth()) {
                 ProfileStat("$focusHours", "FOKUS SOAT", OpalIcon.Hourglass, OpalColors.Accent, Modifier.weight(1f))
                 ProfileStat("${profile.streakDays}", "KUNLIK STREAK", OpalIcon.Flame, OpalColors.Amber, Modifier.weight(1f))
-                ProfileStat("Top $topPercent%", "DUNYO BO'YICHA", OpalIcon.Globe, OpalColors.MintLight, Modifier.weight(1f))
+                ProfileStat("$avgFocus d", "O'RTACHA FOKUS", OpalIcon.Hourglass, OpalColors.MintLight, Modifier.weight(1f))
             }
 
             Spacer(Modifier.height(OpalSpacing.xxl))

@@ -24,9 +24,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.opal.app.data.canDrawOverlays
+import com.opal.app.data.canWriteSecureSettings
+import com.opal.app.data.hasUsageAccess
 import com.opal.app.data.isIgnoringBatteryOptimizations
 import com.opal.app.data.openAutostartSettings
 import com.opal.app.data.openBlockingSettings
+import com.opal.app.data.openOverlaySettings
+import com.opal.app.data.openUsageAccessSettings
 import com.opal.app.data.requestIgnoreBatteryOptimizations
 import com.opal.app.glass.GlassCard
 import com.opal.app.theme.OpalColors
@@ -127,7 +132,11 @@ fun BlockingGuardBanner(
 /** "Nega o'chib qoladi?" — tizim sozlamalariga olib boruvchi qadamlar. */
 @Composable
 fun BlockingSetupCard(modifier: Modifier = Modifier) {
-    val batteryOk = androidx.compose.runtime.remember { isIgnoringBatteryOptimizations() }
+    val batteryOk = isIgnoringBatteryOptimizations()
+    val usageOk = hasUsageAccess()
+    val overlayOk = canDrawOverlays()
+    val secureOk = canWriteSecureSettings()
+
     GlassCard(modifier.fillMaxWidth(), radius = OpalRadius.lg, padding = 16.dp) {
         Column {
             Text(
@@ -138,7 +147,7 @@ fun BlockingSetupCard(modifier: Modifier = Modifier) {
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "MIUI ba'zan Opal xizmatini o'chirib qo'yadi. Quyidagi 3 qadam buni oldini oladi:",
+                "Opal ikki xil usulda bloklaydi. MIUI xizmatni o'chirib qo'ysa ham, ikkinchisi ishlaydi. Quyidagilarni yoqing:",
                 fontSize = 11.5.sp,
                 lineHeight = 16.sp,
                 color = OpalColors.TextTertiary
@@ -147,7 +156,7 @@ fun BlockingSetupCard(modifier: Modifier = Modifier) {
 
             SetupRow(
                 step = "1",
-                title = "Bloklash xizmatini yoqish",
+                title = "Bloklash xizmati",
                 subtitle = "Sozlamalar → Qulaylik → Opal bloklash",
                 done = false,
                 action = "Ochish"
@@ -155,6 +164,22 @@ fun BlockingSetupCard(modifier: Modifier = Modifier) {
             Spacer(Modifier.height(8.dp))
             SetupRow(
                 step = "2",
+                title = "Foydalanish tarixi",
+                subtitle = if (usageOk) "Ruxsat berilgan — ekran vaqti hisoblanadi" else "Ekran vaqtini o'lchash uchun majburiy",
+                done = usageOk,
+                action = if (usageOk) "✓" else "Ochish"
+            ) { openUsageAccessSettings() }
+            Spacer(Modifier.height(8.dp))
+            SetupRow(
+                step = "3",
+                title = "Boshqa ilovalar ustida",
+                subtitle = if (overlayOk) "Ruxsat berilgan — ikkinchi dvigatel faol" else "Xizmat o'chsa ham blok ekrani chiqadi",
+                done = overlayOk,
+                action = if (overlayOk) "✓" else "Ochish"
+            ) { openOverlaySettings() }
+            Spacer(Modifier.height(8.dp))
+            SetupRow(
+                step = "4",
                 title = "Avtomatik ishga tushish",
                 subtitle = "\"Autostart\"ni yoqing (MIUI Security)",
                 done = false,
@@ -162,12 +187,22 @@ fun BlockingSetupCard(modifier: Modifier = Modifier) {
             ) { openAutostartSettings() }
             Spacer(Modifier.height(8.dp))
             SetupRow(
-                step = "3",
+                step = "5",
                 title = "Batareya cheklovisiz",
                 subtitle = if (batteryOk) "Allaqachon ruxsat berilgan" else "Fon rejimida o'chirilmasligi uchun",
                 done = batteryOk,
                 action = if (batteryOk) "✓" else "Ochish"
             ) { requestIgnoreBatteryOptimizations() }
+
+            if (secureOk) {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "✓ O'z-o'zini tiklash yoqilgan (xizmat o'chsa Opal o'zi qayta ulaydi)",
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = OpalColors.Success
+                )
+            }
         }
     }
 }

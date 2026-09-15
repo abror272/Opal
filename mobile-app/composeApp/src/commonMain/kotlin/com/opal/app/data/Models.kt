@@ -38,6 +38,7 @@ data class DailyStatDto(
     val screenTimeMinutes: Int = 0,
     val savedMinutes: Int = 0,
     val pickups: Int = 0,
+    val sessions: Int = 0,
     val goalMinutes: Int = 240
 )
 

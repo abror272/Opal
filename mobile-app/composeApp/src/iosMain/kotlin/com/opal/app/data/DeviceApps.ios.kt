@@ -30,6 +30,28 @@ actual fun isIgnoringBatteryOptimizations(): Boolean = true
 
 actual fun requestIgnoreBatteryOptimizations() {}
 
+actual fun watchdogRunning(): Boolean = false
+
+actual fun startWatchdog() {}
+
+actual fun canDrawOverlays(): Boolean = false
+
+actual fun openOverlaySettings() {}
+
+actual fun hasUsageAccess(): Boolean = false
+
+actual fun openUsageAccessSettings() {}
+
+actual fun canWriteSecureSettings(): Boolean = false
+
+actual fun forceRebindAccessibility(): Boolean = false
+
+actual fun realScreenTimeToday(): Int = 0
+
+actual fun realScreenTimeByDay(days: Int): Map<String, Int> = emptyMap()
+
+actual fun realPickupsToday(): Int = 0
+
 actual fun grantGrace(packageName: String, millis: Long) {
     val until = (NSDate().timeIntervalSince1970 * 1000).toLong() + millis
     NSUserDefaults.standardUserDefaults.setInteger(until.toLong(), "grace_$packageName")
