@@ -11,6 +11,8 @@ import androidx.compose.ui.platform.LocalContext
 @Composable
 actual fun rememberSafePadding(): PaddingValues = WindowInsets.safeDrawing.asPaddingValues()
 
+actual val isIosPlatform: Boolean = false
+
 @Composable
 actual fun rememberOnboarded(): Boolean {
     val ctx = LocalContext.current

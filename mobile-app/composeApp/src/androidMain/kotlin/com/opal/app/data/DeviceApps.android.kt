@@ -267,6 +267,21 @@ actual fun recordAppOpen(packageName: String) {
 
 private var socialCache: Set<String>? = null
 
+actual fun recordUnlock(packageName: String) {
+    val p = prefs()
+    val today = todayKey()
+    val edit = p.edit()
+    if (p.getString("opens_day", null) != today) {
+        p.all.keys.filter { it.startsWith("opens_") && it != "opens_day" }.forEach { edit.remove(it) }
+        edit.putString("opens_day", today)
+    }
+    val prev = if (p.getString("opens_day", null) == today) p.getInt("opens_$packageName", 0) else 0
+    edit.putInt("opens_$packageName", prev + 1)
+    edit.putString("last_open_pkg", packageName)
+    edit.putLong("last_open_at", System.currentTimeMillis())
+    edit.apply()
+}
+
 actual fun installedSocialPackages(): Set<String> {
     socialCache?.let { return it }
     val pm = opalContext().packageManager

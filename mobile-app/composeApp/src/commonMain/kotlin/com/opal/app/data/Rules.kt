@@ -19,6 +19,10 @@ import kotlinx.datetime.toLocalDateTime
  *
  * [apps] — ta'sirlanadigan paket nomlari. Bo'sh bo'lsa, "limit"/"block" uchun
  * qurilmadagi mashhur chalg'ituvchi ilovalar avtomatik olinadi (SOCIAL_PACKAGES).
+ *
+ * [opens] — KUNLIK QULFNI OCHISH SONI. Blok paytida foydalanuvchi shu qadar
+ * marta "Limitdan foydalanish" tugmasini bosib ilovani ocha oladi.
+ * [graceMinutes] — limitdan foydalanganda ilova shu qadar daqiqa ochiq turadi.
  */
 @Serializable
 data class RuleSpec(
@@ -31,6 +35,7 @@ data class RuleSpec(
     val start: String = "22:00",
     val end: String = "08:00",
     val opens: Int = 10,
+    val graceMinutes: Int = 5,
     val apps: List<String> = emptyList(),
     val subtitle: String = "",
     val photo: String = ""
@@ -54,6 +59,25 @@ val SOCIAL_PACKAGES = setOf(
     "com.linkedin.android",                // LinkedIn
     "com.discord",                         // Discord
     "com.zhihu.android"
+)
+
+/** Hech qachon bloklanmaydigan HAYOTIY ilovalar (budilnik, telefon, launcher...). */
+val ESSENTIAL_PACKAGES = setOf(
+    // Budilnik / soat
+    "com.android.deskclock", "com.google.android.deskclock", "com.miui.clock",
+    "com.miui.deskclock", "com.coloros.alarmclock", "com.oneplus.deskclock",
+    "com.sec.android.app.clockpackage", "com.samsung.android.app.clockpack",
+    "com.transsion.clock", "com.oplus.alarmclock",
+    // Telefon / SMS / favqulodda
+    "com.android.dialer", "com.google.android.dialer", "com.android.server.telecom",
+    "com.android.mms", "com.google.android.apps.messaging", "com.samsung.android.messaging",
+    "com.android.emergency", "com.android.incallui",
+    // Launcher / tizim
+    "com.miui.home", "com.android.launcher3", "com.google.android.apps.nexuslauncher",
+    "com.android.systemui", "com.miui.securitycenter", "com.android.settings",
+    "com.android.permissioncontroller", "com.google.android.permissioncontroller",
+    "com.android.camera", "com.miui.calculator", "com.android.calculator2",
+    "com.opal.app"
 )
 
 /** Ish paytida ruxsat etiladigan samarali ilovalar. */
@@ -88,12 +112,14 @@ val DEFAULT_RULES = listOf(
         opens = 10, subtitle = "Chalg'ituvchi ilovalar uchun"
     ),
     RuleSpec(
-        "r-sleep", "Uyqu vaqti", "🌙", "schedule", "blockAll", true,
-        start = "22:00", end = "08:00", subtitle = "Hammasini bloklash", photo = "sleep"
+        "r-sleep", "Uyqu vaqti", "🌙", "schedule", "block", true,
+        start = "22:00", end = "08:00", opens = 3, graceMinutes = 5,
+        subtitle = "Chalg'ituvchi ilovalar bloklanadi", photo = "sleep"
     ),
     RuleSpec(
         "r-work", "Chuqur ish", "💻", "schedule", "block", true,
-        start = "09:00", end = "17:00", subtitle = "Chalg'ituvchilarni bloklash", photo = "deepwork"
+        start = "09:00", end = "17:00", opens = 5, graceMinutes = 5,
+        subtitle = "Chalg'ituvchilarni bloklash", photo = "deepwork"
     ),
     RuleSpec(
         "r-lunch", "Tushlik tanaffusi", "🍽️", "schedule", "allow", true,
@@ -166,8 +192,28 @@ data class BlockHit(
     val ruleId: String?,
     val title: String,
     val icon: String,
-    val detail: String
-)
+    val detail: String,
+    /** Kunlik qulfni ochish (unlock) limiti. 0 = limit yo'q. */
+    val unlockLimit: Int = 0,
+    /** Bugun allaqachon ishlatilgan ochishlar. */
+    val opensToday: Int = 0,
+    /** Limitdan foydalanilganda ilova necha daqiqa ochiq turadi. */
+    val graceMinutes: Int = 5
+) {
+    val remainingUnlocks: Int get() = (unlockLimit - opensToday).coerceAtLeast(0)
+    val canUnlock: Boolean get() = unlockLimit > 0 && remainingUnlocks > 0
+}
+
+/** Shu paket uchun kunlik unlock limitini beruvchi qoida. */
+private fun allowanceRule(
+    pkg: String,
+    rules: List<RuleSpec>,
+    installed: Set<String>
+): RuleSpec? {
+    rules.firstOrNull { it.enabled && it.type == "limit" && pkg in ruleTargets(it, installed) }
+        ?.let { return it }
+    return rules.firstOrNull { it.enabled && pkg in ruleTargets(it, installed) }
+}
 
 /**
  * Ilova hozir bloklanishi kerakmi? Birinchi mos kelgan sabab qaytariladi.
@@ -184,25 +230,35 @@ fun evaluateBlock(
     opensToday: Int
 ): BlockHit? {
     val active = rules.filter { isRuleActiveNow(it, nowMinutes) }
+    val allowance = allowanceRule(pkg, rules, installed)
+    val allowLimit = allowance?.opens ?: 0
+    val allowGrace = allowance?.graceMinutes ?: 5
+
+    // 0) HAYOTIY ilovalar (budilnik, telefon, launcher) — hech qachon bloklanmaydi
+    if (pkg in ESSENTIAL_PACKAGES) return null
 
     // 1) "allow" qoidalari ustun — ilova ochiladi
     for (r in active) {
         if (r.mode == "allow" && pkg in ruleTargets(r, installed)) return null
     }
 
-    // 2) "blockAll" — hamma narsa (samarali ilovalar va tizimdan tashqari)
+    // 2) "blockAll" — hamma narsa (hayotiy va samarali ilovalardan tashqari)
     for (r in active) {
-        if (r.mode == "blockAll" && pkg !in PRODUCTIVITY_PACKAGES) {
+        if (r.mode == "blockAll" && pkg !in PRODUCTIVITY_PACKAGES && pkg !in ESSENTIAL_PACKAGES) {
             return BlockHit(
                 BlockReason.SCHEDULE, r.id, r.title, r.icon,
-                "${r.start}–${r.end} oralig'ida hammasi bloklangan"
+                "${r.start}–${r.end} oralig'ida hammasi bloklangan",
+                unlockLimit = r.opens, opensToday = opensToday, graceMinutes = r.graceMinutes
             )
         }
     }
 
     // 3) Qo'lda bloklash
     if (pkg in manuallyBlocked) {
-        return BlockHit(BlockReason.MANUAL, null, "Bloklangan ilova", "🔒", "Siz bu ilovani bloklagansiz")
+        return BlockHit(
+            BlockReason.MANUAL, null, "Bloklangan ilova", "🔒", "Siz bu ilovani bloklagansiz",
+            unlockLimit = allowLimit, opensToday = opensToday, graceMinutes = allowGrace
+        )
     }
 
     // 4) "block" qoidalari
@@ -210,7 +266,8 @@ fun evaluateBlock(
         if (r.mode == "block" && pkg in ruleTargets(r, installed)) {
             return BlockHit(
                 BlockReason.SCHEDULE, r.id, r.title, r.icon,
-                "${r.start}–${r.end} oralig'ida bloklangan"
+                "${r.start}–${r.end} oralig'ida bloklangan",
+                unlockLimit = r.opens, opensToday = opensToday, graceMinutes = r.graceMinutes
             )
         }
     }
@@ -222,7 +279,8 @@ fun evaluateBlock(
         if (opensToday >= r.opens) {
             return BlockHit(
                 BlockReason.LIMIT, r.id, r.title, r.icon,
-                "Kunlik ${r.opens} ochish limiti tugadi"
+                "Kunlik ${r.opens} ochish limiti tugadi",
+                unlockLimit = r.opens, opensToday = opensToday, graceMinutes = r.graceMinutes
             )
         }
     }
@@ -233,7 +291,7 @@ fun evaluateBlock(
 /** Qoida kartasidagi jonli holat matni. */
 fun ruleStatusLabel(rule: RuleSpec, nowMinutes: Int): String? {
     if (!rule.enabled) return null
-    if (rule.type == "limit") return "Kuniga ${rule.opens} ochish"
+    if (rule.type == "limit") return "Kuniga ${rule.opens} ochish · ${rule.graceMinutes} daq"
     val s = parseTimeToMinutes(rule.start)
     val e = parseTimeToMinutes(rule.end)
     if (isWithinWindow(nowMinutes, rule.start, rule.end)) return "Hozir faol"

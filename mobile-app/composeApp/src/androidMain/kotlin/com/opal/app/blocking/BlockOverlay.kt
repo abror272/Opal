@@ -37,6 +37,8 @@ class BlockOverlay(
     private var reasonTitle: String = ""
     private var reasonDetail: String = ""
     private var strictMode: Boolean = false
+    private var unlockLabel: String? = null
+    private var unlockCb: (() -> Unit)? = null
 
     var blockedPackage: String? = null
         private set
@@ -58,8 +60,10 @@ class BlockOverlay(
         reasonTitle: String,
         reasonDetail: String,
         strict: Boolean,
+        unlockLabel: String? = null,
         onDismiss: () -> Unit,
-        onAllow: () -> Unit
+        onAllow: () -> Unit,
+        onUnlock: (() -> Unit)? = null
     ) {
         currentPkg = packageName
         currentLabel = label
@@ -67,6 +71,8 @@ class BlockOverlay(
         this.reasonTitle = reasonTitle
         this.reasonDetail = reasonDetail
         strictMode = strict
+        this.unlockLabel = unlockLabel
+        unlockCb = onUnlock
         dismissCb = onDismiss
         allowCb = onAllow
         blockedPackage = packageName
@@ -174,11 +180,32 @@ class BlockOverlay(
             column.addView(text(reasonDetail, 11f, false, "#5CFFFFFF"))
         }
 
-        column.addView(space(46f))
+        column.addView(space(38f))
+
+        // ---- Kunlik qulfni ochish (limitdan foydalanish) ----
+        val unlock = unlockLabel
+        if (unlock != null && unlockCb != null) {
+            val btn = TextView(service).apply {
+                text = unlock
+                textSize = 14f
+                typeface = Typeface.DEFAULT_BOLD
+                gravity = Gravity.CENTER
+                setTextColor(AColor.parseColor("#B9F5CE"))
+                background = GradientDrawable().apply {
+                    cornerRadius = dpf(50f)
+                    setColor(AColor.parseColor("#2686EFAC"))
+                    setStroke(dp(1.5f), AColor.parseColor("#9986EFAC"))
+                }
+                isClickable = true
+                setOnClickListener { unlockCb?.invoke() }
+            }
+            column.addView(btn, LinearLayout.LayoutParams(dp(310f), dp(52f)))
+            column.addView(space(12f))
+        }
 
         val close = pill("Yopish", filled = true)
         close.setOnClickListener { dismissCb() }
-        column.addView(close, LinearLayout.LayoutParams(dp(250f), dp(52f)))
+        column.addView(close, LinearLayout.LayoutParams(dp(250f), dp(48f)))
 
         if (!strictMode) {
             column.addView(space(14f))
@@ -189,7 +216,12 @@ class BlockOverlay(
             column.addView(allow)
         } else {
             column.addView(space(14f))
-            column.addView(text("Qat'iy rejim — ochish yo'q", 11f, true, "#7AFFB4B4"))
+            column.addView(
+                text(
+                    if (unlock != null) "Limit tugadi · qat'iy rejim" else "Qat'iy rejim — ochish yo'q",
+                    11f, true, "#7AFFB4B4"
+                )
+            )
         }
     }
 

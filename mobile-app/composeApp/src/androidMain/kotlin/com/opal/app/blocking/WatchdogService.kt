@@ -29,6 +29,7 @@ import com.opal.app.data.loadBlockedPackages
 import com.opal.app.data.loadRules
 import com.opal.app.data.prefs
 import com.opal.app.data.recordAppOpen
+import com.opal.app.data.recordUnlock
 import java.util.Calendar
 
 /**
@@ -156,10 +157,10 @@ class WatchdogService : Service() {
         if (inGrace(pkg)) return
         if (overlay.isShowing && overlay.blockedPackage == pkg) return
 
-        showBlock(pkg, hit.icon + " " + hit.title, hit.detail)
+        showBlock(pkg, hit)
     }
 
-    private fun showBlock(pkg: String, reasonTitle: String, reasonDetail: String) {
+    private fun showBlock(pkg: String, hit: com.opal.app.data.BlockHit) {
         val pm = packageManager
         val label = try {
             pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString()
@@ -171,13 +172,30 @@ class WatchdogService : Service() {
         } catch (_: Throwable) {
             null
         }
+
+        val launchPkg = {
+            val launch = pm.getLaunchIntentForPackage(pkg)
+            if (launch != null) {
+                launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                try {
+                    startActivity(launch)
+                } catch (_: Throwable) {
+                }
+            }
+        }
+
         overlay.show(
             packageName = pkg,
             label = label,
             icon = icon,
-            reasonTitle = reasonTitle,
-            reasonDetail = reasonDetail,
+            reasonTitle = "${hit.icon} ${hit.title}",
+            reasonDetail = hit.detail,
             strict = isStrictBlocking(),
+            unlockLabel = if (hit.canUnlock) {
+                "🔓 Limitdan foydalanish · ${hit.remainingUnlocks} ta (${hit.graceMinutes} daq)"
+            } else {
+                null
+            },
             onDismiss = {
                 overlay.hide()
                 goHome()
@@ -185,14 +203,13 @@ class WatchdogService : Service() {
             onAllow = {
                 overlay.hide()
                 grantGrace(pkg, 5 * 60 * 1000L)
-                val launch = pm.getLaunchIntentForPackage(pkg)
-                if (launch != null) {
-                    launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    try {
-                        startActivity(launch)
-                    } catch (_: Throwable) {
-                    }
-                }
+                launchPkg()
+            },
+            onUnlock = {
+                overlay.hide()
+                recordUnlock(pkg)
+                grantGrace(pkg, hit.graceMinutes * 60_000L)
+                launchPkg()
             }
         )
     }

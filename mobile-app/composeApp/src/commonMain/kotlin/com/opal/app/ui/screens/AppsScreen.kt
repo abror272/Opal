@@ -619,6 +619,7 @@ private fun RuleEditorSheet(
     var startMin by remember { mutableStateOf(parseTimeToMinutes(initial.start)) }
     var endMin by remember { mutableStateOf(parseTimeToMinutes(initial.end)) }
     var opens by remember { mutableStateOf(initial.opens) }
+    var graceMinutes by remember { mutableStateOf(initial.graceMinutes) }
     val insets = rememberSafePadding()
 
     // Ro'yxat bo'sh bo'lsa — qurilmadagi standart chalg'ituvchilarni tanlab beramiz.
@@ -719,25 +720,35 @@ private fun RuleEditorSheet(
                     Spacer(Modifier.height(10.dp))
                     TimeRow("Tugash", endMin) { endMin = it }
                 } else {
-                    FieldLabel("Kunlik ochish soni")
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        StepperButton("−") { if (opens > 1) opens-- }
-                        Text(
-                            "$opens",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = OpalColors.TextPrimary,
-                            modifier = Modifier.width(60.dp),
-                            textAlign = TextAlign.Center
-                        )
-                        StepperButton("＋") { if (opens < 200) opens++ }
-                    }
-                    Spacer(Modifier.height(16.dp))
                     FieldLabel("Ilovalar — ${selectedApps.size} ta tanlandi")
                     AppPicker(apps, selectedApps) { pkg ->
                         selectedApps = if (pkg in selectedApps) selectedApps - pkg else selectedApps + pkg
                     }
                 }
+
+                Spacer(Modifier.height(18.dp))
+
+                // ---- Kunlik qulfni ochish (limit) ----
+                FieldLabel("Kunlik qulfni ochish soni")
+                CountStepper(opens, 0, 200, "ta") { opens = it }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    if (opens == 0) "Limit o'chirilgan — faqat Battle Math bilan ochiladi"
+                    else "Blok paytida shu qadar marta ochish mumkin",
+                    fontSize = 10.5.sp,
+                    color = OpalColors.TextTertiary
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                FieldLabel("Limitdan foydalanganda ochiq turadi")
+                CountStepper(graceMinutes, 1, 60, "daqiqa") { graceMinutes = it }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Bir marta ochganda ilova shu qadar daqiqa ishlaydi, keyin yana bloklanadi",
+                    fontSize = 10.5.sp,
+                    color = OpalColors.TextTertiary
+                )
 
                 Spacer(Modifier.height(24.dp))
 
@@ -769,6 +780,7 @@ private fun RuleEditorSheet(
                                         start = minutesToTime(startMin),
                                         end = minutesToTime(endMin),
                                         opens = opens,
+                                        graceMinutes = graceMinutes,
                                         apps = if (type == "schedule" && mode == "blockAll") emptyList()
                                         else selectedApps.toList()
                                     )
@@ -860,6 +872,36 @@ private fun TimeRow(label: String, minutes: Int, onChange: (Int) -> Unit) {
             )
             StepperButton("＋") { onChange((minutes + 15) % 1440) }
         }
+    }
+}
+
+@Composable
+private fun CountStepper(
+    value: Int,
+    min: Int,
+    max: Int,
+    unit: String,
+    onChange: (Int) -> Unit
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        StepperButton("−") { if (value > min) onChange(value - 1) }
+        Box(
+            Modifier
+                .width(96.dp)
+                .clip(RoundedCornerShape(50))
+                .background(Color.White.copy(alpha = 0.06f))
+                .padding(vertical = 8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                "$value $unit",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = OpalColors.TextPrimary,
+                textAlign = TextAlign.Center
+            )
+        }
+        StepperButton("＋") { if (value < max) onChange(value + 1) }
     }
 }
 

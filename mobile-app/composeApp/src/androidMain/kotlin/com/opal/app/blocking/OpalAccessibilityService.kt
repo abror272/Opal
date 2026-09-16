@@ -209,6 +209,17 @@ class OpalAccessibilityService : AccessibilityService() {
             null
         }
 
+        val launchPkg = {
+            val launch = pm.getLaunchIntentForPackage(pkg)
+            if (launch != null) {
+                launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                try {
+                    startActivity(launch)
+                } catch (_: Throwable) {
+                }
+            }
+        }
+
         overlay.show(
             packageName = pkg,
             label = label,
@@ -216,6 +227,11 @@ class OpalAccessibilityService : AccessibilityService() {
             reasonTitle = "${hit.icon} ${hit.title}",
             reasonDetail = hit.detail,
             strict = isStrictBlocking(),
+            unlockLabel = if (hit.canUnlock) {
+                "🔓 Limitdan foydalanish · ${hit.remainingUnlocks} ta (${hit.graceMinutes} daq)"
+            } else {
+                null
+            },
             onDismiss = {
                 overlay.hide()
                 performGlobalAction(GLOBAL_ACTION_HOME)
@@ -223,14 +239,13 @@ class OpalAccessibilityService : AccessibilityService() {
             onAllow = {
                 overlay.hide()
                 com.opal.app.data.grantGrace(pkg, 5 * 60 * 1000L)
-                val launch = pm.getLaunchIntentForPackage(pkg)
-                if (launch != null) {
-                    launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    try {
-                        startActivity(launch)
-                    } catch (_: Throwable) {
-                    }
-                }
+                launchPkg()
+            },
+            onUnlock = {
+                overlay.hide()
+                com.opal.app.data.recordUnlock(pkg)
+                com.opal.app.data.grantGrace(pkg, hit.graceMinutes * 60_000L)
+                launchPkg()
             }
         )
     }

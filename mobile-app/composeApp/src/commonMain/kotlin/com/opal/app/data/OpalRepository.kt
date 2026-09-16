@@ -176,8 +176,14 @@ class OpalRepository(private val client: HttpClient = createHttpClient()) {
 
     /* ==================== QURILMA / BLOKLASH ==================== */
 
-    suspend fun loadDeviceData() {
+    suspend fun loadDeviceData(force: Boolean = false) {
         if (appsLoading.value) return
+        // Allaqachon yuklangan bo'lsa — og'ir PackageManager so'rovini takrorlamaymiz
+        // (tab almashtirishda qotib qolishning oldini oladi).
+        if (deviceLoaded.value && !force) {
+            refreshBlockingService()
+            return
+        }
         appsLoading.value = true
         rules.value = loadRules()
         blockedPackages.value = loadBlockedPackages()
@@ -252,7 +258,8 @@ class OpalRepository(private val client: HttpClient = createHttpClient()) {
     /* ==================== Backend (ixtiyoriy) ==================== */
 
     suspend fun refreshAll() {
-        refreshRealStats()
+        // Og'ir UsageStats so'rovlari fon oqimida — UI qotmasligi uchun.
+        withContext(Dispatchers.Default) { refreshRealStats(force = true) }
         loadDeviceData()
         try {
             val remote = client.get("/api/profile").body<UserProfileDto>()

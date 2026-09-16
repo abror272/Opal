@@ -18,3 +18,6 @@ expect fun rememberOnboarded(): Boolean
 /** Onboarding tugallanganini belgilash (lambda qaytaradi). */
 @Composable
 expect fun rememberMarkOnboarded(): () -> Unit
+
+/** Joriy platforma iOS'mi? (glass effektlar faqat iOS uchun). */
+expect val isIosPlatform: Boolean

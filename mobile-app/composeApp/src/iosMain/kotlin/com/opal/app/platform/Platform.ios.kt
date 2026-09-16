@@ -8,6 +8,8 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSUserDefaults
 import platform.UIKit.UIApplication
 
+actual val isIosPlatform: Boolean = true
+
 @OptIn(ExperimentalForeignApi::class)
 @Composable
 actual fun rememberSafePadding(): PaddingValues {

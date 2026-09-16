@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import com.opal.app.data.AppGraph
 import com.opal.app.glass.GlassTabBar
 import com.opal.app.glass.GlassVeil
+import com.opal.app.platform.isIosPlatform
 import com.opal.app.platform.rememberMarkOnboarded
 import com.opal.app.platform.rememberOnboarded
 import com.opal.app.platform.rememberSafePadding
@@ -99,15 +100,17 @@ private fun MainShell() {
     var overlay by remember { mutableStateOf<OpalOverlay?>(null) }
     var breathingOpen by remember { mutableStateOf(false) }
 
-    // Tab o'tish glass veil
+    // Tab o'tish glass veil — FAQAT iOS'da (Android'da qotish/qotib qolish bo'lmasligi uchun).
     val veil = remember { Animatable(0f) }
     var firstRender by remember { mutableStateOf(true) }
-    LaunchedEffect(tab) {
-        if (firstRender) {
-            firstRender = false
-        } else {
-            veil.snapTo(1f)
-            veil.animateTo(0f, tween(520, easing = CubicBezierEasing(0.33f, 0f, 0.2f, 1f)))
+    if (isIosPlatform) {
+        LaunchedEffect(tab) {
+            if (firstRender) {
+                firstRender = false
+            } else {
+                veil.snapTo(1f)
+                veil.animateTo(0f, tween(420, easing = CubicBezierEasing(0.33f, 0f, 0.2f, 1f)))
+            }
         }
     }
 
@@ -144,15 +147,20 @@ private fun MainShell() {
                     targetState = tab,
                     transitionSpec = {
                         val forward = targetState.ordinal > initialState.ordinal
-                        val enter = slideInHorizontally(
-                            animationSpec = spring(dampingRatio = 0.9f, stiffness = 380f),
-                            initialOffsetX = { full -> if (forward) full / 4 else -full / 4 }
-                        ) + fadeIn(tween(240))
-                        val exit = slideOutHorizontally(
-                            animationSpec = tween(220),
-                            targetOffsetX = { full -> if (forward) -full / 6 else full / 6 }
-                        ) + fadeOut(tween(170))
-                        enter togetherWith exit
+                        if (isIosPlatform) {
+                            val enter = slideInHorizontally(
+                                animationSpec = spring(dampingRatio = 0.9f, stiffness = 380f),
+                                initialOffsetX = { full -> if (forward) full / 4 else -full / 4 }
+                            ) + fadeIn(tween(240))
+                            val exit = slideOutHorizontally(
+                                animationSpec = tween(220),
+                                targetOffsetX = { full -> if (forward) -full / 6 else full / 6 }
+                            ) + fadeOut(tween(170))
+                            enter togetherWith exit
+                        } else {
+                            // Android: iloji boricha TEZ — bosilganda darhol javob
+                            fadeIn(tween(110)) togetherWith fadeOut(tween(80))
+                        }
                     },
                     label = "tabContent"
                 ) { key ->

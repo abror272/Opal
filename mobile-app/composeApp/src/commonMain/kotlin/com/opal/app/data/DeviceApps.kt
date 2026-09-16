@@ -83,6 +83,9 @@ expect fun inGrace(packageName: String): Boolean
 /** Ilova ochilganini qayd etish (bir xil paket 20s ichida takror sanalmaydi). */
 expect fun recordAppOpen(packageName: String)
 
+/** Kunlik limitdan (qulfni ochish) foydalanilganini qayd etish — har doim sanaladi. */
+expect fun recordUnlock(packageName: String)
+
 /** Shu paket bugun necha marta ochilgan. */
 expect fun appOpensToday(packageName: String): Int
 

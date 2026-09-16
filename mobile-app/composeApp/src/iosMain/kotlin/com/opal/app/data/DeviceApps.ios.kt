@@ -65,6 +65,8 @@ actual fun inGrace(packageName: String): Boolean {
 
 actual fun recordAppOpen(packageName: String) {}
 
+actual fun recordUnlock(packageName: String) {}
+
 actual fun appOpensToday(packageName: String): Int = 0
 
 actual fun installedSocialPackages(): Set<String> = emptySet()
