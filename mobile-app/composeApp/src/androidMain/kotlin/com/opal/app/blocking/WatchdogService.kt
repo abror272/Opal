@@ -30,6 +30,14 @@ import com.opal.app.data.loadRules
 import com.opal.app.data.prefs
 import com.opal.app.data.recordAppOpen
 import com.opal.app.data.recordUnlock
+import com.opal.app.guard.AdultContentGuard
+import com.opal.app.guard.GuardSensitivity
+import com.opal.app.guard.adultGuardCooldownUntil
+import com.opal.app.guard.adultGuardSensitivity
+import com.opal.app.guard.isAdultGuardEnabled
+import com.opal.app.guard.recordAdultGuardFalsePositive
+import com.opal.app.guard.recordAdultGuardHit
+import com.opal.app.guard.setAdultGuardCooldown
 import java.util.Calendar
 
 /**
@@ -46,6 +54,7 @@ import java.util.Calendar
 class WatchdogService : Service() {
 
     private lateinit var overlay: BlockOverlay
+    private lateinit var guardOverlay: GuardOverlay
     private val handler = Handler(Looper.getMainLooper())
     private var lastPkg: String? = null
     private var tickCount = 0L
@@ -79,6 +88,7 @@ class WatchdogService : Service() {
     override fun onCreate() {
         super.onCreate()
         overlay = BlockOverlay(this, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)
+        guardOverlay = GuardOverlay(this, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)
         startForegroundCompat()
         prefs().edit().putBoolean("watchdog_on", true).apply()
         handler.postDelayed(tick, 600L)
@@ -91,6 +101,10 @@ class WatchdogService : Service() {
     override fun onDestroy() {
         handler.removeCallbacks(tick)
         overlay.hide()
+        try {
+            guardOverlay.hide()
+        } catch (_: Throwable) {
+        }
         try {
             prefs().edit().putBoolean("watchdog_on", false).putBoolean("wd_ok", false).apply()
         } catch (_: Throwable) {
@@ -133,12 +147,15 @@ class WatchdogService : Service() {
         val pkg = currentForegroundPackage() ?: return
         if (pkg == packageName || pkg == "com.miui.home" || pkg == "com.android.systemui") {
             if (overlay.isShowing) overlay.hide()
+            if (guardOverlay.isShowing) guardOverlay.hide()
             lastPkg = pkg
             return
         }
 
         val firstSeen = pkg != lastPkg
         lastPkg = pkg
+
+        if (guardOverlay.isShowing && guardOverlay.blockedPackage != pkg) guardOverlay.hide()
 
         val hit = evaluateBlock(
             pkg = pkg,
@@ -152,12 +169,62 @@ class WatchdogService : Service() {
         if (hit == null) {
             if (firstSeen) recordAppOpen(pkg)
             if (overlay.isShowing) overlay.hide()
+            maybeGuardApp(pkg)
             return
         }
         if (inGrace(pkg)) return
         if (overlay.isShowing && overlay.blockedPackage == pkg) return
 
         showBlock(pkg, hit)
+    }
+
+    /**
+     * Accessibility ishlamayotganda ham 18+ ILOVA nomini bloklaymiz.
+     * (Ekran matnini UsageStats orqali o'qib bo'lmaydi — bu zaxira signal.)
+     */
+    private fun maybeGuardApp(pkg: String) {
+        if (!isAdultGuardEnabled()) return
+        if (guardOverlay.isShowing) return
+        if (adultGuardCooldownUntil(pkg) > System.currentTimeMillis()) return
+
+        val sensitivity: GuardSensitivity = runCatching { adultGuardSensitivity() }
+            .getOrDefault(GuardSensitivity.MEDIUM)
+        val label = try {
+            val pm = packageManager
+            pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString()
+        } catch (_: Throwable) {
+            ""
+        }
+        if (label.isBlank()) return
+        val verdict = AdultContentGuard.evaluateLabel(label, sensitivity)
+        if (!verdict.isAdult(sensitivity)) return
+
+        runCatching { recordAdultGuardHit() }
+        guardOverlay.show(
+            packageName = pkg,
+            verdict = verdict,
+            onExit = {
+                guardOverlay.hide()
+                goHome()
+            },
+            onFalsePositive = {
+                guardOverlay.hide()
+                runCatching {
+                    recordAdultGuardFalsePositive()
+                    setAdultGuardCooldown(pkg, 15 * 60_000L)
+                }
+                launchPkg(pkg)
+            }
+        )
+    }
+
+    private fun launchPkg(pkg: String) {
+        try {
+            val launch = packageManager.getLaunchIntentForPackage(pkg) ?: return
+            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(launch)
+        } catch (_: Throwable) {
+        }
     }
 
     private fun showBlock(pkg: String, hit: com.opal.app.data.BlockHit) {

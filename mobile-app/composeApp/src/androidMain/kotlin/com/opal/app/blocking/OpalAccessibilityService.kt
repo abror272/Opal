@@ -1,9 +1,14 @@
 package com.opal.app.blocking
 
 import android.accessibilityservice.AccessibilityService
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityEvent
 import com.opal.app.data.appOpensToday
@@ -15,11 +20,28 @@ import com.opal.app.data.loadBlockedPackages
 import com.opal.app.data.loadRules
 import com.opal.app.data.prefs
 import com.opal.app.data.recordAppOpen
+import com.opal.app.guard.ACTION_GUARD_SELFTEST
+import com.opal.app.guard.AdultContentGuard
+import com.opal.app.guard.GuardInput
+import com.opal.app.guard.GuardVerdict
+import com.opal.app.guard.adultGuardCooldownUntil
+import com.opal.app.guard.adultGuardSensitivity
+import com.opal.app.guard.isAdultGuardEnabled
+import com.opal.app.guard.recordAdultGuardFalsePositive
+import com.opal.app.guard.recordAdultGuardHit
+import com.opal.app.guard.setAdultGuardCooldown
 
 /**
- * QAT'IY BLOKLASH: foydalanuvchi bloklangan ilovani ochsa — darhol
- * to'liq ekranli "Opal tomonidan bloklandi" oynasini (TYPE_ACCESSIBILITY_OVERLAY)
- * ustiga chizadi. Fon-aktivlik cheklovlari bunga ta'sir qilmaydi.
+ * QAT'IY BLOKLASH + 18+ HIMOYASI.
+ *
+ * 1) Ilova bloklash: foydalanuvchi bloklangan ilovani ochsa — darhol
+ *    to'liq ekranli "Opal tomonidan bloklandi" oynasini (TYPE_ACCESSIBILITY_OVERLAY)
+ *    ustiga chizadi.
+ *
+ * 2) 18+ himoyasi: ekrandagi matn/havola o'zgarganda (TYPE_WINDOW_CONTENT_CHANGED)
+ *    daraxtdan matn yig'ib [AdultContentGuard] orqali tekshiradi. 18+ aniqlansa
+ *    ekran [GuardOverlay] bilan yopiladi. Skanerlash qat'iy byudjetli (debounce,
+ *    throttle, node limiti) — UI qotmaydi.
  *
  * Bloklash sabablari:
  *  1. Qo'lda bloklash ("Ilovalarim" bo'limida tanlangan)
@@ -29,18 +51,41 @@ import com.opal.app.data.recordAppOpen
 class OpalAccessibilityService : AccessibilityService() {
 
     private val overlay by lazy { BlockOverlay(this) }
+    private val guardOverlay by lazy { GuardOverlay(this) }
     private val notifier by lazy { RuleNotifier(this) }
     private var lastPackage: String? = null
     private var lastAt = 0L
     private var foregroundPkg: String? = null
     private var lastBeat = 0L
 
+    // 18+ skanerlash holati
+    private var lastGuardScanAt = 0L
+    private var lastGuardTriggerAt = 0L
+    private var pendingScanPkg: String? = null
+    private var receiverRegistered = false
+
     private val handler = Handler(Looper.getMainLooper())
 
     companion object {
         private const val KEEP_ALIVE_ID = 0x0A12
         private const val KEEP_ALIVE_CHANNEL = "opal_service"
+
+        /** Content-change eventlar juda ko'p — shu sababli kechikish + throttle. */
+        private const val GUARD_DEBOUNCE_MS = 320L
+        private const val GUARD_MIN_INTERVAL_MS = 650L
+        private const val GUARD_TRIGGER_COOLDOWN_MS = 2_500L
+        private const val GUARD_FALSE_POSITIVE_MS = 15 * 60_000L
+
+        /** Hech qachon 18+ uchun skanerlanmaydigan paketlar. */
+        private val SCAN_SKIP = setOf(
+            "com.android.systemui",
+            "com.miui.securitycenter",
+            "com.android.settings",
+            "com.android.permissioncontroller",
+            "com.google.android.permissioncontroller"
+        )
     }
+
     private val ticker = object : Runnable {
         override fun run() {
             try {
@@ -53,10 +98,23 @@ class OpalAccessibilityService : AccessibilityService() {
         }
     }
 
+    private val guardScan = Runnable { runGuardScan() }
+
+    private val selfTestReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action != ACTION_GUARD_SELFTEST) return
+            try {
+                showGuardSelfTest()
+            } catch (_: Throwable) {
+            }
+        }
+    }
+
     override fun onServiceConnected() {
         super.onServiceConnected()
         beat(force = true)
         startKeepAlive()
+        registerSelfTestReceiver()
         handler.removeCallbacks(ticker)
         // Birinchi snapshot: hozir faol qoidalar uchun bildirishnoma chiqarmaymiz.
         runCatching { notifier.sync(loadRules(), nowMinutes()) }
@@ -66,15 +124,43 @@ class OpalAccessibilityService : AccessibilityService() {
     override fun onUnbind(intent: Intent?): Boolean {
         clearHeartbeat()
         stopKeepAlive()
+        unregisterSelfTestReceiver()
         return super.onUnbind(intent)
     }
 
     override fun onDestroy() {
         clearHeartbeat()
         stopKeepAlive()
+        unregisterSelfTestReceiver()
         handler.removeCallbacks(ticker)
+        handler.removeCallbacks(guardScan)
         overlay.hide()
+        guardOverlay.hide()
         super.onDestroy()
+    }
+
+    private fun registerSelfTestReceiver() {
+        if (receiverRegistered) return
+        try {
+            val filter = IntentFilter(ACTION_GUARD_SELFTEST)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(selfTestReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            } else {
+                @Suppress("UnspecifiedRegisterReceiverFlag")
+                registerReceiver(selfTestReceiver, filter)
+            }
+            receiverRegistered = true
+        } catch (_: Throwable) {
+        }
+    }
+
+    private fun unregisterSelfTestReceiver() {
+        if (!receiverRegistered) return
+        receiverRegistered = false
+        try {
+            unregisterReceiver(selfTestReceiver)
+        } catch (_: Throwable) {
+        }
     }
 
     /**
@@ -91,7 +177,7 @@ class OpalAccessibilityService : AccessibilityService() {
                             KEEP_ALIVE_CHANNEL,
                             "Opal himoyasi",
                             android.app.NotificationManager.IMPORTANCE_MIN
-                        ).apply { description = "Bloklash xizmati faol" }
+                        ).apply { description = "Bloklash va 18+ himoyasi faol" }
                     )
                 }
             }
@@ -112,7 +198,7 @@ class OpalAccessibilityService : AccessibilityService() {
             val n = androidx.core.app.NotificationCompat.Builder(this, KEEP_ALIVE_CHANNEL)
                 .setSmallIcon(com.opal.app.R.drawable.ic_notify)
                 .setContentTitle("Opal himoyasi faol")
-                .setContentText("Bloklangan ilovalar kuzatilmoqda")
+                .setContentText("Ilovalar va 18+ kontent kuzatilmoqda")
                 .setOngoing(true)
                 .setPriority(androidx.core.app.NotificationCompat.PRIORITY_MIN)
                 .setContentIntent(pi)
@@ -151,6 +237,16 @@ class OpalAccessibilityService : AccessibilityService() {
         val e = event ?: return
         beat()
 
+        // ---- 18+ himoyasi: kontent o'zgardi ----
+        if (e.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
+            val eventPkg = e.packageName?.toString() ?: return
+            if (!isIgnoredPackage(eventPkg)) {
+                if (foregroundPkg == null) foregroundPkg = eventPkg
+                if (eventPkg == foregroundPkg) scheduleGuardScan(eventPkg)
+            }
+            return
+        }
+
         if (e.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
             e.eventType != AccessibilityEvent.TYPE_WINDOWS_CHANGED
         ) return
@@ -161,11 +257,153 @@ class OpalAccessibilityService : AccessibilityService() {
 
         foregroundPkg = pkg
 
-        // Boshqa ilova ochildi — overlay'ni yopamiz.
+        // Boshqa ilova ochildi — overlay'larni yopamiz.
         val shown = overlay.blockedPackage
         if (shown != null && shown != pkg) overlay.hide()
 
+        val guardShown = guardOverlay.blockedPackage
+        if (guardShown != null && guardShown != pkg) guardOverlay.hide()
+
         evaluate(pkg, recordOpens = true)
+        scheduleGuardScan(pkg)
+    }
+
+    /* ==================== 18+ skanerlash ==================== */
+
+    private fun isIgnoredPackage(pkg: String): Boolean =
+        pkg == packageName || pkg in SCAN_SKIP
+
+    private fun scheduleGuardScan(pkg: String) {
+        if (pkg.isBlank() || isIgnoredPackage(pkg)) return
+        if (guardOverlay.isShowing) return
+        if (!runCatching { isAdultGuardEnabled() }.getOrDefault(false)) return
+        if (adultGuardCooldownUntil(pkg) > System.currentTimeMillis()) return
+        pendingScanPkg = pkg
+        handler.removeCallbacks(guardScan)
+        handler.postDelayed(guardScan, GUARD_DEBOUNCE_MS)
+    }
+
+    private fun runGuardScan() {
+        val pkg = pendingScanPkg ?: return
+        pendingScanPkg = null
+
+        if (pkg != foregroundPkg) return
+        if (isIgnoredPackage(pkg)) return
+        if (guardOverlay.isShowing || overlay.isShowing) return
+        if (!isScreenOn()) return
+        if (!runCatching { isAdultGuardEnabled() }.getOrDefault(false)) return
+        if (adultGuardCooldownUntil(pkg) > System.currentTimeMillis()) return
+
+        // Global throttle — og'ir ilovalarda ham UI qotmasligi uchun.
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastGuardScanAt < GUARD_MIN_INTERVAL_MS) {
+            scheduleGuardScan(pkg)
+            return
+        }
+        lastGuardScanAt = now
+
+        val root = try {
+            rootInActiveWindow
+        } catch (_: Throwable) {
+            null
+        }
+        val text = try {
+            ScreenTextScanner.scan(root)
+        } catch (_: Throwable) {
+            ""
+        } finally {
+            try {
+                root?.recycle()
+            } catch (_: Throwable) {
+            }
+        }
+        if (text.length < 3) return
+
+        val sensitivity = runCatching { adultGuardSensitivity() }.getOrDefault(
+            com.opal.app.guard.GuardSensitivity.MEDIUM
+        )
+        val verdict = try {
+            AdultContentGuard.evaluate(
+                GuardInput(
+                    screenText = text,
+                    packageName = pkg,
+                    appLabel = appLabel(pkg)
+                )
+            )
+        } catch (_: Throwable) {
+            GuardVerdict()
+        }
+        if (!verdict.isAdult(sensitivity)) return
+
+        triggerGuard(pkg, verdict)
+    }
+
+    private fun triggerGuard(pkg: String, verdict: GuardVerdict) {
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastGuardTriggerAt < GUARD_TRIGGER_COOLDOWN_MS) return
+        if (guardOverlay.isShowing && guardOverlay.blockedPackage == pkg) return
+        lastGuardTriggerAt = now
+
+        // Bloklash overlay'i ustma-ust tushmasin.
+        overlay.hide()
+        handler.removeCallbacks(guardScan)
+
+        runCatching { recordAdultGuardHit() }
+
+        guardOverlay.show(
+            packageName = pkg,
+            verdict = verdict,
+            onExit = {
+                guardOverlay.hide()
+                performGlobalAction(GLOBAL_ACTION_HOME)
+            },
+            onFalsePositive = {
+                guardOverlay.hide()
+                runCatching {
+                    recordAdultGuardFalsePositive()
+                    setAdultGuardCooldown(pkg, GUARD_FALSE_POSITIVE_MS)
+                }
+                launchPackage(pkg)
+            }
+        )
+    }
+
+    private fun showGuardSelfTest() {
+        if (guardOverlay.isShowing) guardOverlay.hide()
+        guardOverlay.show(
+            packageName = packageName,
+            verdict = GuardVerdict(
+                score = 200,
+                kind = com.opal.app.guard.GuardKind.SITE,
+                signals = listOf("self-test")
+            ),
+            selfTest = true,
+            onExit = { guardOverlay.hide() },
+            onFalsePositive = { guardOverlay.hide() }
+        )
+    }
+
+    private fun isScreenOn(): Boolean = try {
+        val pm = getSystemService(POWER_SERVICE) as PowerManager
+        pm.isInteractive
+    } catch (_: Throwable) {
+        true
+    }
+
+    private fun appLabel(pkg: String): String = try {
+        val pm = packageManager
+        pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString()
+    } catch (_: Throwable) {
+        ""
+    }
+
+    private fun launchPackage(pkg: String) {
+        try {
+            val launch = packageManager.getLaunchIntentForPackage(pkg) ?: return
+            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(launch)
+        } catch (_: Throwable) {
+        }
     }
 
     private fun nowMinutes(): Int {
@@ -190,6 +428,7 @@ class OpalAccessibilityService : AccessibilityService() {
         }
 
         if (inGrace(pkg)) return
+        if (guardOverlay.isShowing) return
         if (overlay.isShowing && overlay.blockedPackage == pkg) return
 
         val now = SystemClock.elapsedRealtime()
@@ -198,26 +437,11 @@ class OpalAccessibilityService : AccessibilityService() {
         lastAt = now
 
         val pm = packageManager
-        val label = try {
-            pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString()
-        } catch (_: Throwable) {
-            pkg.substringAfterLast('.')
-        }
+        val label = appLabel(pkg).ifEmpty { pkg.substringAfterLast('.') }
         val icon = try {
             pm.getApplicationIcon(pkg)
         } catch (_: Throwable) {
             null
-        }
-
-        val launchPkg = {
-            val launch = pm.getLaunchIntentForPackage(pkg)
-            if (launch != null) {
-                launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                try {
-                    startActivity(launch)
-                } catch (_: Throwable) {
-                }
-            }
         }
 
         overlay.show(
@@ -239,13 +463,13 @@ class OpalAccessibilityService : AccessibilityService() {
             onAllow = {
                 overlay.hide()
                 com.opal.app.data.grantGrace(pkg, 5 * 60 * 1000L)
-                launchPkg()
+                launchPackage(pkg)
             },
             onUnlock = {
                 overlay.hide()
                 com.opal.app.data.recordUnlock(pkg)
                 com.opal.app.data.grantGrace(pkg, hit.graceMinutes * 60_000L)
-                launchPkg()
+                launchPackage(pkg)
             }
         )
     }

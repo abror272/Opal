@@ -95,6 +95,10 @@ kotlin {
             implementation(libs.ktor.serialization.kotlinx.json)
         }
 
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
+
         if (androidEnabled) {
             // `androidMain` accessor faqat androidTarget mavjud bo'lganda yaratiladi
             getByName("androidMain").dependencies {

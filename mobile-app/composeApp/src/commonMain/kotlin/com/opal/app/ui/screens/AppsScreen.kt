@@ -52,6 +52,7 @@ import com.opal.app.data.openBlockingSettings
 import com.opal.app.data.parseTimeToMinutes
 import com.opal.app.data.ruleStatusLabel
 import com.opal.app.glass.Pressable
+import com.opal.app.guard.GuardSensitivity
 import com.opal.app.platform.rememberSafePadding
 import com.opal.app.theme.OpalColors
 import com.opal.app.theme.OpalRadius
@@ -90,6 +91,10 @@ fun AppsScreen(onOpenProfile: () -> Unit = {}) {
     val blocked by repo.blockedPackages.collectAsState()
     val strict by repo.strictBlocking.collectAsState()
     val serviceOn by repo.blockingServiceOn.collectAsState()
+    val guardOn by repo.adultGuard.collectAsState()
+    val guardSens by repo.adultGuardSens.collectAsState()
+    val guardHits by repo.adultGuardHits.collectAsState()
+    val guardFp by repo.adultGuardFalsePositives.collectAsState()
     val rules by repo.rules.collectAsState()
     val loading by repo.appsLoading.collectAsState()
     val insets = rememberSafePadding()
@@ -163,6 +168,26 @@ fun AppsScreen(onOpenProfile: () -> Unit = {}) {
                 onOpenSettings = {
                     openBlockingSettings()
                 }
+            )
+
+            Spacer(Modifier.height(OpalSpacing.lg))
+
+            // ---- 18+ himoyasi (yuqori o'rve) ----
+            AdultGuardCard(
+                enabled = guardOn,
+                sensitivity = guardSens,
+                hits = guardHits,
+                falsePositives = guardFp,
+                serviceOn = serviceOn,
+                onToggle = { on ->
+                    if (on && !serviceOn) openBlockingSettings()
+                    else repo.setAdultGuard(on)
+                },
+                onSensitivity = { repo.setAdultGuardSensitivity(it) },
+                onTest = {
+                    if (serviceOn) repo.selfTestAdultGuard() else openBlockingSettings()
+                },
+                onOpenSettings = { openBlockingSettings() }
             )
 
             Spacer(Modifier.height(OpalSpacing.lg))
@@ -333,6 +358,178 @@ private fun StrictBlockCard(
                 }
                 Spacer(Modifier.height(14.dp))
                 BlockingSetupCard()
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdultGuardCard(
+    enabled: Boolean,
+    sensitivity: GuardSensitivity,
+    hits: Int,
+    falsePositives: Int,
+    serviceOn: Boolean,
+    onToggle: (Boolean) -> Unit,
+    onSensitivity: (GuardSensitivity) -> Unit,
+    onTest: () -> Unit,
+    onOpenSettings: () -> Unit
+) {
+    val active = enabled && serviceOn
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(OpalRadius.lg))
+            .background(
+                if (enabled) Brush.linearGradient(listOf(Color(0x26FF5A76), Color(0x0DFFB454)))
+                else Brush.linearGradient(
+                    listOf(Color.White.copy(alpha = 0.06f), Color.White.copy(alpha = 0.02f))
+                )
+            )
+            .border(
+                1.dp,
+                if (enabled) OpalColors.Danger.copy(alpha = 0.45f) else Color.White.copy(alpha = 0.10f),
+                RoundedCornerShape(OpalRadius.lg)
+            )
+            .padding(16.dp)
+    ) {
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier
+                        .size(34.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (enabled) OpalColors.Danger.copy(alpha = 0.18f)
+                            else Color.White.copy(alpha = 0.07f)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "18+",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (enabled) Color(0xFFFFD9DF) else OpalColors.TextSecondary
+                    )
+                }
+                Spacer(Modifier.width(11.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "18+ himoyasi",
+                        fontSize = 14.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = OpalColors.TextPrimary
+                    )
+                    Text(
+                        when {
+                            !enabled -> "O'chirilgan — ekran tekshirilmaydi"
+                            !serviceOn -> "Xizmat o'chirilgan — yoqing"
+                            else -> "Ekranda 18+ aniqlansa darhol yopiladi"
+                        },
+                        fontSize = 11.sp,
+                        color = OpalColors.TextTertiary
+                    )
+                }
+                OpalSwitch(checked = active, onCheckedChange = onToggle)
+            }
+
+            if (enabled) {
+                Spacer(Modifier.height(14.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Sezgirlik", fontSize = 11.5.sp, color = OpalColors.TextTertiary)
+                    Spacer(Modifier.weight(1f))
+                    GuardSensitivity.entries.forEach { level ->
+                        val selected = level == sensitivity
+                        Box(
+                            Modifier
+                                .padding(start = 6.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(
+                                    if (selected) OpalColors.Danger.copy(alpha = 0.24f)
+                                    else Color.White.copy(alpha = 0.06f)
+                                )
+                                .border(
+                                    1.dp,
+                                    if (selected) OpalColors.Danger.copy(alpha = 0.6f)
+                                    else Color.White.copy(alpha = 0.10f),
+                                    RoundedCornerShape(50)
+                                )
+                                .clickable { onSensitivity(level) }
+                                .padding(horizontal = 10.dp, vertical = 5.dp)
+                        ) {
+                            Text(
+                                when (level) {
+                                    GuardSensitivity.LOW -> "Past"
+                                    GuardSensitivity.MEDIUM -> "O'rta"
+                                    GuardSensitivity.HIGH -> "Yuqori"
+                                },
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (selected) Color(0xFFFFD9DF) else OpalColors.TextSecondary
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        buildString {
+                            append("Bugun: $hits ta blok")
+                            if (falsePositives > 0) append(" · $falsePositives xato")
+                        },
+                        fontSize = 11.5.sp,
+                        color = OpalColors.TextSecondary
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Box(
+                        Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(Color.White.copy(alpha = 0.08f))
+                            .border(1.dp, Color.White.copy(alpha = 0.14f), RoundedCornerShape(50))
+                            .clickable(onClick = onTest)
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            if (serviceOn) "Sinash" else "Yoqish",
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = OpalColors.TextPrimary
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "Matn, havola va ilova nomi qurilmaning o'zida tekshiriladi — internetga yuborilmaydi. " +
+                        "Rasm/video ichidagi kontent har doim ham aniqlanmasligi mumkin.",
+                    fontSize = 10.sp,
+                    color = OpalColors.TextTertiary,
+                    lineHeight = 14.sp
+                )
+
+                if (!serviceOn) {
+                    Spacer(Modifier.height(12.dp))
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(50))
+                            .background(OpalColors.Danger.copy(alpha = 0.16f))
+                            .border(1.dp, OpalColors.Danger.copy(alpha = 0.4f), RoundedCornerShape(50))
+                            .clickable(onClick = onOpenSettings)
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "Opal himoyasini yoqish",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFFFD9DF)
+                        )
+                    }
+                }
             }
         }
     }

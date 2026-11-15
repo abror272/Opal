@@ -13,6 +13,7 @@ API band bo'lmasa — ilova offline demo ma'lumotlari bilan to'liq ishlaydi.
 | 📊 Statistika | 7 kunlik bar chart (stagger animatsiya) + bezier trend line chart |
 | 📱 Ilovalar | Bloklash switch (optimistic update), limit progress |
 | 👤 Profil | Yutuqlar, sozlamalar, kunlik maqsad, Opal Plus |
+| 🔞 **18+ himoyasi** | Ekranda 18+ matn/havola/ilova aniqlansa **darhol to'sadi** — o'zini tiyishga undovchi to'siq ekrani, 5s "nafas olish" hisoblagichi, 3 tilli detektor, sezgirlik sozlamasi. Batafsil: [GUARD18.md](GUARD18.md) |
 | ⏱️ Sessiya | Sekundlik ticker, gradient countdown ring, erta chiqish = streak -1 (web bilan bir xil mantiq) |
 
 ## 🪟 Glass Effect (Telegram uslubi)
@@ -35,6 +36,7 @@ mobile-app/
 │       │   ├── OpalApp.kt                    # root + tab navigatsiya + veil
 │       │   ├── theme/OpalTheme.kt            # ranglar, gradientlar
 │       │   ├── data/                         # Models, DemoData, Repository, AppGraph
+│       │   ├── guard/                        # 18+ detektor + sozlamalar (expect/actual)
 │       │   ├── network/ApiClient.kt          # Ktor client (expect engine)
 │       │   ├── session/SessionController.kt  # taymer + tugatish mantiqi
 │       │   ├── glass/OpalGlass.kt            # expect GlassTabBar/GlassVeil + GlassPane

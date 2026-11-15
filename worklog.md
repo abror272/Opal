@@ -1,6 +1,35 @@
 # Worklog
 
 ---
+Task ID: 7
+Agent: pi (mobile / Android)
+Task: 18+ kontent himoyasi (ekran darajasida) — mavjud bloklash tizimini "yuqori o'rve"ga chiqarish
+
+Work Log:
+- Repo holati: `~/StudioProjects/Opal` (github.com/abror272/Opal, `main` toza) → yangi `feature/adult-content-guard` branch
+- ARXITEKTURA: 18+ aniqlash alohida qatlam sifatida qo'shildi — mavjud ilova-bloklash mantiqiga tegilmadi
+  - `commonMain/guard/AdultContentGuard.kt` — sof Kotlin detektor: 3 tilli (uz/ru/en) lug'at, og'irlikli ballash, xavfsiz-kontekst penalizatsiyasi, takrorlanish bonusi
+  - Obfuskatsiyaga chidamlilik: leet (`p0rn`), bo'laklangan (`p o r n`), cho'zilgan (`poooorn`), kirill↔lotin homoglif (`pоrn`)
+  - Domén ro'yxati (60+ mashhur sayt) + `.xxx/.porn/.sex/.adult` TLD → 200 ball = darhol blok
+  - `GuardSettings.kt` (expect/actual): yoqilgan/sezgirlik/statistika/15-daqiqa istisno; Android SharedPreferences, iOS no-op
+- ANDROID:
+  - `OpalAccessibilityService` — `TYPE_WINDOW_CONTENT_CHANGED` qo'shildi; debounce 320ms + global throttle 650ms + trigger cooldown; faqat foreground paket, ekran yoniq, o'z ilovasi/systemui/settings bundan mustasno
+  - `ScreenTextScanner` — BFS, qat'iy byudjet (420 node / 6000 belgi / 14 ms) → UI qotmaydi
+  - `GuardOverlay` — opaque to'liq ekran, "18+" nishoni, 10 ta tasodifiy o'zini-tiyish matni, 5s "Nafas oling" hisoblagichi, "Chiqish" (HOME) va "Bu xato" (15 daq istisno); BACK tugmasi yopmaydi
+  - `WatchdogService` — accessibility o'lsa ham 18+ ILOVA nomini bloklaydi (zaxira dvigatel); overlay paket almashganda yopiladi
+  - `opal_accessibility.xml` — `typeWindowContentChanged` + `flagIncludeNotImportantViews`; matnlar/desc maxfiylik haqida yangilandi
+- UI: `Ilovalar` tab'da yangi "18+ himoyasi" kartasi — switch, Past/O'rta/Yuqori sezgirlik, bugungi bloklar, "Sinash" (haqiqiy overlay'ni broadcast orqali chaqiradi), cheklovlar izohi; `OpalRepository`ga state + metodlar
+- TEST: `commonTest/.../AdultContentGuardTest.kt` — 9 test (domén, obfuskatsiya, 3 til, safe-context, sezgirlik, ilova nomi, takrorlanish, bo'sh kirish) — barchasi PASS
+- VERIFIKATSIYA: `:composeApp:testDebugUnitTest` ✅, `:composeApp:assembleDebug` ✅ (APK 13.5 MB), Kotlin ogohlantirishlar faqat mavjud deprecated API'lar
+- HUJJAT: `mobile-app/GUARD18.md` (qanday ishlaydi, sezgirlik, maxfiylik, cheklovlar, sinash) + README yangilandi
+
+Stage Summary:
+- 18+ himoyasi endi real ishlaydi: ekranda matn/havola/ilova nomi 18+ bo'lsa ~1 soniyada to'liq ekranli to'siq chiqadi va foydalanuvchi o'zini tiyishga undovchi xabar oladi
+- "Qotmay ishlashi" ta'minlandi: debounce + throttle + node/vaqt byudjeti + faqat foreground skan
+- Halol cheklov: rasm/video ichidagi yalang'ochlik aniqlanmaydi (on-device NSFW modeli kerak) — hujjatda aniq yozilgan
+- Keyingi qadam: (1) real qurilmada MIUI/HyperOS'da sinash, (2) ixtiyoriy TFLite NSFW modeli bilan rasm tahlili, (3) blok tarixini Profil/Statistika'da ko'rsatish
+
+---
 Task ID: 5
 Agent: Z.ai Code (main)
 Task: Foydalanuvchi talabi — UI/UX haqiqiy Opal (Apple Design Award 2025) dizayni bo'yicha TO'LIQ qayta qurildi

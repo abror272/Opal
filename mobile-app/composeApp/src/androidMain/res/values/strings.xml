@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="opal_accessibility_label">Opal bloklash</string>
-    <string name="opal_accessibility_summary">Chalg\'ituvchi ilovalarni bloklaydi</string>
-    <string name="opal_accessibility_desc">Opal qat\'iy rejimda bloklangan ilovalar ochilishini to\'xtatadi. Bu xizmat faqat qaysi ilova ochilganini aniqlaydi.</string>
+    <string name="opal_accessibility_label">Opal himoyasi</string>
+    <string name="opal_accessibility_summary">Ilovalarni bloklaydi va 18+ kontentni aniqlaydi</string>
+    <string name="opal_accessibility_desc">Opal bloklangan ilovalarni to\'xtatadi va ekranda 18+ kontent (matn yoki havola) paydo bo\'lsa darhol yopadi. Matn faqat qurilmaning o\'zida tekshiriladi — hech qayerga yuborilmaydi va saqlanmaydi.</string>
 </resources>

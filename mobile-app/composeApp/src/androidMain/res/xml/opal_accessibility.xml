@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  typeWindowContentChanged — 18+ kontent himoyasi uchun kerak: ekrandagi
+  matn/havola o'zgarganda xizmat uni o'qib tekshiradi (debounce bilan).
+  flagIncludeNotImportantViews — brauzer manzil satri kabi "muhim emas"
+  deb belgilangan tugunlardagi matnni ham ko'rish uchun.
+-->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowsChanged"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowsChanged|typeWindowContentChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
-    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows|flagReportViewIds"
+    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows|flagReportViewIds|flagIncludeNotImportantViews"
     android:canRetrieveWindowContent="true"
     android:description="@string/opal_accessibility_desc"
     android:notificationTimeout="100"

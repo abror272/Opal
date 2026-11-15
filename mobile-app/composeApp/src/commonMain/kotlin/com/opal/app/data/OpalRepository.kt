@@ -1,5 +1,13 @@
 package com.opal.app.data
 
+import com.opal.app.guard.GuardSensitivity
+import com.opal.app.guard.adultGuardFalsePositivesToday
+import com.opal.app.guard.adultGuardHitsToday
+import com.opal.app.guard.adultGuardSensitivity
+import com.opal.app.guard.isAdultGuardEnabled
+import com.opal.app.guard.requestAdultGuardSelfTest
+import com.opal.app.guard.setAdultGuardEnabled
+import com.opal.app.guard.setAdultGuardSensitivity
 import com.opal.app.network.createHttpClient
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -60,6 +68,13 @@ class OpalRepository(private val client: HttpClient = createHttpClient()) {
     val rules = MutableStateFlow(DEFAULT_RULES)
     val appsLoading = MutableStateFlow(false)
     val deviceLoaded = MutableStateFlow(false)
+
+    /* ---------- 18+ himoyasi ---------- */
+
+    val adultGuard = MutableStateFlow(true)
+    val adultGuardSens = MutableStateFlow(GuardSensitivity.MEDIUM)
+    val adultGuardHits = MutableStateFlow(0)
+    val adultGuardFalsePositives = MutableStateFlow(0)
 
     /* ==================== HAQIQIY STATISTIKA ==================== */
 
@@ -236,6 +251,32 @@ class OpalRepository(private val client: HttpClient = createHttpClient()) {
         overlayPerm.value = runCatching { canDrawOverlays() }.getOrDefault(false)
         usagePerm.value = runCatching { hasUsageAccess() }.getOrDefault(false)
         secureSettings.value = runCatching { canWriteSecureSettings() }.getOrDefault(false)
+        refreshAdultGuard()
+    }
+
+    /** 18+ himoyasi holati (prefs o'qish — arzon). */
+    fun refreshAdultGuard() {
+        adultGuard.value = runCatching { isAdultGuardEnabled() }.getOrDefault(false)
+        adultGuardSens.value = runCatching { adultGuardSensitivity() }.getOrDefault(GuardSensitivity.MEDIUM)
+        adultGuardHits.value = runCatching { adultGuardHitsToday() }.getOrDefault(0)
+        adultGuardFalsePositives.value =
+            runCatching { adultGuardFalsePositivesToday() }.getOrDefault(0)
+    }
+
+    fun setAdultGuard(on: Boolean) {
+        adultGuard.value = on
+        runCatching { setAdultGuardEnabled(on) }
+        if (on) ensureBlockingEngine()
+    }
+
+    fun setAdultGuardSensitivity(value: GuardSensitivity) {
+        adultGuardSens.value = value
+        runCatching { setAdultGuardSensitivity(value) }
+    }
+
+    /** Haqiqiy overlay'ni sinash (accessibility xizmati ko'rsatadi). */
+    fun selfTestAdultGuard() {
+        runCatching { requestAdultGuardSelfTest() }
     }
 
     /** Bloklash tizimini ishga tayyorlash (ruxsatlar bo'lsa watchdog'ni yoqadi). */
