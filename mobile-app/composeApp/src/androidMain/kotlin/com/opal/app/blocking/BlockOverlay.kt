@@ -149,7 +149,7 @@ class BlockOverlay(
 
         column.addView(space(28f))
         column.addView(text(currentLabel, 24f, true, "#FFFFFF"))
-        column.addView(text("Lumirra tomonidan bloklandi", 24f, true, "#F2FFFFFF"))
+        column.addView(text("Panoh tomonidan bloklandi", 24f, true, "#F2FFFFFF"))
         column.addView(space(14f))
 
         // Sabab chipi (qoida nomi yoki "Bloklangan ilova")

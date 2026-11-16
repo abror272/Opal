@@ -1,6 +1,6 @@
-# Lumirra Mobile — Kotlin Multiplatform (Android + iOS)
+# Panoh Mobile — Kotlin Multiplatform (Android + iOS)
 
-Lumirra — ekran vaqtini nazorat qiluvchi va nomaqbul kontentni bloklovchi **native mobil ilova** — bir Kotlin codebase, ikkala platforma.
+Panoh — ekran vaqtini nazorat qiluvchi va nomaqbul kontentni bloklovchi **native mobil ilova** — bir Kotlin codebase, ikkala platforma.
 Backend sifatida web loyihaning Next.js API'si ishlatiladi (`/api/apps`, `/api/sessions`, `/api/stats`, `/api/profile`).
 API band bo'lmasa — ilova offline demo ma'lumotlari bilan to'liq ishlaydi.
 
@@ -12,7 +12,7 @@ API band bo'lmasa — ilova offline demo ma'lumotlari bilan to'liq ishlaydi.
 | 🎯 Fokus | 5 preset (Deep Focus / Ish / O'qish / Uyqu / Maxsus), davomiylik chiplari, jonli taymer |
 | 📊 Statistika | 7 kunlik bar chart (stagger animatsiya) + bezier trend line chart |
 | 📱 Ilovalar | Bloklash switch (optimistic update), limit progress |
-| 👤 Profil | Yutuqlar, sozlamalar, kunlik maqsad, Lumirra Plus |
+| 👤 Profil | Yutuqlar, sozlamalar, kunlik maqsad, Panoh Plus |
 | 🛡 **Nomaqbul kontent** | Ekran matni, manzil satri va **ekran rasmi (TFLite)** tekshiriladi — nomaqbul kontent aniqlansa darhol to'sadi: o'zini tiyishga undovchi ekran, 5s "nafas olish", 3 tilli detektor, vizual model, sezgirlik. Batafsil: [CONTENT_GUARD.md](CONTENT_GUARD.md) |
 | ⏱️ Sessiya | Sekundlik ticker, gradient countdown ring, erta chiqish = streak -1 (web bilan bir xil mantiq) |
 
@@ -28,9 +28,9 @@ API band bo'lmasa — ilova offline demo ma'lumotlari bilan to'liq ishlaydi.
 
 ## 🎨 Brend va xavfsizlik
 
-- **Nom:** Lumirra (*lumen* + *mirra*) — logo, palitra va render yo'riqnomasi: [branding/README.md](branding/README.md)
+- **Nom:** Panoh (*lumen* + *mirra*) — logo, palitra va render yo'riqnomasi: [branding/README.md](branding/README.md)
 - **Risk bayroqlari:** qaysi ruxsatlar olib tashlangan, release imzo, R8 va tekshirish buyruqlari: [SECURITY.md](SECURITY.md)
-- **Ilova ID:** `com.lumirra.app` · **versiya:** 1.1.0 (code 2)
+- **Ilova ID:** `com.panoh.app` · **versiya:** 1.3.0 (code 4)
 
 ## 📁 Struktura
 
@@ -53,7 +53,7 @@ mobile-app/
 ├── iosApp/
 │   ├── project.yml                           # XcodeGen konfiguratsiyasi
 │   └── iosApp/                               # App.swift, Info.plist, Assets
-└── icon1024.png                              # Lumirra store/ikonka (1024)
+└── icon1024.png                              # Panoh store/ikonka (1024)
 ```
 
 ## 🔌 Backend ulash
@@ -99,14 +99,14 @@ Tarqatish uchun **release** quring:
 ```bash
 cd mobile-app
 # bir marta: keystore yaratish (maxfiy fayl, repo'ga tushmaydi)
-keytool -genkeypair -v -keystore ~/.lumirra/lumirra-release.jks \
-  -alias lumirra -keyalg RSA -keysize 2048 -validity 10000 \
-  -dname "CN=Lumirra, O=Lumirra, C=UZ"
+keytool -genkeypair -v -keystore ~/.panoh/panoh-release.jks \
+  -alias panoh -keyalg RSA -keysize 2048 -validity 10000 \
+  -dname "CN=Panoh, O=Panoh, C=UZ"
 
 # mobile-app/keystore.properties (gitignore'da):
 # storeFile=...
 # storePassword=...
-# keyAlias=lumirra
+# keyAlias=panoh
 # keyPassword=...
 
 ./gradlew :composeApp:assembleRelease

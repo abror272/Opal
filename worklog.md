@@ -1,6 +1,21 @@
 # Worklog
 
 ---
+Task ID: 10
+Agent: pi (brand / portrait QA)
+Task: Nomni Panoh'ga o'tkazish + portret rejimda tekshirish
+
+Work Log:
+- NOM: Lumirra lotincha/wellness ohangli bo'lgani uchun qisqa o'zbekcha **Panoh** tanlandi ("boshpana, himoya"). Ilova ID `com.panoh.app`, iOS bundle, yangi imzo `~/.panoh/panoh-release.jks` (CN=Panoh), versiya 1.3.0 (code 4).
+- BREND: barcha ko'rinadigan matnlar, bildirishnoma/accessibility yorliqlari, overlay footer, onboarding va wordmark — Panoh. Logo (arka/orbita/yulduz) saqlanib qoldi, `panoh_mark.png` qayta render qilindi.
+- PORTRAIT TEST: `accelerometer_rotation=0`, `user_rotation=0`. m.youtube.com 10s — **blok yo'q**; "Sinash" overlay'i portretda to'liq sig'di, "Sinovni yopish" ishladi; 1080×2400.
+- RELIZ: 14 MB, R8, `debuggable=false`, 7 ruxsat, label "Panoh", package `com.panoh.app`, imzo CN=Panoh. SHA-256 `c4120379dd8c8c5710a428255134a5d0520fe7679a02abe5d7457af2225dbd49`.
+- TOZALASH: Panoh o'chirildi, accessibility o'chirildi, APK/reverse tozalandi, Chrome google.com bilan tekshirildi, rotation avtomatikga qaytarildi.
+
+Stage Summary:
+- Nom: **Panoh**. Portretda tekshirildi: YouTube bloklanmaydi, himoya oynasi to'liq ishlaydi.
+
+---
 Task ID: 9
 Agent: pi (precision / vision / brand)
 Task: Haddan tashqari sezgirlikni tuzatish + ekran rasmidan aniqlash + nom/logo va tezlik

@@ -306,7 +306,7 @@ class WatchdogService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if (nm.getNotificationChannel(CHANNEL) == null) {
                 nm.createNotificationChannel(
-                    NotificationChannel(CHANNEL, "Lumirra himoyasi", NotificationManager.IMPORTANCE_MIN)
+                    NotificationChannel(CHANNEL, "Panoh himoyasi", NotificationManager.IMPORTANCE_MIN)
                         .apply { description = "Bloklash xizmati faol" }
                 )
             }
@@ -319,7 +319,7 @@ class WatchdogService : Service() {
         )
         val n: Notification = NotificationCompat.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_notify)
-            .setContentTitle("Lumirra himoyasi faol")
+            .setContentTitle("Panoh himoyasi faol")
             .setContentText("Bloklangan ilovalar kuzatilmoqda")
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_MIN)

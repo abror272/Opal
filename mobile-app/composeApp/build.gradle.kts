@@ -130,11 +130,11 @@ if (androidEnabled) {
         compileSdk = libs.versions.compileSdk.get().toInt()
 
         defaultConfig {
-            applicationId = "com.lumirra.app"
+            applicationId = "com.panoh.app"
             minSdk = libs.versions.minSdk.get().toInt()
             targetSdk = libs.versions.targetSdk.get().toInt()
-            versionCode = 3
-            versionName = "1.2.0"
+            versionCode = 4
+            versionName = "1.3.0"
             ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
         }
 

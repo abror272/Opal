@@ -39,6 +39,6 @@ fun createHttpClient(): HttpClient = HttpClient(platformEngine()) {
         url(ApiConfig.baseUrl)
     }
     install(UserAgent) {
-        agent = "Lumirra/1.1 (Kotlin Multiplatform)"
+        agent = "Panoh/1.1 (Kotlin Multiplatform)"
     }
 }

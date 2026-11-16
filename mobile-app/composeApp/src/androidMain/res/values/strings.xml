@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Lumirra</string>
-    <string name="opal_accessibility_label">Lumirra himoyasi</string>
+    <string name="app_name">Panoh</string>
+    <string name="opal_accessibility_label">Panoh himoyasi</string>
     <string name="opal_accessibility_summary">Ilovalarni bloklaydi va nomaqbul kontentni aniqlaydi</string>
-    <string name="opal_accessibility_desc">Lumirra bloklangan ilovalarni to\'xtatadi va ekranda nomaqbul kontent (matn, havola yoki ekran rasmi) paydo bo\'lsa darhol yopadi. Matn faqat qurilmaning o\'zida tekshiriladi — hech qayerga yuborilmaydi va saqlanmaydi.</string>
+    <string name="opal_accessibility_desc">Panoh bloklangan ilovalarni to\'xtatadi va ekranda nomaqbul kontent (matn, havola yoki ekran rasmi) paydo bo\'lsa darhol yopadi. Matn faqat qurilmaning o\'zida tekshiriladi — hech qayerga yuborilmaydi va saqlanmaydi.</string>
 </resources>

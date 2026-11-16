@@ -51,7 +51,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import opalapp.composeapp.generated.resources.Res
-import opalapp.composeapp.generated.resources.lumirra_mark
+import opalapp.composeapp.generated.resources.panoh_mark
 import opalapp.composeapp.generated.resources.opal_crystal
 import opalapp.composeapp.generated.resources.timer_scene
 
@@ -64,9 +64,9 @@ private data class Slide(
 )
 
 private val SLIDES = listOf(
-    Slide(Res.drawable.opal_crystal, true, "BLOKLASH", "Lumirra chalg'ituvchilarni siz uchun bloklaydi", "TikTok, Instagram va boshqalar — bir bosish bilan himoya ostida."),
+    Slide(Res.drawable.opal_crystal, true, "BLOKLASH", "Panoh chalg'ituvchilarni siz uchun bloklaydi", "TikTok, Instagram va boshqalar — bir bosish bilan himoya ostida."),
     Slide(Res.drawable.timer_scene, false, "FOKUS", "Bir bosish. To'liq fokus.", "Flip-clock taymer bilan sessiya boshlang — ilovalar o'z-o'zidan bloklanadi."),
-    Slide(null, false, "BALL", "Progressingizni chuqur his qiling", "Lumirra balli uyqu, fokus va damni bitta ko'rsatkichga jamsheydi.")
+    Slide(null, false, "BALL", "Progressingizni chuqur his qiling", "Panoh balli uyqu, fokus va damni bitta ko'rsatkichga jamsheydi.")
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -165,14 +165,14 @@ fun OnboardingScreen(onDone: () -> Unit) {
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Image(
-                        painter = painterResource(Res.drawable.lumirra_mark),
+                        painter = painterResource(Res.drawable.panoh_mark),
                         contentDescription = null,
                         modifier = Modifier.size(34.dp),
                         contentScale = ContentScale.Fit
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        "Lumirra",
+                        "Panoh",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,

@@ -4,8 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const root = path.resolve('..');
-const icon = fs.readFileSync('lumirra-icon.svg', 'utf8');
-const mark = fs.readFileSync('lumirra-mark.svg', 'utf8');
+const icon = fs.readFileSync('panoh-icon.svg', 'utf8');
+const mark = fs.readFileSync('panoh-mark.svg', 'utf8');
 // iOS / store: to'liq kvadrat fon (alpha yo'q, burchaklar Apple tomonidan maskalanadi)
 const iconSquare = icon.replaceAll('rx="232"', 'rx="0"');
 
@@ -44,5 +44,5 @@ stripAlpha(render(iconSquare, 1024), `${root}/icon1024.png`);
 // Preview / hujjat uchun
 write('preview-icon.png', render(icon, 512));
 write('preview-mark.png', render(mark, 256));
-write('lumirra-store-512.png', render(iconSquare, 512));
+write('panoh-store-512.png', render(iconSquare, 512));
 console.log('rendered');

@@ -208,7 +208,7 @@ actual fun startWatchdog() {
 actual fun requestIgnoreBatteryOptimizations() {
     val context = opalContext()
     // REQUEST_IGNORE_BATTERY_OPTIMIZATIONS ruxsati ishlatilmaydi (risk flagi).
-    // Foydalanuvchi ro'yxatdan Lumirra'ni tanlaydi.
+    // Foydalanuvchi ro'yxatdan Panoh'ni tanlaydi.
     try {
         context.startActivity(
             Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)

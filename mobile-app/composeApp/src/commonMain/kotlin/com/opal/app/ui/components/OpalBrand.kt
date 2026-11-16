@@ -52,24 +52,24 @@ import opalapp.composeapp.generated.resources.gem_night_owl
 import opalapp.composeapp.generated.resources.gem_opal_plus
 import opalapp.composeapp.generated.resources.gem_pride
 import opalapp.composeapp.generated.resources.gem_time_lord
-import opalapp.composeapp.generated.resources.lumirra_mark
+import opalapp.composeapp.generated.resources.panoh_mark
 import opalapp.composeapp.generated.resources.opal_crystal
 
-/** Lumirra wordmark — porlab turuvchi qalqon belgisi + "Lumirra". */
+/** Panoh wordmark — arka/orbita belgisi + "Panoh". */
 @Composable
 fun OpalWordmark(textSize: Int = 20, boxSize: Dp = 24.dp) {
     androidx.compose.foundation.layout.Row(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
-            painter = painterResource(Res.drawable.lumirra_mark),
+            painter = painterResource(Res.drawable.panoh_mark),
             contentDescription = null,
             modifier = Modifier.size(boxSize),
             contentScale = ContentScale.Fit
         )
         Spacer(Modifier.width(6.dp))
         Text(
-            "Lumirra",
+            "Panoh",
             fontSize = textSize.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White,

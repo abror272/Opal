@@ -1,6 +1,6 @@
 # Nomaqbul kontent himoyasi
 
-Lumirra ekranda nomaqbul (kattalar uchun) kontent paydo bo'lsa, ekranni **darhol to'sadi**
+Panoh ekranda nomaqbul (kattalar uchun) kontent paydo bo'lsa, ekranni **darhol to'sadi**
 va foydalanuvchini o'zini tiyishga undovchi xabarlar ko'rsatadi.
 
 > Android 11+ da to'liq ishlaydi (ekran rasmi tahlili uchun). iOS'da boshqa ilova
@@ -76,7 +76,7 @@ GuardOverlay — to'liq ekranli to'siq + "nafas olish" hisoblagichi
    ham 100% aniqlanmaydi; ba'zi badiiy rasmlar past ball oladi.
 2. Android 11+ talab qilinadi (screenshot API). Undan pastda faqat matn/URL.
 3. Accessibility o'chirilgan bo'lsa hech narsa ishlamaydi. MIUI xizmatni jimgina
-   o'chirib qo'yishi mumkin — Sozlamalar → Qulaylik → **Lumirra himoyasi**ni qayta yoqing.
+   o'chirib qo'yishi mumkin — Sozlamalar → Qulaylik → **Panoh himoyasi**ni qayta yoqing.
 4. 100% aniqlik kafolatlanmaydi — shuning uchun "Bu xato" va sezgirlik sozlamasi bor.
 
 ## Sinash
@@ -86,7 +86,7 @@ cd mobile-app
 ./gradlew :composeApp:testDebugUnitTest   # 13 test
 ```
 
-Qurilmada: rasm/video sahifasini oching → logcat'da `LumirraVision: score=...`.
+Qurilmada: rasm/video sahifasini oching → logcat'da `PanohVision: score=...`.
 `score ≥ 0.87` ikki marta bo'lsa — to'siq chiqadi.
 
 Model litsenziyasi: [THIRD_PARTY.md](THIRD_PARTY.md).

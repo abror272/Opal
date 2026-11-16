@@ -1,4 +1,4 @@
-# Lumirra — xavfsizlik va "yuqori risk" bayrog'i
+# Panoh — xavfsizlik va "yuqori risk" bayrog'i
 
 Bu hujjat APK skanerlaydigan vositalar (masalan "APK qo'riqchi", Play Protect,
 VirusTotal) nega ba'zi ilovalarni "yuqori risk" deb belgilashini va biz bunga qarshi
@@ -28,7 +28,7 @@ o'rnatish yoki internetga ma'lumot yuborish YO'Q.
 | `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | **olib tashlandi** — oddiy sozlamalar sahifasi ochiladi | "batareya cheklovini chetlab o'tish" bayrog'i |
 | `usesCleartextTraffic="true"` | `false` | shifrlanmagan HTTP — skanerda salbiy |
 | `android:debuggable=true` (debug APK) | **release**: `false` | debug APK — eng katta "test/xavfli" belgisi |
-| Debug imzo | **release keystore** (`CN=Lumirra`) | barqaror, maxsus imzo |
+| Debug imzo | **release keystore** (`CN=Panoh`) | barqaror, maxsus imzo |
 | `allowBackup` default | `false` | zaxira orqali ma'lumot chiqishi yo'q |
 | BootReceiver `exported=true` | `false` | tashqi ilova soxta broadcast yubora olmaydi |
 | R8 yo'q | `minify + shrinkResources` (14 MB, TFLite model bilan) | ishlatilmagan kod/ruxsat izlari qolmaydi |
@@ -69,6 +69,13 @@ $ANDROID_HOME/build-tools/35.0.0/aapt2 dump xmltree \
 - Skrinshot olinmaydi, matn saqlanmaydi, internetga yuborilmaydi.
 - Saqlanadigan yagona ma'lumot: bloklar soni, qoidalar, vaqtinchalik istisnolar.
 - `allowBackup=false` — zaxira nusxasida ham chiqmaydi.
+
+## 1.3.0 — Panoh nomi
+
+- Brend **Panoh**'ga o'tkazildi: ilova ID `com.panoh.app`, imzo CN=Panoh,
+  versiya 1.3.0 (code 4). Ruxsatlar va funksiyalar o'zgarmadi.
+- Portret rejimda tekshirildi (1080×2400): YouTube'da blok yo'q, himoya oynasi
+  portretga to'liq mos tushadi, "Sinovni yopish" ishlaydi.
 
 ## 1.2.0 — vizual tekshirish qo'shildi
 

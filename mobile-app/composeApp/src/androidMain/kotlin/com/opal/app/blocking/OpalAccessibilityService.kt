@@ -41,7 +41,7 @@ import java.util.concurrent.Executors
  * QAT'IY BLOKLASH + KONTENT HIMOYASI.
  *
  * 1) Ilova bloklash: foydalanuvchi bloklangan ilovani ochsa — darhol
- *    to'liq ekranli "Lumirra tomonidan bloklandi" oynasini (TYPE_ACCESSIBILITY_OVERLAY)
+ *    to'liq ekranli "Panoh tomonidan bloklandi" oynasini (TYPE_ACCESSIBILITY_OVERLAY)
  *    ustiga chizadi.
  *
  * 2) Kontent himoyasi: (a) ekrandagi ko'rinadigan matn + manzil satri
@@ -215,7 +215,7 @@ class OpalAccessibilityService : AccessibilityService() {
                     nm.createNotificationChannel(
                         android.app.NotificationChannel(
                             KEEP_ALIVE_CHANNEL,
-                            "Lumirra himoyasi",
+                            "Panoh himoyasi",
                             android.app.NotificationManager.IMPORTANCE_MIN
                         ).apply { description = "Bloklash va kontent himoyasi faol" }
                     )
@@ -237,7 +237,7 @@ class OpalAccessibilityService : AccessibilityService() {
             )
             val n = androidx.core.app.NotificationCompat.Builder(this, KEEP_ALIVE_CHANNEL)
                 .setSmallIcon(com.opal.app.R.drawable.ic_notify)
-                .setContentTitle("Lumirra himoyasi faol")
+                .setContentTitle("Panoh himoyasi faol")
                 .setContentText("Ilovalar va kontent kuzatilmoqda")
                 .setOngoing(true)
                 .setPriority(androidx.core.app.NotificationCompat.PRIORITY_MIN)
@@ -436,7 +436,7 @@ class OpalAccessibilityService : AccessibilityService() {
                     val model = classifier ?: NsfwClassifier(this).also { classifier = it }
                     val score = runCatching { model.score(bitmap) }.getOrDefault(0f)
                     android.util.Log.d(
-                        "LumirraVision",
+                        "PanohVision",
                         "score=${String.format("%.3f", score)} threshold=$threshold pkg=$pkg"
                     )
                     when {

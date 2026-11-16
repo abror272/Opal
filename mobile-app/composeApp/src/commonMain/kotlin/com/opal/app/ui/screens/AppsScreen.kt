@@ -71,7 +71,7 @@ import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import opalapp.composeapp.generated.resources.Res
-import opalapp.composeapp.generated.resources.lumirra_mark
+import opalapp.composeapp.generated.resources.panoh_mark
 import opalapp.composeapp.generated.resources.routine_deepwork
 import opalapp.composeapp.generated.resources.routine_family
 import opalapp.composeapp.generated.resources.routine_sleep
@@ -359,7 +359,7 @@ private fun StrictBlockCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "Sozlamalarda Lumirra himoyasini yoqish",
+                        "Sozlamalarda Panoh himoyasini yoqish",
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = OpalColors.MintLight
@@ -418,7 +418,7 @@ private fun AdultGuardCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
-                        painter = painterResource(Res.drawable.lumirra_mark),
+                        painter = painterResource(Res.drawable.panoh_mark),
                         contentDescription = null,
                         modifier = Modifier.size(22.dp),
                         contentScale = ContentScale.Fit
@@ -554,7 +554,7 @@ private fun AdultGuardCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            "Lumirra himoyasini yoqish",
+                            "Panoh himoyasini yoqish",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFFFD9DF)

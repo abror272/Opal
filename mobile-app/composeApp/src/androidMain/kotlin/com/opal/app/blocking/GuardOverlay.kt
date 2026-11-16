@@ -325,7 +325,7 @@ class GuardOverlay(
         }
 
         column.addView(space(10f))
-        column.addView(label("Lumirra · kontent himoyasi", 10f, "#40FFFFFF"))
+        column.addView(label("Panoh · kontent himoyasi", 10f, "#40FFFFFF"))
     }
 
     private fun enableButtons(enabled: Boolean) {

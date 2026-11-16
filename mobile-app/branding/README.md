@@ -1,10 +1,11 @@
-# Lumirra — brend va logo
+# Panoh — brend va logo
 
-**Nom:** Lumirra — *lumen* (yorug'lik) + *mirra* (aura) qo'shimchasidan yasalgan yangi so'z.
-Ma'nosi: "diqqatingizga yorug'lik". Play'da shu nomdagi ilova topilmadi, `lumirra.com`
-bo'sh (2026-11 holatiga ko'ra).
+**Nom:** **Panoh** — o'zbekcha "boshpana, himoya" ma'nosini beradi. Qisqa (5 harf),
+oson talaffuz qilinadi va ilovaning maqsadini (ekran uchun xavfsiz burchak) aniq
+ifodalaydi. Play qidiruvida aynan shu nomdagi ilova topilmadi.
 
-**Shior:** *Yorug'lik diqqatingizda.*
+**Shior:** *Ekraningiz panohi.*
+
 
 ## Belgi
 
@@ -33,12 +34,12 @@ Tipografiya: tizim sans, **Bold**, harf oralig'i −0.45sp (wordmark).
 
 ```
 branding/
-├── lumirra-icon.svg        # to'liq ikonka (1024, rounded)
-├── lumirra-mark.svg        # shaffof belgi
-├── lumirra-mark-tight.svg  # header uchun yaqin kesim (generated)
+├── panoh-icon.svg        # to'liq ikonka (1024, rounded)
+├── panoh-mark.svg        # shaffof belgi
+├── panoh-mark-tight.svg  # header uchun yaqin kesim (generated)
 ├── render.mjs              # Android mipmap + adaptive + iOS 1024 + store
 ├── render-mark.mjs         # ilova ichidagi mark PNG
-├── lumirra-store-512.png
+├── panoh-store-512.png
 └── preview-*.png
 ```
 
@@ -52,7 +53,7 @@ node render-mark.mjs   # oxirida — tight mark'ni yozadi
 ```
 
 Yangilanadi: `res/mipmap-*`, `drawable/ic_launcher_*` (vector), iOS AppIcon,
-`icon1024.png`, `composeResources/drawable/lumirra_mark.png`.
+`icon1024.png`, `composeResources/drawable/panoh_mark.png`.
 
 iOS ikonkasi **alpha kanalisiz**; Android adaptive ikonka
 `background + foreground + monochrome` uch qatlamli.
