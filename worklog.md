@@ -1,6 +1,24 @@
 # Worklog
 
 ---
+Task ID: 12
+Agent: pi (real-time fix)
+Task: Kech bloklash (boshqa sahifada) va sezgirlik muammosini tuzatish
+
+Work Log:
+- FOYDALANUVCHI: Wikimedia bikini sahifasida uzoq vaqtdan keyin begona kontentda blok; "Yuqori" sezgirlik ham yordam bermadi (screenshot 2026-11-16 16:18).
+- SABAB: `visualStrikes` global edi. Polldan o'tgan birinchi kadr strike=1 qilardi; tasdiqlovchi 1.2s skan `VISUAL_MIN_INTERVAL_MS=1800` tufayli ishlamasdi — strike saqlanib qolardi. Keyingi sahifadagi birinchi kadr strike=2 bilan darhol blok ochardi (1-2 daqiqadan keyin begona kontentda). Sahifa generation tekshiruvi ham yo'q edi.
+- TUZATISH: strike/2-kadr butunlay olib tashlandi; bir kadr ≥ pol → darhol trigger. `pageGeneration` har `TYPE_WINDOW_STATE_CHANGED`da oshadi; trigger oldidan `foregroundPkg==pkg && gen==pageGeneration` tekshiriladi. Debounce 1000→450ms, throttle 1800→700ms.
+- POL: Past 0.96 / O'rta 0.91 / Yuqori 0.85 (avval 0.94/0.87/0.78). Yuqori endi ham saqlanadi.
+- TEST: release 1.3.2 — Gallery'dagi aynan o'sha bikini screenshot `score=0.106` (pol 0.85) → blok yo'q; lokal "porn" matn sahifasi ~1s da blok; Google'da 10s kuzatuvda kech blok yo'q. Debug (pol 0.05) bilan bir kadrli trigger bikini `score=0.110`da darhol ishladi, keyin kech blok yo'q.
+- RELIZ: 1.3.2 (code 6), 14 MB, R8, CN=Panoh, 7 ruxsat. SHA-256 `766577b822451ce457c4e2170e4d7196cf5cdf07670e2b3c9f7cdcaf107d1afe`.
+- HOLAT: qurilmada o'rnatilgan, accessibility `Bound services`da, MIUI autostart yoqilgan.
+- TOZALASH: debug APK o'chirildi, test rasm/server/adb reverse tozalandi, Chrome google.com.
+
+Stage Summary:
+- Kech bloklar sababi (strike leak) bartaraf etildi; qaror joriy sahifaga bog'langan va ~1s ichida chiqadi.
+
+---
 Task ID: 11
 Agent: pi (bugfix / device QA)
 Task: Sezgirlik tanlanmasligi va "ishlamayapti" muammosini tuzatish

@@ -13,7 +13,7 @@ AccessibilityService
 ├── matn: ko'rinadigan tugunlar (300 node / 5000 belgi / 12 ms)
 │   ├── manzil satri  → nomaqbul domén (aniq blok)
 │   └── sahifa matni  → kuchli/o'rtacha/zaif guruhlar
-└── ekran rasmi (API 30+) → open_nsfw TFLite (224×224) → 2 kadr tasdiqlash
+└── ekran rasmi (API 30+) → open_nsfw TFLite (224×224) → bir kadr → gen tekshiruvi
         ▼
 GuardOverlay — to'liq ekranli to'siq + "nafas olish" hisoblagichi
 ```
@@ -39,10 +39,13 @@ GuardOverlay — to'liq ekranli to'siq + "nafas olish" hisoblagichi
 
 - **Model:** Yahoo **open_nsfw** (BSD-2-Clause), TFLite 5.7 MB, 224×224, BGR, mean `[104,117,123]`.
 - Faqat qurilmada ishlaydi; rasm xotirada tahlil qilinadi va darhol bo'shatiladi.
-- **2 kadr tasdiqlash:** bitta kadr yetarli emas (statik rasm uchun 2.2s dan keyin
-  ikkinchi tekshiruv). Ball ≥ 0.95 bo'lsa — darhol.
-- Pol: Past 0.94 · **O'rta 0.87** · Yuqori 0.78.
-- Skanerlash: content-change'dan keyin 1s debounce, 1.8s throttle, faqat foreground.
+- **Bir kadr — darhol qaror:** ball ≥ pol bo'lsa, shu zahoti to'siq chiqadi.
+  Avvalgi "strike"/2-kadr tizimi sahifalar orasida ball ko'chirib, kech bloklarga
+  sabab bo'lgani uchun olib tashlandi.
+- **Sahifa generation:** yangi oyna/sahifada eski skrinshot natijasi bekor qilinadi
+  (`gen == pageGeneration`) — boshqa sahifada kech blok bo'lmaydi.
+- Pol: Past 0.96 · **O'rta 0.91** · Yuqori 0.85.
+- Skanerlash: content-change'dan keyin 450ms debounce, 700ms throttle, faqat foreground.
 - Launcher, tizim UI, klaviatura, o'rnatuvchi — skanerlanmaydi.
 
 ### 3. To'siq ekrani
@@ -89,6 +92,6 @@ cd mobile-app
 ```
 
 Qurilmada: rasm/video sahifasini oching → logcat'da `PanohVision: score=...`.
-`score ≥ 0.87` ikki marta bo'lsa — to'siq chiqadi.
+`score ≥ 0.85` bir marta bo'lsa — to'siq chiqadi.
 
 Model litsenziyasi: [THIRD_PARTY.md](THIRD_PARTY.md).

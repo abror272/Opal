@@ -73,7 +73,7 @@ class OpalAccessibilityService : AccessibilityService() {
     // vizual (rasm/video) skanerlash holati
     private val visualExecutor = Executors.newSingleThreadExecutor()
     @Volatile private var visualBusy = false
-    private var visualStrikes = 0
+    private var pageGeneration = 0L
     private var lastVisualScanAt = 0L
     private var pendingVisualPkg: String? = null
     private var visualScheduled = false
@@ -92,9 +92,8 @@ class OpalAccessibilityService : AccessibilityService() {
         private const val GUARD_FALSE_POSITIVE_MS = 30 * 60_000L
 
         /** Rasm/video tekshiruvi — kamroq, lekin barqaror. */
-        private const val VISUAL_DEBOUNCE_MS = 1_000L
-        private const val VISUAL_MIN_INTERVAL_MS = 1_800L
-        private const val VISUAL_IMMEDIATE_SCORE = 0.95f
+        private const val VISUAL_DEBOUNCE_MS = 450L
+        private const val VISUAL_MIN_INTERVAL_MS = 700L
 
         /** Hech qachon kontent uchun skanerlanmaydigan paketlar. */
         private val SCAN_SKIP = setOf(
@@ -296,6 +295,8 @@ class OpalAccessibilityService : AccessibilityService() {
         if (pkg == "com.android.systemui" || pkg == "com.miui.securitycenter") return
 
         foregroundPkg = pkg
+        // Yangi sahifa/oyna — eski skrinshot natijalari endi tegishli emas.
+        pageGeneration++
 
         // Boshqa ilova ochildi — overlay'larni yopamiz.
         val shown = overlay.blockedPackage
@@ -431,6 +432,7 @@ class OpalAccessibilityService : AccessibilityService() {
         if (now - lastVisualScanAt < VISUAL_MIN_INTERVAL_MS) return
         lastVisualScanAt = now
         visualBusy = true
+        val gen = pageGeneration
 
         ScreenCapture.capture(this, visualExecutor) { bitmap ->
             if (bitmap == null) {
@@ -446,27 +448,23 @@ class OpalAccessibilityService : AccessibilityService() {
                     val score = runCatching { model.score(bitmap) }.getOrDefault(0f)
                     android.util.Log.d(
                         "PanohVision",
-                        "score=${String.format("%.3f", score)} threshold=$threshold pkg=$pkg"
+                        "score=${String.format("%.3f", score)} threshold=$threshold " +
+                            "gen=$gen/$pageGeneration pkg=$pkg"
                     )
-                    when {
-                        score >= VISUAL_IMMEDIATE_SCORE -> visualStrikes = 2
-                        score >= threshold -> visualStrikes += 1
-                        else -> visualStrikes = 0
-                    }
-                    if (visualStrikes >= 2) {
-                        visualStrikes = 0
+                    // Bir kadr — darhol qaror. Avvalgi "strike" tizimi sahifa
+                    // almashganda eski ballni olib o'tib, kech bloklarga sabab bo'lardi.
+                    if (score >= threshold) {
                         handler.post {
-                            if (foregroundPkg == pkg && !guardOverlay.isShowing) {
+                            if (foregroundPkg == pkg &&
+                                gen == pageGeneration &&
+                                !guardOverlay.isShowing
+                            ) {
                                 triggerGuard(
                                     pkg,
                                     GuardVerdict(GuardKind.VISUAL, listOf("vizual"))
                                 )
                             }
                         }
-                    } else if (visualStrikes == 1) {
-                        // Statik rasm (masalan, rasmlar galereyasi) uchun tasdiqlovchi
-                        // ikkinchi kadr: 2.2s dan keyin yana bir marta tekshiramiz.
-                        handler.postDelayed({ scheduleVisualScan(pkg) }, 1_200L)
                     }
                 } finally {
                     visualBusy = false

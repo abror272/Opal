@@ -284,9 +284,9 @@ object AdultContentGuard {
 
     /** Vizual model uchun pol (qanchalik yuqori bo'lsa, shunchalik qat'iy). */
     fun visualThreshold(sensitivity: GuardSensitivity): Float = when (sensitivity) {
-        GuardSensitivity.LOW -> 0.94f
-        GuardSensitivity.MEDIUM -> 0.87f
-        GuardSensitivity.HIGH -> 0.78f
+        GuardSensitivity.LOW -> 0.96f
+        GuardSensitivity.MEDIUM -> 0.91f
+        GuardSensitivity.HIGH -> 0.85f
     }
 
     private fun isAdultDomain(host: String): Boolean {

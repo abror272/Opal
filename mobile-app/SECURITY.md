@@ -70,6 +70,22 @@ $ANDROID_HOME/build-tools/35.0.0/aapt2 dump xmltree \
 - Saqlanadigan yagona ma'lumot: bloklar soni, qoidalar, vaqtinchalik istisnolar.
 - `allowBackup=false` — zaxira nusxasida ham chiqmaydi.
 
+## 1.3.2 — kech bloklar tuzatildi
+
+- Vizual "strike" tizimi noto'g'ri ishlardi: birinchi kadr polldan o'tsa strike
+  qo'yilardi, tasdiqlovchi ikkinchi skan `VISUAL_MIN_INTERVAL_MS` tufayli
+  o'tkazib yuborilardi — strike esa saqlanib qolardi. Keyingi sahifadagi
+  birinchi kadr shu eski strike bilan darhol blok ochardi (1-2 daqiqadan keyin
+  begona kontentda). Strike/2-kadr tizimi butunlay olib tashlandi.
+- Endi **bir kadr — darhol qaror**: ball ≥ pol bo'lsa shu zahoti to'siq.
+  `pageGeneration` yangi oyna/sahifada eski natijani bekor qiladi; trigger
+  oldidan `foregroundPkg == pkg && gen == pageGeneration` tekshiriladi.
+- Pol: Past 0.96 / **O'rta 0.91** / Yuqori 0.85; debounce 450ms, throttle 700ms.
+- Tekshirildi (Redmi Note 9 Pro): Wikimedia bikini rasmi `score=0.106` —
+  blok yo'q (u 18+ emas); matnli test sahifasi ~1s da blok; Google'da 10s
+  kuzatuvda kech blok yo'q. Debug (pol 0.05) bilan bir kadrli trigger darhol
+  ishlashi tasdiqlandi.
+
 ## 1.3.1 — sezgirlik saqlanishi tuzatildi
 
 - **Xato:** `setAdultGuardSensitivity` o'zini-o'zi chaqirib (recursion), pref
