@@ -93,3 +93,11 @@ actual fun requestAdultGuardSelfTest() {
     } catch (_: Throwable) {
     }
 }
+
+private const val KEY_VISUAL = "guard18_visual"
+
+actual fun isAdultGuardVisualEnabled(): Boolean = prefs().getBoolean(KEY_VISUAL, true)
+
+actual fun setAdultGuardVisualEnabled(on: Boolean) {
+    prefs().edit().putBoolean(KEY_VISUAL, on).apply()
+}

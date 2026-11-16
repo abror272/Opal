@@ -10,7 +10,7 @@ Ekran vaqtini nazorat qiluvchi ilova **tabiatan** quyidagi imkoniyatlarga muhtoj
 
 | Imkoniyat | Nima uchun | Skanerda ko'rinishi |
 |---|---|---|
-| AccessibilityService | bloklangan ilovani aniqlash + 18+ matnni o'qish | "input monitoring" — eng yuqori signal |
+| AccessibilityService | bloklangan ilovani aniqlash + nomaqbul matnni o'qish | "input monitoring" — eng yuqori signal |
 | SYSTEM_ALERT_WINDOW | accessibility o'chsa ham blok ekranini chizish | "overlay" — o'rtacha-yuqori |
 | PACKAGE_USAGE_STATS | ekran vaqti statistikasi | "usage access" — o'rtacha |
 | RECEIVE_BOOT_COMPLETED | qayta ishga tushgandan keyin himoya | past |
@@ -31,7 +31,7 @@ o'rnatish yoki internetga ma'lumot yuborish YO'Q.
 | Debug imzo | **release keystore** (`CN=Lumirra`) | barqaror, maxsus imzo |
 | `allowBackup` default | `false` | zaxira orqali ma'lumot chiqishi yo'q |
 | BootReceiver `exported=true` | `false` | tashqi ilova soxta broadcast yubora olmaydi |
-| R8 yo'q | `minify + shrinkResources` (2.6 MB) | ishlatilmagan kod/ruxsat izlari qolmaydi |
+| R8 yo'q | `minify + shrinkResources` (14 MB, TFLite model bilan) | ishlatilmagan kod/ruxsat izlari qolmaydi |
 
 Qolgan ruxsatlar (7 ta): INTERNET, POST_NOTIFICATIONS, FOREGROUND_SERVICE,
 FOREGROUND_SERVICE_SPECIAL_USE, RECEIVE_BOOT_COMPLETED, SYSTEM_ALERT_WINDOW,
@@ -69,3 +69,13 @@ $ANDROID_HOME/build-tools/35.0.0/aapt2 dump xmltree \
 - Skrinshot olinmaydi, matn saqlanmaydi, internetga yuborilmaydi.
 - Saqlanadigan yagona ma'lumot: bloklar soni, qoidalar, vaqtinchalik istisnolar.
 - `allowBackup=false` — zaxira nusxasida ham chiqmaydi.
+
+## 1.2.0 — vizual tekshirish qo'shildi
+
+- Accessibility konfiguratsiyasiga `android:canTakeScreenshot="true"` qo'shildi
+  (faqat Android 11+; ekran rasmi qurilmada tahlil qilinadi).
+- `assets/nsfw.tflite` — Yahoo **open_nsfw** (BSD-2-Clause, 5.7 MB) + TensorFlow Lite
+  (Apache-2.0). Model faqat lokal, internetga chiqmaydi. Batafsil: `THIRD_PARTY.md`.
+- APK hajmi 14 MB (arm64-v8a + armeabi-v7a). Ruxsatlar soni o'zgarmadi (7 ta).
+- `canTakeScreenshot` skanerlarda qo'shimcha "screen capture" signali bo'lishi mumkin —
+  bu funksiyaning ajralmas qismi (vizual aniqlash uchun).

@@ -1,6 +1,34 @@
 # Worklog
 
 ---
+Task ID: 9
+Agent: pi (precision / vision / brand)
+Task: Haddan tashqari sezgirlikni tuzatish + ekran rasmidan aniqlash + nom/logo va tezlik
+
+Work Log:
+- MUAMMO: oldingi detektor "sex"/"18+"/"nude" kabi bitta noaniq so'zda ham bloklardi (YouTube, yangiliklar). URL esa butun sahifa matnidan qidirilardi (izohdagi havola ham blok).
+- MATN QAYTA QURILDI: kuchli atamalar (porn/hentai/порно) yolg'iz bloklaydi; o'rtacha atamalar GURUHLARGA bo'lindi (nudity/erotic/fetish/bdsm/nsfw/sexact/exploitation), kamida 2 xil guruh yoki 1 guruh + 2 zaif guruh kerak; zaiflar (sex/adult/intim) faqat HIGH'da 3 guruh. Brend/havolalar (pornhub, xvideos...) sahifa matnida yolg'iz bloklamaydi — faqat manzil satri yoki ilova nomi.
+- XAVFSIZ KONTEKST: sex education, same-sex, jinsiy tarbiya, sexual health/harassment, music/official/lyrics/video/documentary, tibbiyot, yangilik, Wikipedia... — medium signallar bloklamaydi.
+- KO'RINISH: ScreenTextScanner endi faqat `isVisibleToUser` tugunlar (300 node/5000 belgi/12ms), manzil satri alohida (yuqoridagi EditText/url maydoni), yashirin RecyclerView elementlari hisobga olinmaydi.
+- VIZUAL: Yahoo open_nsfw TFLite (5.7 MB, BSD-2-Clause) + TensorFlow Lite; AccessibilityService.takeScreenshot (API 30+, `canTakeScreenshot`). 224×224 BGR mean [104,117,123]. 2 kadr tasdiqlash, pol Past 0.94 / O'rta 0.87 / Yuqori 0.78, content-change + 1s debounce + 1.8s throttle, launcher/klaviatura/systemui skip.
+- TEZLIK: matn throttle 900ms, faqat foreground+ko'rinadigan, vizual faqat o'zgarishda; model lazy (startup'da yuklanmaydi); bitta background executor.
+- NOM: "18+ himoyasi" olib tashlandi → **Nomaqbul kontent** (karta, overlay, bildirishnomalar, strings). Overlay nishoni "18+" emas — "!" + pulse; footer "Lumirra · kontent himoyasi".
+- LOGO: butunlay yangi kreativ belgi — arka/darvoza + orbita + yulduzcha (mint→cyan→periwinkle). SVG + barcha mipmap/adaptive/monochrome/iOS 1024/store 512/ilova mark qayta render.
+- QURILMADA TEST (Redmi Note 9 Pro, Android 12): YouTube/Chrome'da vizual ball 0.003–0.059, matn verdict yo'q — **blok yo'q**. Bikini surati 0.29, Botticelli "Venera" 0.26 (pol 0.87 — blok yo'q). Vaqtinchalik pol 0.20 bilan vizual zanjir to'liq tekshirildi: screenshot → model → 2 kadr → GuardOverlay (landscape'da ham). Release APK R8 bilan yig'ildi, model/liblar ichida.
+- UNIT TEST: 13 ta (manzil satri, brend, guruhlar, xavfsiz kontekst, YouTube misollari, vizual pol tartibi) — hammasi PASS.
+- TOZALASH: test ilovalari (release+debug) o'chirildi, accessibility o'chirildi, /data/local/tmp APK'lar, adb reverse, lokal server, test skrinshotlari tozalandi; Chrome ishlaydigan holatga qaytarildi.
+
+Stage Summary:
+- Endi oddiy YouTube/musiqa/yangilik bloklanmaydi; nomaqbul kontent matn, manzil satri va **ekran rasmidan** aniqlanadi.
+- Model va TFLite qurilmada, hech qanday tarmoq yo'q; 2 kadr tasdiqlash falsh-positive'ni kamaytiradi.
+- Brend: Lumirra + yangi arka/orbita logotipi; "18+ himoyasi" atamasi UI'dan olib tashlandi.
+- Risklar: model badiiy rasmlarga konservativ; Android 11+; accessibility o'chsa ishlamaydi.
+- Keyingi qadam: real qurilmada foydalanuvchi kontenti bilan polni sozlash (0.80–0.90), Play uchun accessibility deklaratsiyasi.
+
+---
+# Worklog
+
+---
 Task ID: 8
 Agent: pi (brand / Android / security)
 Task: Yangi nom + professional logo + UI sayqallash + APK "yuqori risk" bayrog'ini pasaytirish
@@ -42,7 +70,7 @@ Work Log:
 - UI: `Ilovalar` tab'da yangi "18+ himoyasi" kartasi — switch, Past/O'rta/Yuqori sezgirlik, bugungi bloklar, "Sinash" (haqiqiy overlay'ni broadcast orqali chaqiradi), cheklovlar izohi; `OpalRepository`ga state + metodlar
 - TEST: `commonTest/.../AdultContentGuardTest.kt` — 9 test (domén, obfuskatsiya, 3 til, safe-context, sezgirlik, ilova nomi, takrorlanish, bo'sh kirish) — barchasi PASS
 - VERIFIKATSIYA: `:composeApp:testDebugUnitTest` ✅, `:composeApp:assembleDebug` ✅ (APK 13.5 MB), Kotlin ogohlantirishlar faqat mavjud deprecated API'lar
-- HUJJAT: `mobile-app/GUARD18.md` (qanday ishlaydi, sezgirlik, maxfiylik, cheklovlar, sinash) + README yangilandi
+- HUJJAT: `mobile-app/CONTENT_GUARD.md` (qanday ishlaydi, sezgirlik, maxfiylik, cheklovlar, sinash) + README yangilandi
 
 Stage Summary:
 - 18+ himoyasi endi real ishlaydi: ekranda matn/havola/ilova nomi 18+ bo'lsa ~1 soniyada to'liq ekranli to'siq chiqadi va foydalanuvchi o'zini tiyishga undovchi xabar oladi

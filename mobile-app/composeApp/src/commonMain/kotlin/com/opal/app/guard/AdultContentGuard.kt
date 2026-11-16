@@ -1,29 +1,28 @@
 package com.opal.app.guard
 
 /**
- * 18+ (kattalar uchun) kontent detektori.
+ * Nomaqbul (kattalar uchun) kontent detektori.
  *
- * Sof Kotlin — platformadan mustaqil, shuning uchun JVM'da test qilish oson.
- * Android'da `OpalAccessibilityService` ekrandagi matnni yig'ib shu yerga beradi.
+ * Aniqlik tamoyili — "bitta so'z = blok" EMAS:
+ *  - **Kuchli** atama (porn, hentai, aniq domén) — yolg'iz o'zi bloklaydi.
+ *  - **O'rtacha** atamalar guruhlarga bo'lingan (nudity, erotic, fetish...).
+ *    Kamida 2 xil guruh yoki 1 guruh + 2 zaif guruh kerak.
+ *  - **Zaif** atamalar (sex, adult, intim) — faqat 3 xil guruh birgalikda.
+ *  - Ta'lim/tibbiyot/yangilik/musiqa konteksti bo'lsa — faqat kuchli atama bloklaydi.
+ *  - URL faqat **manzil satridan** tekshiriladi (sahifa matnidagi havola emas).
  *
- * Aniqlash 3 manbadan ishlaydi:
- *  1. HAVOLA (URL/domén) — eng ishonchli signal (200 ball, darhol blok).
- *  2. MATN — ko'p tilli (o'zbek / rus / ingliz) lug'at + obfuskatsiyaga chidamli
- *     normalizatsiya (p0rn, p-o-r-n, poooorn, Cyrillic↔Latin almashtirish).
- *  3. ILOVA NOMI — 18+ ilovalar uchun.
- *
- * Xavfsiz kontekst (ta'lim, tibbiyot, yangilik) so'zlari ballni pasaytiradi —
- * "sex education" kabi sahifalar bloklanmasligi uchun.
+ * Shu tufayli "Sex" nomli qo'shiq, "sex education" maqolasi yoki "18+" belgisi
+ * bloklanmaydi; haqiqiy nomaqbul sahifa esa bloklanadi.
  */
-enum class GuardSensitivity(val code: String, val threshold: Int) {
-    /** Faqat aniq signal: domén yoki kuchli so'z ("porn", "hentai"). */
-    LOW("low", 100),
+enum class GuardSensitivity(val code: String, val label: String) {
+    /** Faqat aniq signal. */
+    LOW("low", "Past"),
 
-    /** Standart: bitta o'rtacha signal ("nude", "seks", "18+") yetadi. */
-    MEDIUM("medium", 60),
+    /** Standart: 2 xil o'rtacha guruh yoki strong atama. */
+    MEDIUM("medium", "O'rta"),
 
-    /** Eng qat'iy: "adult" kabi zaif signal ham bloklaydi. */
-    HIGH("high", 35);
+    /** Ko'proq signal bilan ishlaydi, lekin bitta noaniq so'z bilan emas. */
+    HIGH("high", "Yuqori");
 
     companion object {
         fun from(code: String?): GuardSensitivity =
@@ -31,128 +30,144 @@ enum class GuardSensitivity(val code: String, val threshold: Int) {
     }
 }
 
-enum class GuardKind { NONE, TEXT, SITE, APP }
+enum class GuardKind { NONE, TEXT, SITE, APP, VISUAL }
 
 data class GuardInput(
     val screenText: String = "",
-    val packageName: String = "",
+    val addressBarText: String = "",
     val appLabel: String = "",
     val windowTitle: String = ""
 )
 
 data class GuardVerdict(
-    val score: Int = 0,
     val kind: GuardKind = GuardKind.NONE,
     val signals: List<String> = emptyList(),
     val host: String? = null
 ) {
-    fun isAdult(sensitivity: GuardSensitivity): Boolean =
-        kind != GuardKind.NONE && score >= sensitivity.threshold
+    val isBlocking: Boolean get() = kind != GuardKind.NONE
 
-    /** Foydalanuvchiga ko'rsatiladigan qisqa sabab (so'zning o'zi ko'rsatilmaydi). */
+    /** Foydalanuvchiga ko'rsatiladigan qisqa sabab. */
     fun reasonLabel(): String = when (kind) {
-        GuardKind.SITE -> "18+ sayt aniqlandi"
-        GuardKind.APP -> "18+ ilova aniqlandi"
-        GuardKind.TEXT -> "18+ kontent aniqlandi"
+        GuardKind.SITE -> "Nomaqbul sayt aniqlandi"
+        GuardKind.APP -> "Nomaqbul ilova aniqlandi"
+        GuardKind.VISUAL -> "Ekranda nomaqbul kontent"
+        GuardKind.TEXT -> "Nomaqbul kontent aniqlandi"
         GuardKind.NONE -> ""
     }
 }
 
 object AdultContentGuard {
 
-    /* ==================== og'irliklar ==================== */
+    /* ==================== kuchli atamalar ==================== */
 
-    private const val W_STRONG = 100
-    private const val W_MEDIUM = 65
-    private const val W_WEAK = 35
-    private const val W_18PLUS = 60
-    private const val W_REPEAT = 12
-    private const val SAFE_CONTEXT_PENALTY = 45
-
-    /** Aniq 18+ atamalar (bitta o'zi ham yetarli). */
-    private val STRONG_TERMS: Map<String, Int> = buildMap {
-        listOf(
-            // ingliz
-            "porn", "porno", "pornography", "pornographic", "pornhub", "pornstar",
-            "xxx", "xrated", "hentai", "rule34", "e621", "onlyfans", "fansly",
-            "chaturbate", "stripchat", "cam4", "bongacams", "livejasmin", "spankbang",
-            "xvideos", "xnxx", "xhamster", "redtube", "youporn", "brazzers", "nhentai",
-            "hanime", "missav", "javbus", "javhd", "supjav", "porntrex", "tnaflix",
-            "beeg", "txxx", "motherless", "adultfriendfinder", "ashleymadison",
-            "gangbang", "creampie", "cumshot", "blowjob", "handjob", "deepthroat",
-            "orgy", "incest", "bestiality", "necrophilia", "pedophilia",
-            // rus
-            "порно", "порнография", "порнуха", "порносайт", "хентай", "инцест",
-            "минет", "куннилингус", "мастурбация", "онанизм", "сперма",
-            "трахать", "трахаться", "выебать", "дрочка", "сексшоп", "секс-шоп",
-            "групповуха", "зоофилия", "педофилия",
-            // o'zbek (lotin)
-            "pornografiya", "pornografik", "seks-shop", "seksshop"
-        ).forEach { put(it, W_STRONG) }
-    }
-
-    /** Kuchli, lekin ba'zan tibbiy/ta'limiy kontekstda uchraydigan atamalar. */
-    private val MEDIUM_TERMS: Map<String, Int> = buildMap {
-        listOf(
-            "nude", "nudes", "nudity", "naked", "nakedly", "erotic", "erotica",
-            "eroticism", "camgirl", "camsex", "webcamsex", "escort", "nsfw",
-            "fetish", "orgasm", "milf", "bdsm", "sex", "seks", "seksual",
-            "sexual", "sexuality", "sexcam", "sexting", "striptease", "stripper",
-            "lapdance", "brothel", "prostitute", "prostitution", "sperm",
-            "vagina", "penis", "clitoris", "erection", "masturbation",
-            // rus
-            "эротика", "эротический", "нагота", "голая", "голые", "обнажённая",
-            "обнаженная", "обнажённые", "обнаженные", "интим", "проститутка",
-            "шлюха", "фетиш", "бдсм", "вагина", "пенис", "клитор", "эрекция",
-            "порноактриса", "разврат", "блуд",
-            // o'zbek
-            "yalang'och", "yalangoch", "shahvoniy", "shahvat", "fohisha",
-            "jinsiy", "jinsiyaloqa", "eros", "intim"
-        ).forEach { put(it, W_MEDIUM) }
-    }
-
-    /** Zaif signallar — faqat birgalikda yoki yuqori sezgirlikda bloklaydi. */
-    private val WEAK_TERMS: Map<String, Int> = buildMap {
-        listOf(
-            "sex", "adult", "adults", "adultcontent", "adultvideo", "18plus",
-            "seks", "kattalar", "voyaga", "fohishalik", "sutenyor", "erotik",
-            // rus
-            "секс", "сексуальный", "эротичный", "совращение", "растление"
-        ).forEach { put(it, W_WEAK) }
-    }
+    /** Aniq nomaqbul atamalar — yolg'iz o'zi bloklaydi. */
+    private val STRONG: Set<String> = setOf(
+        // ingliz
+        "porn", "porno", "pornography", "pornographic", "pornstar",
+        "xxx", "xrated", "hentai",
+        "gangbang", "creampie", "cumshot", "blowjob", "handjob", "deepthroat",
+        "orgy", "incest", "bestiality", "necrophilia", "pedophilia",
+        // rus
+        "порно", "порнография", "порнуха", "порносайт", "хентай", "инцест",
+        "минет", "куннилингус", "мастурбация", "онанизм", "сперма",
+        "трахать", "трахаться", "выебать", "дрочка",
+        "групповуха", "зоофилия", "педофилия",
+        // o'zbek (lotin)
+        "pornografiya", "pornografik"
+    )
 
     /**
-     * Atamalar birlashtirilgan jadval (eng yuqori og'irlik ustun).
-     * Kalit — normalizatsiya qilingan atama.
+     * Platforma/brand nomlari. Bular sahifa MATNIDA yolg'iz uchrasa bloklanmaydi
+     * (izohdagi havola, yangilik maqolasi), lekin manzil satri yoki ilova nomida
+     * bo'lsa — blok. Matnda ular "brand" guruhi sifatida hisoblanadi.
      */
-    private val TERMS: Map<String, Int> = HashMap<String, Int>().apply {
-        putAll(WEAK_TERMS)
-        putAll(MEDIUM_TERMS)
-        putAll(STRONG_TERMS)
-        // takroriy harflar uchun ixchamlangan variant: "pooorn" -> "porn"
-        for ((term, weight) in entries.toList()) {
-            val squeezed = squeeze(term)
-            if (squeezed != term && weight > (this[squeezed] ?: 0)) put(squeezed, weight)
-        }
-    }
+    private val BRANDS: Set<String> = setOf(
+        "pornhub", "rule34", "e621", "onlyfans", "fansly", "chaturbate",
+        "stripchat", "cam4", "bongacams", "livejasmin", "spankbang",
+        "xvideos", "xnxx", "xhamster", "redtube", "youporn", "brazzers",
+        "nhentai", "hanime", "missav", "javbus", "javhd", "supjav",
+        "porntrex", "tnaflix", "beeg", "txxx", "motherless",
+        "adultfriendfinder", "ashleymadison",
+        "сексшоп", "секс-шоп", "seks-shop", "seksshop"
+    )
 
-    /** Ta'lim/tibbiyot/yangilik konteksti — ballni pasaytiradi. */
+    /** O'rtacha atamalar — guruhlar bo'yicha (sinonimlar bitta guruh). */
+    private val MEDIUM_GROUPS: Map<String, Set<String>> = mapOf(
+        "nudity" to setOf(
+            "nude", "nudes", "nudity", "naked", "nakedly",
+            "нагота", "голая", "голые", "обнажённая", "обнаженная",
+            "обнажённые", "обнаженные", "yalang'och", "yalangoch"
+        ),
+        "erotic" to setOf(
+            "erotic", "erotica", "eroticism", "эротика", "эротический",
+            "shahvoniy", "shahvat", "eros"
+        ),
+        "nsfw" to setOf("nsfw", "sexcam", "webcamsex", "camgirl", "camsex"),
+        "fetish" to setOf("fetish", "фетиш"),
+        "bdsm" to setOf("bdsm", "бдсм"),
+        "sexact" to setOf(
+            "orgasm", "masturbation", "vagina", "penis", "clitoris", "erection",
+            "вагина", "пенис", "клитор", "эрекция", "оргазм", "разврат", "блуд"
+        ),
+        "exploitation" to setOf(
+            "escort", "prostitute", "prostitution", "brothel", "lapdance",
+            "striptease", "stripper", "проститутка", "шлюха", "fohisha", "sutenyor"
+        )
+    )
+
+    /** Zaif atamalar — guruhlar bo'yicha. */
+    private val WEAK_GROUPS: Map<String, Set<String>> = mapOf(
+        "sex" to setOf(
+            "sex", "seks", "seksual", "sexual", "sexuality", "sexting",
+            "секс", "сексуальный", "jinsiy", "jinsiyaloqa"
+        ),
+        "adult" to setOf("adult", "adults", "adultcontent", "adultvideo"),
+        "intimate" to setOf(
+            "intim", "интим", "эротичный", "kattalar", "voyaga", "erotik"
+        )
+    )
+
+    /** Ta'lim/tibbiyot/yangilik/media konteksti — faqat kuchli atama bloklaydi. */
     private val SAFE_CONTEXT: Set<String> = setOf(
         "education", "educational", "school", "lesson", "course", "science",
         "research", "study", "article", "wikipedia", "encyclopedia", "news",
         "report", "statistics", "medical", "medicine", "health", "clinic",
         "doctor", "gynecology", "gynecologist", "urology", "urologist",
         "sexology", "sexologist", "therapy", "reproductive", "pregnancy",
-        "ta'lim", "talim", "tarbiya", "tarbiyaviy", "dars", "darslik", "ilm", "ilmiy", "tadqiqot",
-        "maqola", "yangilik", "hisobot", "statistika", "tibbiyot", "tibbiy",
-        "shifokor", "klinika", "ginekolog", "urolog", "salomatlik", "qonun",
-        "huquq", "jinoyat", "profilaktika", "reproduktiv", "safecontext",
+        "anatomy", "biology", "psychology", "relationship", "harassment",
+        "music", "official", "lyrics", "video", "trailer", "movie", "series",
+        "documentary", "podcast", "interview", "shorts", "subscribe",
+        "ta'lim", "talim", "tarbiya", "tarbiyaviy", "dars", "darslik", "ilm",
+        "ilmiy", "tadqiqot", "maqola", "yangilik", "hisobot", "statistika",
+        "tibbiyot", "tibbiy", "shifokor", "klinika", "ginekolog", "urolog",
+        "salomatlik", "qonun", "huquq", "jinoyat", "profilaktika",
+        "reproduktiv", "musiqa", "rasmiy", "treyler", "film", "serial",
+        "safecontext",
         "образование", "учебник", "урок", "наука", "исследование", "статья",
         "новости", "медицина", "медицинский", "здоровье", "врач",
-        "гинеколог", "уролог", "сексология", "терапия", "закон", "право"
+        "гинеколог", "уролог", "сексология", "терапия", "закон", "право",
+        "музыка", "официальный", "трейлер", "фильм", "сериал"
     )
 
-    /** Mashhur 18+ doménlar (suffiks bo'yicha ham mos keladi). */
+    /** Xavfsiz iboralar — tahlildan oldin neytrallanadi. */
+    private val SAFE_PHRASES = listOf(
+        Regex("(?i)same[\\s-]*sex"),
+        Regex("(?i)sex\\s*education"),
+        Regex("(?i)sexual\\s*education"),
+        Regex("(?i)sexual\\s*health"),
+        Regex("(?i)sexual\\s*harassment"),
+        Regex("(?i)sex\\s*ism"),
+        Regex("(?i)sex\\s*ology"),
+        Regex("(?i)jinsiy\\s*tarbiya"),
+        Regex("(?i)jinsiy\\s*salomatlik"),
+        Regex("(?i)jinsiy\\s*zo'?ravonlik"),
+        Regex("(?i)reproductive\\s*health"),
+        Regex("(?i)сексуальное\\s*образование"),
+        Regex("(?i)сексуальное\\s*здоровье"),
+        Regex("(?i)сексуальное\\s*домогательство")
+    )
+
+    /** Mashhur nomaqbul doménlar (faqat manzil satri uchun). */
     private val ADULT_DOMAINS: List<String> = listOf(
         "pornhub.com", "pornhub.org", "xvideos.com", "xnxx.com", "xhamster.com",
         "xhamster.desi", "xhamster.xxx", "redtube.com", "youporn.com",
@@ -169,34 +184,14 @@ object AdultContentGuard {
         "letmejerk.com", "jav.guru", "javmost.com", "njav.tv", "sextb.net"
     )
 
-    /** 18+ uchun ajratilgan yuqori darajali doménlar. */
     private val ADULT_TLDS: List<String> = listOf(
-        ".xxx", ".porn", ".sex", ".adult", ".sexy", ".cam"
+        ".xxx", ".porn", ".sex", ".adult", ".sexy"
     )
 
     private val DOMAIN_RE =
         Regex("""(?i)\b((?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:[a-z]{2,24}))\b""")
 
     private val NON_ALNUM_RE = Regex("""[^\p{L}\p{N}]+""")
-
-    private val PLUS_18_RE = Regex("""(?i)\b18\s*\+""")
-
-    /**
-     * Xavfsiz iboralar: tahlildan OLDIN neytrallanadi.
-     * Masalan "same-sex marriage" yoki "sex education" — 18+ kontent emas.
-     */
-    private val SAFE_PHRASES = listOf(
-        Regex("(?i)same[\\s-]*sex"),
-        Regex("(?i)sex\\s*education"),
-        Regex("(?i)sexual\\s*education"),
-        Regex("(?i)sexual\\s*health"),
-        Regex("(?i)sex\\s*ology"),
-        Regex("(?i)jinsiy\\s*tarbiya"),
-        Regex("(?i)jinsiy\\s*salomatlik"),
-        Regex("(?i)reproductive\\s*health"),
-        Regex("(?i)сексуальное\\s*образование"),
-        Regex("(?i)сексуальное\\s*здоровье")
-    )
 
     private val LEET = mapOf(
         '0' to 'o', '1' to 'i', '3' to 'e', '4' to 'a', '5' to 's',
@@ -219,76 +214,79 @@ object AdultContentGuard {
 
     /* ==================== asosiy API ==================== */
 
-    fun evaluate(input: GuardInput): GuardVerdict {
-        // 1) Havola — eng kuchli signal, qolganini tekshirish shart emas.
-        val host = findAdultHost(input.screenText)
+    fun evaluate(input: GuardInput, sensitivity: GuardSensitivity = GuardSensitivity.MEDIUM): GuardVerdict {
+        // 1) Manzil satridagi 18+ domén — eng ishonchli signal.
+        val host = findAdultHost(input.addressBarText)
         if (host != null) {
-            return GuardVerdict(score = 200, kind = GuardKind.SITE, signals = listOf(host), host = host)
+            return GuardVerdict(GuardKind.SITE, listOf(host), host)
         }
 
-        // 2) Ekrandagi matn.
-        val textTokens = tokenize(input.screenText + "\n" + input.windowTitle)
-        val (textScore, textSignals) = scoreTokens(textTokens, safeContext = true)
-
-        // 3) Ilova nomi.
+        // 2) Ilova nomi — kuchli atama yoki brand.
         val labelTokens = tokenize(input.appLabel)
-        val (labelScore, labelSignals) = scoreTokens(labelTokens, safeContext = false)
-
-        // 4) "18+" ni alohida tekshiramiz (tokenizatsiyada "+" yo'qoladi).
-        val plus18 = PLUS_18_RE.containsMatchIn(input.screenText) ||
-            PLUS_18_RE.containsMatchIn(input.appLabel)
-        // "adult" so'zi token sifatida allaqachon WEAK jadvalda.
-
-        var score = textScore
-        var kind = GuardKind.NONE
-        val signals = textSignals.toMutableList()
-        if (labelScore >= textScore && labelScore > 0) {
-            score = maxOf(score, labelScore + minOf(textScore, W_MEDIUM))
-            signals += labelSignals
-            kind = GuardKind.APP
-        } else if (textScore > 0) {
-            kind = GuardKind.TEXT
-        } else if (labelScore > 0) {
-            score = maxOf(score, labelScore)
-            signals += labelSignals
-            kind = GuardKind.APP
+        val labelStrong = strongHits(labelTokens)
+        val labelBrand = brandHits(labelTokens)
+        if (labelStrong.isNotEmpty() || labelBrand.isNotEmpty()) {
+            return GuardVerdict(GuardKind.APP, (labelStrong + labelBrand).take(4))
         }
-        if (plus18) {
-            score += W_18PLUS
-            signals += "18+"
-            if (kind == GuardKind.NONE) kind = GuardKind.TEXT
+
+        // 3) Ekrandagi ko'rinadigan matn.
+        val tokens = tokenize(input.screenText + "\n" + input.windowTitle)
+        val strong = strongHits(tokens)
+        if (strong.isNotEmpty()) {
+            return GuardVerdict(GuardKind.TEXT, strong)
         }
+
+        val medium = mediumGroups(tokens)
+        val weak = weakGroups(tokens)
+        val safe = hasSafeContext(tokens)
+
+        val block = when (sensitivity) {
+            GuardSensitivity.LOW -> medium.size >= 4
+            GuardSensitivity.MEDIUM ->
+                (!safe && medium.size >= 2) || (!safe && medium.size >= 1 && weak.size >= 2)
+            GuardSensitivity.HIGH ->
+                (!safe && medium.size >= 1 && weak.size >= 1) ||
+                    medium.size >= 2 ||
+                    weak.size >= 3
+        }
+        if (!block) return GuardVerdict()
 
         return GuardVerdict(
-            score = score.coerceIn(0, 250),
-            kind = kind,
-            signals = signals.distinct().take(8)
+            kind = GuardKind.TEXT,
+            signals = (medium.keys + weak.keys).take(6)
         )
     }
 
-    /** Faqat ilova nomi bo'yicha tez tekshiruv (Watchdog uchun). */
-    fun evaluateLabel(appLabel: String, sensitivity: GuardSensitivity): GuardVerdict {
+    /** Ilova nomi bo'yicha (Watchdog zaxira dvigateli uchun). */
+    fun evaluateLabel(appLabel: String): GuardVerdict {
         if (appLabel.isBlank()) return GuardVerdict()
-        val (score, signals) = scoreTokens(tokenize(appLabel), safeContext = false)
-        val plus18 = if (PLUS_18_RE.containsMatchIn(appLabel)) W_18PLUS else 0
-        val total = score + plus18
-        if (total <= 0) return GuardVerdict()
-        return GuardVerdict(
-            score = total.coerceAtMost(250),
-            kind = GuardKind.APP,
-            signals = (signals + if (plus18 > 0) listOf("18+") else emptyList()).distinct()
-        ).takeIf { it.isAdult(sensitivity) } ?: GuardVerdict()
+        val tokens = tokenize(appLabel)
+        val strong = strongHits(tokens)
+        val brands = brandHits(tokens)
+        if (strong.isNotEmpty() || brands.isNotEmpty()) {
+            return GuardVerdict(GuardKind.APP, (strong + brands).take(4))
+        }
+        val medium = mediumGroups(tokens)
+        if (medium.size >= 2) return GuardVerdict(GuardKind.APP, medium.keys.toList())
+        return GuardVerdict()
     }
 
-    /** Matnda 18+ domén bormi? */
+    /** Manzil satridagi nomaqbul domén. */
     fun findAdultHost(text: String): String? {
         if (text.isBlank()) return null
-        for (match in DOMAIN_RE.findAll(text.take(20_000))) {
+        for (match in DOMAIN_RE.findAll(text.take(8_000))) {
             val host = match.groupValues[1].lowercase().trimEnd('.')
             val bare = host.removePrefix("www.").removePrefix("m.")
             if (isAdultDomain(bare)) return bare
         }
         return null
+    }
+
+    /** Vizual model uchun pol (qanchalik yuqori bo'lsa, shunchalik qat'iy). */
+    fun visualThreshold(sensitivity: GuardSensitivity): Float = when (sensitivity) {
+        GuardSensitivity.LOW -> 0.94f
+        GuardSensitivity.MEDIUM -> 0.87f
+        GuardSensitivity.HIGH -> 0.78f
     }
 
     private fun isAdultDomain(host: String): Boolean {
@@ -307,17 +305,13 @@ object AdultContentGuard {
             .replace('\u00A0', ' ')
             .replace('\uFEFF', ' ')
             .replace('ё', 'е')
-        // Xavfsiz iboralarni neytrallash (faqat tegishli so'z bo'lsa — arzon tekshiruv).
-        if (lowered.contains("sex") || lowered.contains("jinsiy") ||
-            lowered.contains("сексуаль")
-        ) {
+        if (lowered.contains("sex") || lowered.contains("jinsiy") || lowered.contains("сексуаль")) {
             for (phrase in SAFE_PHRASES) lowered = phrase.replace(lowered, " safecontext ")
         }
         val raw = lowered.split(NON_ALNUM_RE)
         val out = ArrayList<String>(raw.size)
         for (token in raw) {
             if (token.isEmpty()) continue
-            // Kirill harflari aralashgan lotin so'zlar: "pоrn" -> "porn"
             val latin = latinize(token)
             out += latin
             if (latin != token) out += token
@@ -369,50 +363,79 @@ object AdultContentGuard {
     }
 
     private fun squeeze(value: String): String {
-        if (value.length < 3) return value
+        if (value.length < 4) return value
         val sb = StringBuilder(value.length)
         var prev = ' '
         for (ch in value) {
             if (ch != prev) sb.append(ch)
             prev = ch
         }
-        return sb.toString()
+        return if (sb.length < 3) value else sb.toString()
     }
 
     /* ==================== ballash ==================== */
 
-    private fun scoreTokens(tokens: List<String>, safeContext: Boolean): Pair<Int, List<String>> {
-        if (tokens.isEmpty()) return 0 to emptyList()
-        var score = 0
-        val signals = ArrayList<String>(4)
-        val seen = HashMap<String, Int>()
-
-        for (raw in tokens) {
-            val direct = TERMS[raw]
-            val deLeeted = deLeet(raw)
-            val weight = direct ?: TERMS[deLeeted] ?: run {
-                if (deLeeted.length >= 4) TERMS[squeeze(deLeeted)] else null
-            } ?: continue
-
-            val key = if (direct != null) raw else deLeeted
-            val count = (seen[key] ?: 0) + 1
-            seen[key] = count
-            if (count == 1) {
-                score += weight
-                signals += key
-            } else if (count <= 5) {
-                // Mavzu takrorlanmoqda — qo'shimcha signal.
-                score += W_REPEAT
-            }
+    private fun strongHits(tokens: List<String>): List<String> {
+        val hits = ArrayList<String>(2)
+        for (token in tokens) {
+            val term = normalizeToken(token)
+            if (term in STRONG) hits += term
         }
-
-        if (safeContext && signals.isNotEmpty()) {
-            val safeHits = tokens.count { it in SAFE_CONTEXT }
-            if (safeHits > 0) {
-                score -= SAFE_CONTEXT_PENALTY * minOf(safeHits, 2)
-            }
-        }
-        return score.coerceAtLeast(0) to signals
+        return hits.distinct()
     }
 
+    private fun brandHits(tokens: List<String>): List<String> {
+        val hits = ArrayList<String>(2)
+        for (token in tokens) {
+            val term = normalizeToken(token)
+            if (term in BRANDS) hits += term
+        }
+        return hits.distinct()
+    }
+
+    private fun mediumGroups(tokens: List<String>): Map<String, String> {
+        val hits = LinkedHashMap<String, String>()
+        for (token in tokens) {
+            val term = normalizeToken(token)
+            if (term.isEmpty()) continue
+            if (term in BRANDS) {
+                hits["brand"] = term
+                continue
+            }
+            for ((group, terms) in MEDIUM_GROUPS) {
+                if (term in terms) {
+                    hits[group] = term
+                    break
+                }
+            }
+        }
+        return hits
+    }
+
+    private fun weakGroups(tokens: List<String>): Map<String, String> {
+        val hits = LinkedHashMap<String, String>()
+        for (token in tokens) {
+            val term = normalizeToken(token)
+            if (term.isEmpty()) continue
+            for ((group, terms) in WEAK_GROUPS) {
+                if (term in terms) {
+                    hits[group] = term
+                    break
+                }
+            }
+        }
+        return hits
+    }
+
+    private fun hasSafeContext(tokens: List<String>): Boolean =
+        tokens.any { it in SAFE_CONTEXT }
+
+    private fun normalizeToken(token: String): String {
+        val deLeeted = deLeet(token)
+        return when {
+            deLeeted != token -> deLeeted
+            token.length >= 4 -> squeeze(token)
+            else -> token
+        }
+    }
 }

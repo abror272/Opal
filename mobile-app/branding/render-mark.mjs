@@ -3,7 +3,7 @@ import fs from 'node:fs';
 const mark = fs.readFileSync('lumirra-mark.svg', 'utf8');
 // Shield markaziga nisbatan 2x kattalashtirish — header'da mayda padding qolmasin.
 const tight = mark
-  .replace('<defs>', '<g transform="translate(512 537) scale(2.0) translate(-512 -537)"><defs>')
+  .replace('<defs>', '<g transform="translate(512 512) scale(1.5059) translate(-512 -536)"><defs>')
   .replace('</svg>', '</g></svg>');
 fs.writeFileSync('lumirra-mark-tight.svg', tight);
 const out = '../composeApp/src/commonMain/composeResources/drawable/lumirra_mark.png';

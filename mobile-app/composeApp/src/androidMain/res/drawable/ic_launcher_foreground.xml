@@ -5,64 +5,92 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- 1024x1024 dizayn 108dp ga proporsional keltirilgan -->
     <group
         android:scaleX="0.10546875"
         android:scaleY="0.10546875">
 
-        <!-- qalqon ichi -->
-        <path
-            android:pathData="M512,292 C588,330 664,352 700,360 L700,552 C700,668 604,744 512,782 C420,744 324,668 324,552 L324,360 C360,352 436,330 512,292 Z">
-            <aapt:attr name="android:fillColor">
-                <gradient
-                    android:type="linear"
-                    android:startX="404"
-                    android:startY="320"
-                    android:endX="646"
-                    android:endY="762">
-                    <item android:offset="0" android:color="#38B6F0C3" />
-                    <item android:offset="0.6" android:color="#1A6FD98F" />
-                    <item android:offset="1" android:color="#0F5FC7DD" />
-                </gradient>
-            </aapt:attr>
-        </path>
+        <!-- orbita -->
+        <group
+            android:rotation="-17"
+            android:pivotX="512"
+            android:pivotY="536">
+            <path
+                android:pathData="M190,536 a322,104 0 1,0 644,0 a322,104 0 1,0 -644,0 Z"
+                android:fillColor="#00000000"
+                android:strokeWidth="7">
+                <aapt:attr name="android:strokeColor">
+                    <gradient
+                        android:type="linear"
+                        android:startX="190"
+                        android:startY="536"
+                        android:endX="834"
+                        android:endY="536">
+                        <item android:offset="0" android:color="#00A9E8B8" />
+                        <item android:offset="0.25" android:color="#8CA9E8B8" />
+                        <item android:offset="0.75" android:color="#8CB08CFF" />
+                        <item android:offset="1" android:color="#00B08CFF" />
+                    </gradient>
+                </aapt:attr>
+            </path>
+            <path
+                android:pathData="M783,470 a9,9 0 1,0 18,0 a9,9 0 1,0 -18,0 Z"
+                android:fillColor="#FFF0E9FF" />
+        </group>
 
-        <!-- qalqon qirrasi -->
+        <!-- yumshoq nur -->
         <path
-            android:pathData="M512,292 C588,330 664,352 700,360 L700,552 C700,668 604,744 512,782 C420,744 324,668 324,552 L324,360 C360,352 436,330 512,292 Z"
-            android:strokeWidth="26"
-            android:strokeLineJoin="round"
-            android:strokeLineCap="round">
+            android:pathData="M352,726 L352,506 A160,160 0 0,1 672,506 L672,726"
+            android:fillColor="#00000000"
+            android:strokeColor="#338AF0D6"
+            android:strokeWidth="58"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+
+        <!-- arka -->
+        <path
+            android:pathData="M352,726 L352,506 A160,160 0 0,1 672,506 L672,726"
+            android:fillColor="#00000000"
+            android:strokeWidth="30"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round">
             <aapt:attr name="android:strokeColor">
                 <gradient
                     android:type="linear"
-                    android:startX="356"
-                    android:startY="296"
-                    android:endX="700"
-                    android:endY="768">
-                    <item android:offset="0" android:color="#FFEDFFF7" />
-                    <item android:offset="0.4" android:color="#FF8AF0D6" />
-                    <item android:offset="0.74" android:color="#FF61C6E8" />
-                    <item android:offset="1" android:color="#FF93A9FF" />
+                    android:startX="340"
+                    android:startY="330"
+                    android:endX="690"
+                    android:endY="740">
+                    <item android:offset="0" android:color="#FFFFF7E8" />
+                    <item android:offset="0.35" android:color="#FFA9E8B8" />
+                    <item android:offset="0.7" android:color="#FF6FD9E8" />
+                    <item android:offset="1" android:color="#FFB08CFF" />
                 </gradient>
             </aapt:attr>
         </path>
 
-        <!-- markaziy yulduzcha -->
+        <!-- yulduzcha -->
         <path
-            android:pathData="M512,424 C522,496 544,518 616,528 C544,538 522,560 512,632 C502,560 480,538 408,528 C480,518 502,496 512,424 Z">
+            android:pathData="M512,418 C521,480 542,501 604,510 C542,519 521,540 512,602 C503,540 482,519 420,510 C482,501 503,480 512,418 Z">
             <aapt:attr name="android:fillColor">
                 <gradient
                     android:type="linear"
-                    android:startX="452"
-                    android:startY="440"
-                    android:endX="580"
-                    android:endY="626">
+                    android:startX="470"
+                    android:startY="430"
+                    android:endX="560"
+                    android:endY="580">
                     <item android:offset="0" android:color="#FFFFFFFF" />
-                    <item android:offset="0.55" android:color="#FFDEFFF3" />
-                    <item android:offset="1" android:color="#FF98F1DC" />
+                    <item android:offset="0.5" android:color="#FFEDE4FF" />
+                    <item android:offset="1" android:color="#FF9BF2DD" />
                 </gradient>
             </aapt:attr>
         </path>
+
+        <!-- ichki yorug' qirra -->
+        <path
+            android:pathData="M352,506 A160,160 0 0,1 512,346"
+            android:fillColor="#00000000"
+            android:strokeColor="#59FFFFFF"
+            android:strokeWidth="7"
+            android:strokeLineCap="round" />
     </group>
 </vector>

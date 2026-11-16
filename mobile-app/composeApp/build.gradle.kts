@@ -104,6 +104,7 @@ kotlin {
             getByName("androidMain").dependencies {
                 implementation(libs.androidx.activity.compose)
                 implementation(libs.ktor.client.okhttp)
+                implementation(libs.tensorflow.lite)
             }
         }
 
@@ -132,8 +133,9 @@ if (androidEnabled) {
             applicationId = "com.lumirra.app"
             minSdk = libs.versions.minSdk.get().toInt()
             targetSdk = libs.versions.targetSdk.get().toInt()
-            versionCode = 2
-            versionName = "1.1.0"
+            versionCode = 3
+            versionName = "1.2.0"
+            ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
         }
 
         packaging {

@@ -20,3 +20,6 @@ actual fun adultGuardFalsePositivesToday(): Int = 0
 actual fun adultGuardCooldownUntil(packageName: String): Long = 0L
 actual fun setAdultGuardCooldown(packageName: String, millis: Long) {}
 actual fun requestAdultGuardSelfTest() {}
+
+actual fun isAdultGuardVisualEnabled(): Boolean = false
+actual fun setAdultGuardVisualEnabled(on: Boolean) {}

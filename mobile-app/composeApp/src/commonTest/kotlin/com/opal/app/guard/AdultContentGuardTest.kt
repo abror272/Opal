@@ -8,98 +8,116 @@ import kotlin.test.assertTrue
 
 class AdultContentGuardTest {
 
-    private fun check(text: String, label: String = ""): Pair<Boolean, GuardVerdict> {
-        val verdict = AdultContentGuard.evaluate(GuardInput(screenText = text, appLabel = label))
-        return verdict.isAdult(GuardSensitivity.MEDIUM) to verdict
+    private fun eval(
+        text: String = "",
+        address: String = "",
+        label: String = "",
+        sensitivity: GuardSensitivity = GuardSensitivity.MEDIUM
+    ): GuardVerdict = AdultContentGuard.evaluate(
+        GuardInput(screenText = text, addressBarText = address, appLabel = label),
+        sensitivity
+    )
+
+    @Test
+    fun adultDomainIsBlockedOnlyFromAddressBar() {
+        val fromBar = eval(address = "https://m.xvideos.com/video123")
+        assertEquals(GuardKind.SITE, fromBar.kind)
+        assertEquals("xvideos.com", fromBar.host)
+        assertTrue(fromBar.isBlocking)
+
+        // Sahifa matnidagi havola (masalan izohdagi link) yolg'iz bloklamaydi.
+        val inBody = eval(text = "Look at this: pornhub.com")
+        assertFalse(inBody.isBlocking)
     }
 
     @Test
-    fun detectsAdultDomains() {
-        val verdict = AdultContentGuard.evaluate(
-            GuardInput(screenText = "Salom, pornhub.com saytiga o'tildi")
-        )
-        assertEquals(GuardKind.SITE, verdict.kind)
-        assertEquals("pornhub.com", verdict.host)
-        assertTrue(verdict.isAdult(GuardSensitivity.LOW))
-    }
-
-    @Test
-    fun detectsDomainsInUrlsAndSubdomains() {
-        assertNotNull(AdultContentGuard.findAdultHost("https://m.xvideos.com/video123"))
-        assertNotNull(AdultContentGuard.findAdultHost("www.onlyfans.com/user"))
+    fun adultTldAndSubdomains() {
         assertNotNull(AdultContentGuard.findAdultHost("example.xxx"))
-        assertEquals(null, AdultContentGuard.findAdultHost("https://wikipedia.org/wiki/Sex"))
+        assertNotNull(AdultContentGuard.findAdultHost("www.onlyfans.com/user"))
+        assertEquals(null, AdultContentGuard.findAdultHost("wikipedia.org"))
         assertEquals(null, AdultContentGuard.findAdultHost("example.com"))
     }
 
     @Test
-    fun detectsStrongTerms() {
-        assertTrue(check("eng yaxshi porn saytlari").first)
-        assertTrue(check("bu yerda порно bor").first)
-        assertTrue(check("xxx videos").first)
-        assertTrue(check("hentai manga").first)
+    fun strongTermBlocksAlone() {
+        assertTrue(eval(text = "eng yaxshi porn saytlari").isBlocking)
+        assertTrue(eval(text = "bu yerda порно bor").isBlocking)
+        assertTrue(eval(text = "hentai manga").isBlocking)
     }
 
     @Test
-    fun detectsObfuscatedTerms() {
-        assertTrue(check("p0rn video").first)
-        assertTrue(check("p o r n").first)
-        assertTrue(check("poooorn").first)
-        // kirill "о" bilan yozilgan lotin so'z
-        assertTrue(check("p\u043Ern").first)
-        assertTrue(check("P.O.R.N.").first)
+    fun obfuscatedStrongTerm() {
+        assertTrue(eval(text = "p0rn video").isBlocking)
+        assertTrue(eval(text = "p o r n").isBlocking)
+        assertTrue(eval(text = "poooorn").isBlocking)
+        assertTrue(eval(text = "p\u043Ern").isBlocking) // kirill "о"
     }
 
     @Test
-    fun safeContextIsNotBlocked() {
-        assertFalse(check("sex education darsligi").first)
-        assertFalse(check("same-sex marriage haqida yangilik").first)
-        assertFalse(check("jinsiy tarbiya va reproduktiv salomatlik").first)
-        assertFalse(check("sexual health clinic and medical research").first)
-        assertFalse(check("гинеколог ва репродуктив саломатлик").first)
-        assertFalse(check("bugun havo juda issiq, parkda sayr qildik").first)
-        assertFalse(check("instagram post: yangi kofe do'koni ochildi").first)
+    fun singleAmbiguousTermDoesNotBlock() {
+        assertFalse(eval(text = "sex").isBlocking)
+        assertFalse(eval(text = "adult").isBlocking)
+        assertFalse(eval(text = "nude").isBlocking)
+        assertFalse(eval(text = "18+").isBlocking)
+        assertFalse(eval(text = "18+ video").isBlocking)
     }
 
     @Test
-    fun mediumBlocksOneClearSignal() {
-        assertTrue(check("18+ video").first)
-        assertTrue(check("nude photo").first)
-        assertTrue(check("seks").first)
+    fun youtubeStyleContentIsNotBlocked() {
+        assertFalse(eval(text = "Official music video: Sex — new song 2026").isBlocking)
+        assertFalse(eval(text = "Shorts Subscribe Comments Recommended Trending").isBlocking)
+        assertFalse(eval(text = "Sex education: reproductive health explained").isBlocking)
+        assertFalse(eval(text = "Sexual harassment: news report and law changes").isBlocking)
+        assertFalse(eval(text = "Nude art in the museum — documentary").isBlocking)
+        assertFalse(eval(text = "Jinsiy tarbiya darsligi, tibbiy maqola").isBlocking)
     }
 
     @Test
-    fun weakSignalNeedsHighSensitivity() {
-        val verdict = AdultContentGuard.evaluate(GuardInput(screenText = "adult"))
-        assertFalse(verdict.isAdult(GuardSensitivity.MEDIUM))
-        assertTrue(verdict.isAdult(GuardSensitivity.HIGH))
+    fun twoMediumGroupsBlock() {
+        assertTrue(eval(text = "nude erotic photo set").isBlocking)
+        assertTrue(eval(text = "fetish bdsm gallery").isBlocking)
     }
 
     @Test
-    fun adultAppLabelIsDetected() {
-        val verdict = AdultContentGuard.evaluate(GuardInput(appLabel = "Porn Hub"))
-        assertEquals(GuardKind.APP, verdict.kind)
-        assertTrue(verdict.isAdult(GuardSensitivity.MEDIUM))
-
-        val labelOnly = AdultContentGuard.evaluateLabel("OnlyFans", GuardSensitivity.MEDIUM)
-        assertTrue(labelOnly.isAdult(GuardSensitivity.MEDIUM))
-
-        val normal = AdultContentGuard.evaluateLabel("Instagram", GuardSensitivity.MEDIUM)
-        assertFalse(normal.isAdult(GuardSensitivity.MEDIUM))
+    fun mediumPlusWeakSignalsBlockAtMedium() {
+        // medium: nudity; weak: sex + adult
+        assertTrue(eval(text = "nude sex adult").isBlocking)
     }
 
     @Test
-    fun repeatedSignalsAddUp() {
-        val once = AdultContentGuard.evaluate(GuardInput(screenText = "seks"))
-        val many = AdultContentGuard.evaluate(GuardInput(screenText = "seks seks seks seks"))
-        assertTrue(many.score > once.score)
-        assertTrue(many.isAdult(GuardSensitivity.MEDIUM))
+    fun weakOnlyNeedsHigh() {
+        val text = "sex adult intim"
+        assertFalse(eval(text = text, sensitivity = GuardSensitivity.MEDIUM).isBlocking)
+        assertTrue(eval(text = text, sensitivity = GuardSensitivity.HIGH).isBlocking)
+    }
+
+    @Test
+    fun adultAppLabelIsBlocked() {
+        val byLabel = eval(label = "Porn Hub")
+        assertEquals(GuardKind.APP, byLabel.kind)
+        assertTrue(byLabel.isBlocking)
+
+        val normal = AdultContentGuard.evaluateLabel("Instagram")
+        assertFalse(normal.isBlocking)
+    }
+
+    @Test
+    fun strongTermWinsEvenInSafeContext() {
+        assertTrue(eval(text = "porn addiction therapy research").isBlocking)
+    }
+
+    @Test
+    fun visualThresholdsAreOrdered() {
+        val low = AdultContentGuard.visualThreshold(GuardSensitivity.LOW)
+        val medium = AdultContentGuard.visualThreshold(GuardSensitivity.MEDIUM)
+        val high = AdultContentGuard.visualThreshold(GuardSensitivity.HIGH)
+        assertTrue(low > medium && medium > high)
     }
 
     @Test
     fun emptyInputIsSafe() {
-        val verdict = AdultContentGuard.evaluate(GuardInput())
+        val verdict = eval()
         assertEquals(GuardKind.NONE, verdict.kind)
-        assertFalse(verdict.isAdult(GuardSensitivity.HIGH))
+        assertFalse(verdict.isBlocking)
     }
 }

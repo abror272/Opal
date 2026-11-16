@@ -31,9 +31,7 @@ import com.opal.app.data.prefs
 import com.opal.app.data.recordAppOpen
 import com.opal.app.data.recordUnlock
 import com.opal.app.guard.AdultContentGuard
-import com.opal.app.guard.GuardSensitivity
 import com.opal.app.guard.adultGuardCooldownUntil
-import com.opal.app.guard.adultGuardSensitivity
 import com.opal.app.guard.isAdultGuardEnabled
 import com.opal.app.guard.recordAdultGuardFalsePositive
 import com.opal.app.guard.recordAdultGuardHit
@@ -187,8 +185,6 @@ class WatchdogService : Service() {
         if (guardOverlay.isShowing) return
         if (adultGuardCooldownUntil(pkg) > System.currentTimeMillis()) return
 
-        val sensitivity: GuardSensitivity = runCatching { adultGuardSensitivity() }
-            .getOrDefault(GuardSensitivity.MEDIUM)
         val label = try {
             val pm = packageManager
             pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString()
@@ -196,8 +192,8 @@ class WatchdogService : Service() {
             ""
         }
         if (label.isBlank()) return
-        val verdict = AdultContentGuard.evaluateLabel(label, sensitivity)
-        if (!verdict.isAdult(sensitivity)) return
+        val verdict = AdultContentGuard.evaluateLabel(label)
+        if (!verdict.isBlocking) return
 
         runCatching { recordAdultGuardHit() }
         guardOverlay.show(

@@ -7,10 +7,25 @@
     <group
         android:scaleX="0.10546875"
         android:scaleY="0.10546875">
-        <!-- evenOdd: qalqon ichidagi yulduzcha o'yib tashlanadi -->
+        <group
+            android:rotation="-17"
+            android:pivotX="512"
+            android:pivotY="536">
+            <path
+                android:pathData="M190,536 a322,104 0 1,0 644,0 a322,104 0 1,0 -644,0 Z"
+                android:fillColor="#00000000"
+                android:strokeColor="#66FFFFFF"
+                android:strokeWidth="7" />
+        </group>
         <path
-            android:pathData="M512,292 C588,330 664,352 700,360 L700,552 C700,668 604,744 512,782 C420,744 324,668 324,552 L324,360 C360,352 436,330 512,292 Z M512,424 C522,496 544,518 616,528 C544,538 522,560 512,632 C502,560 480,538 408,528 C480,518 502,496 512,424 Z"
-            android:fillColor="#FFFFFFFF"
-            android:fillType="evenOdd" />
+            android:pathData="M352,726 L352,506 A160,160 0 0,1 672,506 L672,726"
+            android:fillColor="#00000000"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="30"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+        <path
+            android:pathData="M512,418 C521,480 542,501 604,510 C542,519 521,540 512,602 C503,540 482,519 420,510 C482,501 503,480 512,418 Z"
+            android:fillColor="#FFFFFFFF" />
     </group>
 </vector>

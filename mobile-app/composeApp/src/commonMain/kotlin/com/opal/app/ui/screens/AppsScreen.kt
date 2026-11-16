@@ -71,6 +71,7 @@ import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import opalapp.composeapp.generated.resources.Res
+import opalapp.composeapp.generated.resources.lumirra_mark
 import opalapp.composeapp.generated.resources.routine_deepwork
 import opalapp.composeapp.generated.resources.routine_family
 import opalapp.composeapp.generated.resources.routine_sleep
@@ -98,6 +99,7 @@ fun AppsScreen(onOpenProfile: () -> Unit = {}) {
     val serviceOn by repo.blockingServiceOn.collectAsState()
     val guardOn by repo.adultGuard.collectAsState()
     val guardSens by repo.adultGuardSens.collectAsState()
+    val guardVisual by repo.adultGuardVisual.collectAsState()
     val guardHits by repo.adultGuardHits.collectAsState()
     val guardFp by repo.adultGuardFalsePositives.collectAsState()
     val rules by repo.rules.collectAsState()
@@ -177,10 +179,11 @@ fun AppsScreen(onOpenProfile: () -> Unit = {}) {
 
             Spacer(Modifier.height(OpalSpacing.lg))
 
-            // ---- 18+ himoyasi (yuqori o'rve) ----
+            // ---- kontent himoyasi ----
             AdultGuardCard(
                 enabled = guardOn,
                 sensitivity = guardSens,
+                visual = guardVisual,
                 hits = guardHits,
                 falsePositives = guardFp,
                 serviceOn = serviceOn,
@@ -189,6 +192,7 @@ fun AppsScreen(onOpenProfile: () -> Unit = {}) {
                     else repo.setAdultGuard(on)
                 },
                 onSensitivity = { repo.setAdultGuardSensitivity(it) },
+                onVisual = { repo.setAdultGuardVisual(it) },
                 onTest = {
                     if (serviceOn) repo.selfTestAdultGuard() else openBlockingSettings()
                 },
@@ -372,11 +376,13 @@ private fun StrictBlockCard(
 private fun AdultGuardCard(
     enabled: Boolean,
     sensitivity: GuardSensitivity,
+    visual: Boolean,
     hits: Int,
     falsePositives: Int,
     serviceOn: Boolean,
     onToggle: (Boolean) -> Unit,
     onSensitivity: (GuardSensitivity) -> Unit,
+    onVisual: (Boolean) -> Unit,
     onTest: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
@@ -411,17 +417,17 @@ private fun AdultGuardCard(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        "18+",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = if (enabled) Color(0xFFFFD9DF) else OpalColors.TextSecondary
+                    Image(
+                        painter = painterResource(Res.drawable.lumirra_mark),
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp),
+                        contentScale = ContentScale.Fit
                     )
                 }
                 Spacer(Modifier.width(11.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        "18+ himoyasi",
+                        "Nomaqbul kontent",
                         fontSize = 14.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = OpalColors.TextPrimary
@@ -430,7 +436,7 @@ private fun AdultGuardCard(
                         when {
                             !enabled -> "O'chirilgan — ekran tekshirilmaydi"
                             !serviceOn -> "Xizmat o'chirilgan — yoqing"
-                            else -> "Ekranda 18+ aniqlansa darhol yopiladi"
+                            else -> "Ekranda aniqlansa darhol yopiladi"
                         },
                         fontSize = 11.sp,
                         color = OpalColors.TextTertiary
@@ -481,6 +487,25 @@ private fun AdultGuardCard(
                 Spacer(Modifier.height(12.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Rasm va videoni tekshirish",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = OpalColors.TextPrimary
+                        )
+                        Text(
+                            "Ekran rasmi qurilmada tahlil qilinadi (Android 11+)",
+                            fontSize = 10.sp,
+                            color = OpalColors.TextTertiary
+                        )
+                    }
+                    OpalSwitch(checked = visual, onCheckedChange = onVisual)
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         buildString {
                             append("Bugun: $hits ta blok")
@@ -509,8 +534,8 @@ private fun AdultGuardCard(
 
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    "Matn, havola va ilova nomi qurilmaning o'zida tekshiriladi — internetga yuborilmaydi. " +
-                        "Rasm/video ichidagi kontent har doim ham aniqlanmasligi mumkin.",
+                    "Matn, havola va ekran rasmi qurilmaning o'zida tekshiriladi — internetga yuborilmaydi. " +
+                        "Imkoniyat cheklangan: 100% aniqlik kafolatlanmaydi.",
                     fontSize = 10.sp,
                     color = OpalColors.TextTertiary,
                     lineHeight = 14.sp

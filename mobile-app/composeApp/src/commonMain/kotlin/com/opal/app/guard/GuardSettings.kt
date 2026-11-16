@@ -46,3 +46,10 @@ fun adultGuardSensitivity(): GuardSensitivity =
 
 fun setAdultGuardSensitivity(value: GuardSensitivity) =
     setAdultGuardSensitivityCode(value.code)
+
+/**
+ * Vizual tekshirish (ekran rasmi / rasm-video) yoqilganmi?
+ * Android 11+ da ishlaydi; iOS'da yo'q.
+ */
+expect fun isAdultGuardVisualEnabled(): Boolean
+expect fun setAdultGuardVisualEnabled(on: Boolean)

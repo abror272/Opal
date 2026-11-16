@@ -4,6 +4,8 @@ import com.opal.app.guard.GuardSensitivity
 import com.opal.app.guard.adultGuardFalsePositivesToday
 import com.opal.app.guard.adultGuardHitsToday
 import com.opal.app.guard.adultGuardSensitivity
+import com.opal.app.guard.isAdultGuardVisualEnabled
+import com.opal.app.guard.setAdultGuardVisualEnabled
 import com.opal.app.guard.isAdultGuardEnabled
 import com.opal.app.guard.requestAdultGuardSelfTest
 import com.opal.app.guard.setAdultGuardEnabled
@@ -69,10 +71,11 @@ class OpalRepository(private val client: HttpClient = createHttpClient()) {
     val appsLoading = MutableStateFlow(false)
     val deviceLoaded = MutableStateFlow(false)
 
-    /* ---------- 18+ himoyasi ---------- */
+    /* ---------- kontent himoyasi ---------- */
 
     val adultGuard = MutableStateFlow(true)
     val adultGuardSens = MutableStateFlow(GuardSensitivity.MEDIUM)
+    val adultGuardVisual = MutableStateFlow(true)
     val adultGuardHits = MutableStateFlow(0)
     val adultGuardFalsePositives = MutableStateFlow(0)
 
@@ -254,10 +257,12 @@ class OpalRepository(private val client: HttpClient = createHttpClient()) {
         refreshAdultGuard()
     }
 
-    /** 18+ himoyasi holati (prefs o'qish — arzon). */
+    /** Kontent himoyasi holati (prefs o'qish — arzon). */
     fun refreshAdultGuard() {
         adultGuard.value = runCatching { isAdultGuardEnabled() }.getOrDefault(false)
         adultGuardSens.value = runCatching { adultGuardSensitivity() }.getOrDefault(GuardSensitivity.MEDIUM)
+        adultGuardVisual.value =
+            runCatching { isAdultGuardVisualEnabled() }.getOrDefault(true)
         adultGuardHits.value = runCatching { adultGuardHitsToday() }.getOrDefault(0)
         adultGuardFalsePositives.value =
             runCatching { adultGuardFalsePositivesToday() }.getOrDefault(0)
@@ -272,6 +277,11 @@ class OpalRepository(private val client: HttpClient = createHttpClient()) {
     fun setAdultGuardSensitivity(value: GuardSensitivity) {
         adultGuardSens.value = value
         runCatching { setAdultGuardSensitivity(value) }
+    }
+
+    fun setAdultGuardVisual(on: Boolean) {
+        adultGuardVisual.value = on
+        runCatching { setAdultGuardVisualEnabled(on) }
     }
 
     /** Haqiqiy overlay'ni sinash (accessibility xizmati ko'rsatadi). */

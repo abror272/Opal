@@ -23,25 +23,31 @@ import com.opal.app.data.recordAppOpen
 import com.opal.app.guard.ACTION_GUARD_SELFTEST
 import com.opal.app.guard.AdultContentGuard
 import com.opal.app.guard.GuardInput
+import com.opal.app.guard.GuardKind
+import com.opal.app.guard.GuardSensitivity
 import com.opal.app.guard.GuardVerdict
+import com.opal.app.guard.NsfwClassifier
+import com.opal.app.guard.ScreenCapture
 import com.opal.app.guard.adultGuardCooldownUntil
 import com.opal.app.guard.adultGuardSensitivity
+import com.opal.app.guard.isAdultGuardVisualEnabled
 import com.opal.app.guard.isAdultGuardEnabled
 import com.opal.app.guard.recordAdultGuardFalsePositive
 import com.opal.app.guard.recordAdultGuardHit
 import com.opal.app.guard.setAdultGuardCooldown
+import java.util.concurrent.Executors
 
 /**
- * QAT'IY BLOKLASH + 18+ HIMOYASI.
+ * QAT'IY BLOKLASH + KONTENT HIMOYASI.
  *
  * 1) Ilova bloklash: foydalanuvchi bloklangan ilovani ochsa — darhol
  *    to'liq ekranli "Lumirra tomonidan bloklandi" oynasini (TYPE_ACCESSIBILITY_OVERLAY)
  *    ustiga chizadi.
  *
- * 2) 18+ himoyasi: ekrandagi matn/havola o'zgarganda (TYPE_WINDOW_CONTENT_CHANGED)
- *    daraxtdan matn yig'ib [AdultContentGuard] orqali tekshiradi. 18+ aniqlansa
- *    ekran [GuardOverlay] bilan yopiladi. Skanerlash qat'iy byudjetli (debounce,
- *    throttle, node limiti) — UI qotmaydi.
+ * 2) Kontent himoyasi: (a) ekrandagi ko'rinadigan matn + manzil satri
+ *    [AdultContentGuard] orqali, (b) ekran rasmi [NsfwClassifier] (TFLite)
+ *    orqali tekshiriladi. Ikkalasi ham qurilmada, hech narsa saqlanmaydi.
+ *    Aniqlash byudjetli (debounce, throttle, node limiti, vizual 1.8s) — UI qotmaydi.
  *
  * Bloklash sabablari:
  *  1. Qo'lda bloklash ("Ilovalarim" bo'limida tanlangan)
@@ -58,11 +64,20 @@ class OpalAccessibilityService : AccessibilityService() {
     private var foregroundPkg: String? = null
     private var lastBeat = 0L
 
-    // 18+ skanerlash holati
+    // kontent skanerlash holati
     private var lastGuardScanAt = 0L
     private var lastGuardTriggerAt = 0L
     private var pendingScanPkg: String? = null
     private var receiverRegistered = false
+
+    // vizual (rasm/video) skanerlash holati
+    private val visualExecutor = Executors.newSingleThreadExecutor()
+    @Volatile private var visualBusy = false
+    private var visualStrikes = 0
+    private var lastVisualScanAt = 0L
+    private var pendingVisualPkg: String? = null
+    private var visualScheduled = false
+    private var classifier: NsfwClassifier? = null
 
     private val handler = Handler(Looper.getMainLooper())
 
@@ -71,18 +86,34 @@ class OpalAccessibilityService : AccessibilityService() {
         private const val KEEP_ALIVE_CHANNEL = "opal_service"
 
         /** Content-change eventlar juda ko'p — shu sababli kechikish + throttle. */
-        private const val GUARD_DEBOUNCE_MS = 320L
-        private const val GUARD_MIN_INTERVAL_MS = 650L
+        private const val GUARD_DEBOUNCE_MS = 420L
+        private const val GUARD_MIN_INTERVAL_MS = 900L
         private const val GUARD_TRIGGER_COOLDOWN_MS = 2_500L
-        private const val GUARD_FALSE_POSITIVE_MS = 15 * 60_000L
+        private const val GUARD_FALSE_POSITIVE_MS = 30 * 60_000L
 
-        /** Hech qachon 18+ uchun skanerlanmaydigan paketlar. */
+        /** Rasm/video tekshiruvi — kamroq, lekin barqaror. */
+        private const val VISUAL_DEBOUNCE_MS = 1_000L
+        private const val VISUAL_MIN_INTERVAL_MS = 1_800L
+        private const val VISUAL_IMMEDIATE_SCORE = 0.95f
+
+        /** Hech qachon kontent uchun skanerlanmaydigan paketlar. */
         private val SCAN_SKIP = setOf(
             "com.android.systemui",
             "com.miui.securitycenter",
             "com.android.settings",
             "com.android.permissioncontroller",
-            "com.google.android.permissioncontroller"
+            "com.google.android.permissioncontroller",
+            "com.miui.home",
+            "com.android.launcher3",
+            "com.google.android.apps.nexuslauncher",
+            "com.android.inputmethod.latin",
+            "com.google.android.inputmethod.latin",
+            "com.sohu.inputmethod.sogou",
+            "com.sohu.inputmethod.sogou.xiaomi",
+            "com.baidu.input",
+            "com.iflytek.inputmethod",
+            "com.miui.packageinstaller",
+            "com.android.packageinstaller"
         )
     }
 
@@ -99,6 +130,7 @@ class OpalAccessibilityService : AccessibilityService() {
     }
 
     private val guardScan = Runnable { runGuardScan() }
+    private val visualScan = Runnable { runVisualScan() }
 
     private val selfTestReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -134,6 +166,14 @@ class OpalAccessibilityService : AccessibilityService() {
         unregisterSelfTestReceiver()
         handler.removeCallbacks(ticker)
         handler.removeCallbacks(guardScan)
+        handler.removeCallbacks(visualScan)
+        runCatching {
+            visualExecutor.execute {
+                runCatching { classifier?.close() }
+                classifier = null
+            }
+            visualExecutor.shutdown()
+        }
         overlay.hide()
         guardOverlay.hide()
         super.onDestroy()
@@ -177,7 +217,7 @@ class OpalAccessibilityService : AccessibilityService() {
                             KEEP_ALIVE_CHANNEL,
                             "Lumirra himoyasi",
                             android.app.NotificationManager.IMPORTANCE_MIN
-                        ).apply { description = "Bloklash va 18+ himoyasi faol" }
+                        ).apply { description = "Bloklash va kontent himoyasi faol" }
                     )
                 }
             }
@@ -198,7 +238,7 @@ class OpalAccessibilityService : AccessibilityService() {
             val n = androidx.core.app.NotificationCompat.Builder(this, KEEP_ALIVE_CHANNEL)
                 .setSmallIcon(com.opal.app.R.drawable.ic_notify)
                 .setContentTitle("Lumirra himoyasi faol")
-                .setContentText("Ilovalar va 18+ kontent kuzatilmoqda")
+                .setContentText("Ilovalar va kontent kuzatilmoqda")
                 .setOngoing(true)
                 .setPriority(androidx.core.app.NotificationCompat.PRIORITY_MIN)
                 .setContentIntent(pi)
@@ -237,7 +277,7 @@ class OpalAccessibilityService : AccessibilityService() {
         val e = event ?: return
         beat()
 
-        // ---- 18+ himoyasi: kontent o'zgardi ----
+        // ---- kontent himoyasi: kontent o'zgardi ----
         if (e.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
             val eventPkg = e.packageName?.toString() ?: return
             if (!isIgnoredPackage(eventPkg)) {
@@ -268,7 +308,7 @@ class OpalAccessibilityService : AccessibilityService() {
         scheduleGuardScan(pkg)
     }
 
-    /* ==================== 18+ skanerlash ==================== */
+    /* ==================== kontent skanerlash ==================== */
 
     private fun isIgnoredPackage(pkg: String): Boolean =
         pkg == packageName || pkg in SCAN_SKIP
@@ -281,6 +321,7 @@ class OpalAccessibilityService : AccessibilityService() {
         pendingScanPkg = pkg
         handler.removeCallbacks(guardScan)
         handler.postDelayed(guardScan, GUARD_DEBOUNCE_MS)
+        scheduleVisualScan(pkg)
     }
 
     private fun runGuardScan() {
@@ -307,35 +348,130 @@ class OpalAccessibilityService : AccessibilityService() {
         } catch (_: Throwable) {
             null
         }
-        val text = try {
-            ScreenTextScanner.scan(root)
+        val screenHeight = try {
+            resources.displayMetrics.heightPixels
         } catch (_: Throwable) {
-            ""
+            0
+        }
+        val snapshot = try {
+            ScreenTextScanner.scan(root, screenHeight)
+        } catch (_: Throwable) {
+            ScreenSnapshot("", "")
         } finally {
             try {
                 root?.recycle()
             } catch (_: Throwable) {
             }
         }
-        if (text.length < 3) return
+        if (snapshot.text.length < 3 && snapshot.addressBar.isBlank()) return
 
         val sensitivity = runCatching { adultGuardSensitivity() }.getOrDefault(
-            com.opal.app.guard.GuardSensitivity.MEDIUM
+            GuardSensitivity.MEDIUM
         )
         val verdict = try {
             AdultContentGuard.evaluate(
                 GuardInput(
-                    screenText = text,
-                    packageName = pkg,
+                    screenText = snapshot.text,
+                    addressBarText = snapshot.addressBar,
                     appLabel = appLabel(pkg)
-                )
+                ),
+                sensitivity
             )
         } catch (_: Throwable) {
             GuardVerdict()
         }
-        if (!verdict.isAdult(sensitivity)) return
+        if (!verdict.isBlocking) return
 
         triggerGuard(pkg, verdict)
+    }
+
+    /* ==================== vizual (rasm/video) tekshiruv ==================== */
+
+    private fun scheduleVisualScan(pkg: String) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
+        if (pkg.isBlank() || isIgnoredPackage(pkg)) return
+        if (guardOverlay.isShowing || overlay.isShowing) return
+        if (!runCatching { isAdultGuardEnabled() }.getOrDefault(false)) return
+        if (!runCatching { isAdultGuardVisualEnabled() }.getOrDefault(false)) return
+        if (adultGuardCooldownUntil(pkg) > System.currentTimeMillis()) return
+        if (!isScreenOn()) return
+        pendingVisualPkg = pkg
+        // Muhim: har bir content event'da taymerni QAYTA BOSHLAMAYMIZ —
+        // aks holda video oqimida rasm tekshiruvi umuman ishlamaydi.
+        if (visualScheduled) return
+        visualScheduled = true
+        handler.postDelayed(visualScan, VISUAL_DEBOUNCE_MS)
+    }
+
+    private fun runVisualScan() {
+        visualScheduled = false
+        val pkg = pendingVisualPkg ?: return
+        pendingVisualPkg = null
+
+        if (visualBusy) return
+        if (pkg != foregroundPkg) return
+        if (isIgnoredPackage(pkg)) return
+        if (guardOverlay.isShowing || overlay.isShowing) return
+        if (!runCatching { isAdultGuardEnabled() }.getOrDefault(false)) return
+        if (!runCatching { isAdultGuardVisualEnabled() }.getOrDefault(false)) return
+        if (adultGuardCooldownUntil(pkg) > System.currentTimeMillis()) return
+        if (!isScreenOn()) return
+        if (!isVisualCandidate(pkg)) return
+
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastVisualScanAt < VISUAL_MIN_INTERVAL_MS) return
+        lastVisualScanAt = now
+        visualBusy = true
+
+        ScreenCapture.capture(this, visualExecutor) { bitmap ->
+            if (bitmap == null) {
+                visualBusy = false
+                return@capture
+            }
+            visualExecutor.execute {
+                try {
+                    val sensitivity = runCatching { adultGuardSensitivity() }
+                        .getOrDefault(GuardSensitivity.MEDIUM)
+                    val threshold = AdultContentGuard.visualThreshold(sensitivity)
+                    val model = classifier ?: NsfwClassifier(this).also { classifier = it }
+                    val score = runCatching { model.score(bitmap) }.getOrDefault(0f)
+                    android.util.Log.d(
+                        "LumirraVision",
+                        "score=${String.format("%.3f", score)} threshold=$threshold pkg=$pkg"
+                    )
+                    when {
+                        score >= VISUAL_IMMEDIATE_SCORE -> visualStrikes = 2
+                        score >= threshold -> visualStrikes += 1
+                        else -> visualStrikes = 0
+                    }
+                    if (visualStrikes >= 2) {
+                        visualStrikes = 0
+                        handler.post {
+                            if (foregroundPkg == pkg && !guardOverlay.isShowing) {
+                                triggerGuard(
+                                    pkg,
+                                    GuardVerdict(GuardKind.VISUAL, listOf("vizual"))
+                                )
+                            }
+                        }
+                    } else if (visualStrikes == 1) {
+                        // Statik rasm (masalan, rasmlar galereyasi) uchun tasdiqlovchi
+                        // ikkinchi kadr: 2.2s dan keyin yana bir marta tekshiramiz.
+                        handler.postDelayed({ scheduleVisualScan(pkg) }, 1_200L)
+                    }
+                } finally {
+                    visualBusy = false
+                    runCatching { bitmap.recycle() }
+                }
+            }
+        }
+    }
+
+    /** Matnli, rasmli yoki video ko'rsatadigan ilovalar (rasm tekshiruvi uchun). */
+    private fun isVisualCandidate(pkg: String): Boolean {
+        // Brauzer, ijtimoiy tarmoq, galereya, video — accessibility oynasi bor ilovalar.
+        // Tizim/launcher allaqachon SCAN_SKIP'da.
+        return pkg != packageName && pkg !in SCAN_SKIP
     }
 
     private fun triggerGuard(pkg: String, verdict: GuardVerdict) {
@@ -373,8 +509,7 @@ class OpalAccessibilityService : AccessibilityService() {
         guardOverlay.show(
             packageName = packageName,
             verdict = GuardVerdict(
-                score = 200,
-                kind = com.opal.app.guard.GuardKind.SITE,
+                kind = GuardKind.TEXT,
                 signals = listOf("self-test")
             ),
             selfTest = true,

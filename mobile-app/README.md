@@ -1,6 +1,6 @@
 # Lumirra Mobile — Kotlin Multiplatform (Android + iOS)
 
-Lumirra — ekran vaqtini nazorat qiluvchi va 18+ kontentni bloklovchi **native mobil ilova** — bir Kotlin codebase, ikkala platforma.
+Lumirra — ekran vaqtini nazorat qiluvchi va nomaqbul kontentni bloklovchi **native mobil ilova** — bir Kotlin codebase, ikkala platforma.
 Backend sifatida web loyihaning Next.js API'si ishlatiladi (`/api/apps`, `/api/sessions`, `/api/stats`, `/api/profile`).
 API band bo'lmasa — ilova offline demo ma'lumotlari bilan to'liq ishlaydi.
 
@@ -13,7 +13,7 @@ API band bo'lmasa — ilova offline demo ma'lumotlari bilan to'liq ishlaydi.
 | 📊 Statistika | 7 kunlik bar chart (stagger animatsiya) + bezier trend line chart |
 | 📱 Ilovalar | Bloklash switch (optimistic update), limit progress |
 | 👤 Profil | Yutuqlar, sozlamalar, kunlik maqsad, Lumirra Plus |
-| 🔞 **18+ himoyasi** | Ekranda 18+ matn/havola/ilova aniqlansa **darhol to'sadi** — o'zini tiyishga undovchi to'siq ekrani, 5s "nafas olish" hisoblagichi, 3 tilli detektor, sezgirlik sozlamasi. Batafsil: [GUARD18.md](GUARD18.md) |
+| 🛡 **Nomaqbul kontent** | Ekran matni, manzil satri va **ekran rasmi (TFLite)** tekshiriladi — nomaqbul kontent aniqlansa darhol to'sadi: o'zini tiyishga undovchi ekran, 5s "nafas olish", 3 tilli detektor, vizual model, sezgirlik. Batafsil: [CONTENT_GUARD.md](CONTENT_GUARD.md) |
 | ⏱️ Sessiya | Sekundlik ticker, gradient countdown ring, erta chiqish = streak -1 (web bilan bir xil mantiq) |
 
 ## 🪟 Glass Effect (Telegram uslubi)
@@ -42,7 +42,7 @@ mobile-app/
 │       │   ├── OpalApp.kt                    # root + tab navigatsiya + veil
 │       │   ├── theme/OpalTheme.kt            # ranglar, gradientlar
 │       │   ├── data/                         # Models, DemoData, Repository, AppGraph
-│       │   ├── guard/                        # 18+ detektor + sozlamalar (expect/actual)
+│       │   ├── guard/                        # kontent detektori + vizual model (expect/actual)
 │       │   ├── network/ApiClient.kt          # Ktor client (expect engine)
 │       │   ├── session/SessionController.kt  # taymer + tugatish mantiqi
 │       │   ├── glass/OpalGlass.kt            # expect GlassTabBar/GlassVeil + GlassPane
@@ -110,7 +110,7 @@ keytool -genkeypair -v -keystore ~/.lumirra/lumirra-release.jks \
 # keyPassword=...
 
 ./gradlew :composeApp:assembleRelease
-# APK: composeApp/build/outputs/apk/release/composeApp-release.apk (~2.6 MB)
+# APK: composeApp/build/outputs/apk/release/composeApp-release.apk (14 MB, TFLite model bilan)
 ```
 
 Tekshirish: [SECURITY.md](SECURITY.md) dagi `apksigner` / `aapt2 dump permissions`

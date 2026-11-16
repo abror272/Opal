@@ -194,8 +194,8 @@ class GuardOverlay(
 
         // 18+ nishoni (atrofida "nafas oluvchi" halqa)
         val badge = TextView(service).apply {
-            text = "18+"
-            textSize = 24f
+            text = "!"
+            textSize = 30f
             typeface = Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
             setTextColor(AColor.parseColor("#FFD9DF"))
@@ -325,7 +325,7 @@ class GuardOverlay(
         }
 
         column.addView(space(10f))
-        column.addView(label("Lumirra · 18+ himoyasi", 10f, "#40FFFFFF"))
+        column.addView(label("Lumirra · kontent himoyasi", 10f, "#40FFFFFF"))
     }
 
     private fun enableButtons(enabled: Boolean) {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  typeWindowContentChanged — 18+ kontent himoyasi uchun kerak: ekrandagi
+  typeWindowContentChanged — nomaqbul kontent himoyasi uchun kerak: ekrandagi
   matn/havola o'zgarganda xizmat uni o'qib tekshiradi (debounce bilan).
   flagIncludeNotImportantViews — brauzer manzil satri kabi "muhim emas"
   deb belgilangan tugunlardagi matnni ham ko'rish uchun.
@@ -10,6 +10,7 @@
     android:accessibilityFeedbackType="feedbackGeneric"
     android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows|flagReportViewIds|flagIncludeNotImportantViews"
     android:canRetrieveWindowContent="true"
+    android:canTakeScreenshot="true"
     android:description="@string/opal_accessibility_desc"
     android:notificationTimeout="100"
     android:summary="@string/opal_accessibility_summary" />
