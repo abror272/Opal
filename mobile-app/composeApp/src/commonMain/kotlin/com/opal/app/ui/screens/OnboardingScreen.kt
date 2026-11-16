@@ -51,6 +51,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import opalapp.composeapp.generated.resources.Res
+import opalapp.composeapp.generated.resources.lumirra_mark
 import opalapp.composeapp.generated.resources.opal_crystal
 import opalapp.composeapp.generated.resources.timer_scene
 
@@ -63,9 +64,9 @@ private data class Slide(
 )
 
 private val SLIDES = listOf(
-    Slide(Res.drawable.opal_crystal, true, "BLOKLASH", "Opal chalg'ituvchilarni siz uchun bloklaydi", "TikTok, Instagram va boshqalar — bir bosish bilan himoya ostida."),
+    Slide(Res.drawable.opal_crystal, true, "BLOKLASH", "Lumirra chalg'ituvchilarni siz uchun bloklaydi", "TikTok, Instagram va boshqalar — bir bosish bilan himoya ostida."),
     Slide(Res.drawable.timer_scene, false, "FOKUS", "Bir bosish. To'liq fokus.", "Flip-clock taymer bilan sessiya boshlang — ilovalar o'z-o'zidan bloklanadi."),
-    Slide(null, false, "BALL", "Progressingizni chuqur his qiling", "Opal balli uyqu, fokus va damni bitta ko'rsatkichga jamsheydi.")
+    Slide(null, false, "BALL", "Progressingizni chuqur his qiling", "Lumirra balli uyqu, fokus va damni bitta ko'rsatkichga jamsheydi.")
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -163,16 +164,20 @@ fun OnboardingScreen(onDone: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        Modifier
-                            .size(32.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(
-                                Brush.linearGradient(listOf(Color(0xFF86EFAC), Color(0xFFB18CFF), Color(0xFFFF9AD5)))
-                            )
+                    Image(
+                        painter = painterResource(Res.drawable.lumirra_mark),
+                        contentDescription = null,
+                        modifier = Modifier.size(34.dp),
+                        contentScale = ContentScale.Fit
                     )
-                    Spacer(Modifier.width(10.dp))
-                    Text("Opal", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "Lumirra",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        letterSpacing = (-0.3).sp
+                    )
                 }
                 Text(
                     "O'tkazib yuborish",

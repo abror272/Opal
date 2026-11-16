@@ -147,7 +147,7 @@ fun BlockingSetupCard(modifier: Modifier = Modifier) {
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "Opal ikki xil usulda bloklaydi. MIUI xizmatni o'chirib qo'ysa ham, ikkinchisi ishlaydi. Quyidagilarni yoqing:",
+                "Lumirra ikki xil usulda bloklaydi. MIUI xizmatni o'chirib qo'ysa ham, ikkinchisi ishlaydi. Quyidagilarni yoqing:",
                 fontSize = 11.5.sp,
                 lineHeight = 16.sp,
                 color = OpalColors.TextTertiary
@@ -157,7 +157,7 @@ fun BlockingSetupCard(modifier: Modifier = Modifier) {
             SetupRow(
                 step = "1",
                 title = "Bloklash xizmati",
-                subtitle = "Sozlamalar → Qulaylik → Opal bloklash",
+                subtitle = "Sozlamalar → Qulaylik → Lumirra himoyasi",
                 done = false,
                 action = "Ochish"
             ) { openBlockingSettings() }
@@ -197,7 +197,7 @@ fun BlockingSetupCard(modifier: Modifier = Modifier) {
             if (secureOk) {
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    "✓ O'z-o'zini tiklash yoqilgan (xizmat o'chsa Opal o'zi qayta ulaydi)",
+                    "✓ O'z-o'zini tiklash yoqilgan (xizmat o'chsa Lumirra o'zi qayta ulaydi)",
                     fontSize = 10.5.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = OpalColors.Success

@@ -239,7 +239,7 @@ fun FocusScreen() {
                                 )
                                 Spacer(Modifier.height(8.dp))
                                 Text(
-                                    "Hozir sessiya boshlasangiz ham ilovalar bloklanmaydi, chunki tizim Opal bloklash xizmatini o'chirib qo'ygan.",
+                                    "Hozir sessiya boshlasangiz ham ilovalar bloklanmaydi, chunki tizim Lumirra himoyasini o'chirib qo'ygan.",
                                     fontSize = 12.5.sp,
                                     lineHeight = 18.sp,
                                     color = OpalColors.TextSecondary

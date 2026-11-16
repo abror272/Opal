@@ -56,7 +56,7 @@ private val WITTY = listOf(
     "Bir oz tinchlanish — eng yaxshi tanlov."
 )
 
-/** "X — Opal tomonidan bloklandi" ekrani + Battle Math bilan ochish. */
+/** "X — Lumirra tomonidan bloklandi" ekrani + Battle Math bilan ochish. */
 @Composable
 fun BlockedAppScreen(
     appName: String,
@@ -132,7 +132,7 @@ fun BlockedAppScreen(
                 lineHeight = 30.sp
             )
             Text(
-                "Opal tomonidan bloklandi",
+                "Lumirra tomonidan bloklandi",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = Color.White.copy(alpha = 0.95f),

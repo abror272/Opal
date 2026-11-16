@@ -39,6 +39,6 @@ fun createHttpClient(): HttpClient = HttpClient(platformEngine()) {
         url(ApiConfig.baseUrl)
     }
     install(UserAgent) {
-        agent = "OpalMobile/1.0 (Kotlin Multiplatform)"
+        agent = "Lumirra/1.1 (Kotlin Multiplatform)"
     }
 }

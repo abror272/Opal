@@ -63,3 +63,8 @@ test
 prompt
 server.log
 /skills/
+
+# Lumirra release imzosi (maxfiy)
+keystore.properties
+*.jks
+*.keystore

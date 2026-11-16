@@ -207,20 +207,14 @@ actual fun startWatchdog() {
 
 actual fun requestIgnoreBatteryOptimizations() {
     val context = opalContext()
+    // REQUEST_IGNORE_BATTERY_OPTIMIZATIONS ruxsati ishlatilmaydi (risk flagi).
+    // Foydalanuvchi ro'yxatdan Lumirra'ni tanlaydi.
     try {
-        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-            data = Uri.fromParts("package", context.packageName, null)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        context.startActivity(intent)
+        context.startActivity(
+            Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
     } catch (_: Throwable) {
-        try {
-            context.startActivity(
-                Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            )
-        } catch (_: Throwable) {
-        }
     }
 }
 

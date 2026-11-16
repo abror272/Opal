@@ -52,30 +52,28 @@ import opalapp.composeapp.generated.resources.gem_night_owl
 import opalapp.composeapp.generated.resources.gem_opal_plus
 import opalapp.composeapp.generated.resources.gem_pride
 import opalapp.composeapp.generated.resources.gem_time_lord
+import opalapp.composeapp.generated.resources.lumirra_mark
 import opalapp.composeapp.generated.resources.opal_crystal
 
-/** Opal wordmark — yuqorida kichik bo'shliqli "O" halqasi + "pal". */
+/** Lumirra wordmark — porlab turuvchi qalqon belgisi + "Lumirra". */
 @Composable
-fun OpalWordmark(textSize: Int = 20, boxSize: Dp = 21.dp) {
-    androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.Bottom) {
-        Canvas(Modifier.size(boxSize)) {
-            val sw = 2.9f * (size.minDimension / 22f)
-            drawArc(
-                color = Color.White,
-                startAngle = -75f,
-                sweepAngle = 330f,
-                useCenter = false,
-                topLeft = Offset(sw / 2f, sw / 2f),
-                size = Size(size.width - sw, size.height - sw),
-                style = Stroke(width = sw, cap = StrokeCap.Round)
-            )
-        }
+fun OpalWordmark(textSize: Int = 20, boxSize: Dp = 24.dp) {
+    androidx.compose.foundation.layout.Row(
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Image(
+            painter = painterResource(Res.drawable.lumirra_mark),
+            contentDescription = null,
+            modifier = Modifier.size(boxSize),
+            contentScale = ContentScale.Fit
+        )
+        Spacer(Modifier.width(6.dp))
         Text(
-            "pal",
+            "Lumirra",
             fontSize = textSize.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White,
-            letterSpacing = (-0.5).sp
+            letterSpacing = (-0.45).sp
         )
     }
 }

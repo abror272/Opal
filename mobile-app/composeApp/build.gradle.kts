@@ -114,6 +114,14 @@ kotlin {
 }
 
 if (androidEnabled) {
+    // Release imzosi: keystore.properties (gitignore'da) bo'lsa ishlatiladi.
+    val keystorePropertiesFile = rootProject.file("keystore.properties")
+    val keystoreProperties = Properties().apply {
+        if (keystorePropertiesFile.isFile) {
+            keystorePropertiesFile.inputStream().use { load(it) }
+        }
+    }
+
     // `android { }` type-safe accessor plugin `plugins {}` blokida bo'lmagani uchun
     // mavjud emas — shu sababli ochiq tur (public DSL interface) orqali sozlaymiz.
     (extensions.getByName("android") as ApplicationExtension).apply {
@@ -121,11 +129,11 @@ if (androidEnabled) {
         compileSdk = libs.versions.compileSdk.get().toInt()
 
         defaultConfig {
-            applicationId = "com.opal.app"
+            applicationId = "com.lumirra.app"
             minSdk = libs.versions.minSdk.get().toInt()
             targetSdk = libs.versions.targetSdk.get().toInt()
-            versionCode = 1
-            versionName = "1.0.0"
+            versionCode = 2
+            versionName = "1.1.0"
         }
 
         packaging {
@@ -134,9 +142,33 @@ if (androidEnabled) {
             }
         }
 
+        signingConfigs {
+            create("release") {
+                if (keystorePropertiesFile.isFile) {
+                    storeFile = file(keystoreProperties.getProperty("storeFile"))
+                    storePassword = keystoreProperties.getProperty("storePassword")
+                    keyAlias = keystoreProperties.getProperty("keyAlias")
+                    keyPassword = keystoreProperties.getProperty("keyPassword")
+                }
+            }
+        }
+
         buildTypes {
             getByName("release") {
-                isMinifyEnabled = false
+                isMinifyEnabled = true
+                isShrinkResources = true
+                isDebuggable = false
+                proguardFiles(
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
+                    "proguard-rules.pro"
+                )
+                signingConfig =
+                    if (keystorePropertiesFile.isFile) signingConfigs.getByName("release")
+                    else signingConfigs.getByName("debug")
+            }
+            getByName("debug") {
+                applicationIdSuffix = ".debug"
+                versionNameSuffix = "-debug"
             }
         }
 

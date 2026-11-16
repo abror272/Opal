@@ -52,7 +52,7 @@ fun gemsFor(profile: UserProfileDto, hadSleepSession: Boolean): List<OpalGem> = 
     OpalGem("night-owl", "Night Owl", 41, Color(0xFFC7D2FE), Color(0xFFA5B4FC), Color(0xFF4338CA), hadSleepSession, "Uyqu sessiyasi"),
     OpalGem("pride", "Pride", 23, Color(0xFFFED7AA), Color(0xFFFDBA74), Color(0xFFC2410C), profile.streakDays >= 7, "7 kunlik streak"),
     OpalGem("iron-will", "Iron Will", 12, Color(0xFFE2E8F0), Color(0xFF94A3B8), Color(0xFF334155), profile.totalSessions >= 50, "50 sessiya"),
-    OpalGem("opal-plus", "Opal Plus", 9, Color(0xFFFDE68A), Color(0xFFFCD34D), Color(0xFF92400E), profile.plan == "PLUS", "Premium a'zo"),
+    OpalGem("opal-plus", "Lumirra Plus", 9, Color(0xFFFDE68A), Color(0xFFFCD34D), Color(0xFF92400E), profile.plan == "PLUS", "Premium a'zo"),
     OpalGem("time-lord", "Time Lord", 7, Color(0xFFBBF7D0), Color(0xFF86EFAC), Color(0xFF15803D), profile.totalSavedMinutes >= 3000, "50 soat tejaldi"),
     OpalGem("century", "Century", 3, Color(0xFFFECACA), Color(0xFFF87171), Color(0xFF7F1D1D), profile.streakDays >= 100, "100 kunlik streak")
 )

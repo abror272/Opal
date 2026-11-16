@@ -260,7 +260,7 @@ private fun ScoreArc(score: Int, delta: Int, modifier: Modifier = Modifier) {
                     modifier = Modifier.padding(top = 6.dp)
                 )
             }
-            Text("Opal balli", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = OpalColors.TextTertiary)
+            Text("Lumirra balli", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = OpalColors.TextTertiary)
         }
     }
 }

@@ -35,7 +35,7 @@ import com.opal.app.guard.setAdultGuardCooldown
  * QAT'IY BLOKLASH + 18+ HIMOYASI.
  *
  * 1) Ilova bloklash: foydalanuvchi bloklangan ilovani ochsa — darhol
- *    to'liq ekranli "Opal tomonidan bloklandi" oynasini (TYPE_ACCESSIBILITY_OVERLAY)
+ *    to'liq ekranli "Lumirra tomonidan bloklandi" oynasini (TYPE_ACCESSIBILITY_OVERLAY)
  *    ustiga chizadi.
  *
  * 2) 18+ himoyasi: ekrandagi matn/havola o'zgarganda (TYPE_WINDOW_CONTENT_CHANGED)
@@ -175,7 +175,7 @@ class OpalAccessibilityService : AccessibilityService() {
                     nm.createNotificationChannel(
                         android.app.NotificationChannel(
                             KEEP_ALIVE_CHANNEL,
-                            "Opal himoyasi",
+                            "Lumirra himoyasi",
                             android.app.NotificationManager.IMPORTANCE_MIN
                         ).apply { description = "Bloklash va 18+ himoyasi faol" }
                     )
@@ -197,7 +197,7 @@ class OpalAccessibilityService : AccessibilityService() {
             )
             val n = androidx.core.app.NotificationCompat.Builder(this, KEEP_ALIVE_CHANNEL)
                 .setSmallIcon(com.opal.app.R.drawable.ic_notify)
-                .setContentTitle("Opal himoyasi faol")
+                .setContentTitle("Lumirra himoyasi faol")
                 .setContentText("Ilovalar va 18+ kontent kuzatilmoqda")
                 .setOngoing(true)
                 .setPriority(androidx.core.app.NotificationCompat.PRIORITY_MIN)

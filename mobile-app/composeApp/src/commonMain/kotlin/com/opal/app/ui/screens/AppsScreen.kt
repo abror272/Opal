@@ -4,6 +4,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -350,7 +355,7 @@ private fun StrictBlockCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "Sozlamalarda Opal bloklashni yoqish",
+                        "Sozlamalarda Lumirra himoyasini yoqish",
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = OpalColors.MintLight
@@ -392,6 +397,7 @@ private fun AdultGuardCard(
                 RoundedCornerShape(OpalRadius.lg)
             )
             .padding(16.dp)
+            .animateContentSize()
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -523,7 +529,7 @@ private fun AdultGuardCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            "Opal himoyasini yoqish",
+                            "Lumirra himoyasini yoqish",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFFFD9DF)
@@ -537,18 +543,27 @@ private fun AdultGuardCard(
 
 @Composable
 private fun OpalSwitch(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    val thumbX by animateDpAsState(
+        targetValue = if (checked) 24.dp else 3.dp,
+        animationSpec = spring(dampingRatio = 0.72f, stiffness = 900f),
+        label = "switch_thumb"
+    )
+    val track by animateColorAsState(
+        targetValue = if (checked) OpalColors.Accent else Color.White.copy(alpha = 0.14f),
+        label = "switch_track"
+    )
     Box(
         Modifier
             .width(50.dp)
             .height(29.dp)
             .clip(RoundedCornerShape(50))
-            .background(if (checked) OpalColors.Accent else Color.White.copy(alpha = 0.14f))
-            .clickable { onCheckedChange(!checked) },
-        contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart
+            .background(track)
+            .clickable { onCheckedChange(!checked) }
     ) {
         Box(
             Modifier
-                .padding(3.dp)
+                .align(Alignment.CenterStart)
+                .offset(x = thumbX)
                 .size(23.dp)
                 .clip(CircleShape)
                 .background(Color.White)

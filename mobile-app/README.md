@@ -1,6 +1,6 @@
-# Opal Mobile — Kotlin Multiplatform (Android + iOS)
+# Lumirra Mobile — Kotlin Multiplatform (Android + iOS)
 
-Opal screen-time clone'ning **native mobil versiyasi** — bir Kotlin codebase, ikkala platforma.
+Lumirra — ekran vaqtini nazorat qiluvchi va 18+ kontentni bloklovchi **native mobil ilova** — bir Kotlin codebase, ikkala platforma.
 Backend sifatida web loyihaning Next.js API'si ishlatiladi (`/api/apps`, `/api/sessions`, `/api/stats`, `/api/profile`).
 API band bo'lmasa — ilova offline demo ma'lumotlari bilan to'liq ishlaydi.
 
@@ -12,7 +12,7 @@ API band bo'lmasa — ilova offline demo ma'lumotlari bilan to'liq ishlaydi.
 | 🎯 Fokus | 5 preset (Deep Focus / Ish / O'qish / Uyqu / Maxsus), davomiylik chiplari, jonli taymer |
 | 📊 Statistika | 7 kunlik bar chart (stagger animatsiya) + bezier trend line chart |
 | 📱 Ilovalar | Bloklash switch (optimistic update), limit progress |
-| 👤 Profil | Yutuqlar, sozlamalar, kunlik maqsad, Opal Plus |
+| 👤 Profil | Yutuqlar, sozlamalar, kunlik maqsad, Lumirra Plus |
 | 🔞 **18+ himoyasi** | Ekranda 18+ matn/havola/ilova aniqlansa **darhol to'sadi** — o'zini tiyishga undovchi to'siq ekrani, 5s "nafas olish" hisoblagichi, 3 tilli detektor, sezgirlik sozlamasi. Batafsil: [GUARD18.md](GUARD18.md) |
 | ⏱️ Sessiya | Sekundlik ticker, gradient countdown ring, erta chiqish = streak -1 (web bilan bir xil mantiq) |
 
@@ -25,6 +25,12 @@ API band bo'lmasa — ilova offline demo ma'lumotlari bilan to'liq ishlaydi.
   smooth easing bilan erib ketadi — content glass orqali o'tgandek his beradi.
 - **Android**: real backdrop blur cheklovi tufayli glass gradient + specular nur + hairline border
   bilan imitatsiya qilinadi (Material-3 uslubida, baribir silliq).
+
+## 🎨 Brend va xavfsizlik
+
+- **Nom:** Lumirra (*lumen* + *mirra*) — logo, palitra va render yo'riqnomasi: [branding/README.md](branding/README.md)
+- **Risk bayroqlari:** qaysi ruxsatlar olib tashlangan, release imzo, R8 va tekshirish buyruqlari: [SECURITY.md](SECURITY.md)
+- **Ilova ID:** `com.lumirra.app` · **versiya:** 1.1.0 (code 2)
 
 ## 📁 Struktura
 
@@ -47,7 +53,7 @@ mobile-app/
 ├── iosApp/
 │   ├── project.yml                           # XcodeGen konfiguratsiyasi
 │   └── iosApp/                               # App.swift, Info.plist, Assets
-└── icon1024.png                              # AI-generatsiya qilingan icon
+└── icon1024.png                              # Lumirra store/ikonka (1024)
 ```
 
 ## 🔌 Backend ulash
@@ -84,6 +90,33 @@ Talablar: **Android Studio Ladybug+**, Android SDK 35. JDK alohida o'rnatish sha
    ./gradlew :composeApp:assembleDebug
    # APK: composeApp/build/outputs/apk/debug/
    ```
+
+### 🔐 Release APK (tarqatish uchun)
+
+Debug APK `android:debuggable=true` bo'lgani uchun skanerlarda yuqori risk ko'rsatadi.
+Tarqatish uchun **release** quring:
+
+```bash
+cd mobile-app
+# bir marta: keystore yaratish (maxfiy fayl, repo'ga tushmaydi)
+keytool -genkeypair -v -keystore ~/.lumirra/lumirra-release.jks \
+  -alias lumirra -keyalg RSA -keysize 2048 -validity 10000 \
+  -dname "CN=Lumirra, O=Lumirra, C=UZ"
+
+# mobile-app/keystore.properties (gitignore'da):
+# storeFile=...
+# storePassword=...
+# keyAlias=lumirra
+# keyPassword=...
+
+./gradlew :composeApp:assembleRelease
+# APK: composeApp/build/outputs/apk/release/composeApp-release.apk (~2.6 MB)
+```
+
+Tekshirish: [SECURITY.md](SECURITY.md) dagi `apksigner` / `aapt2 dump permissions`
+buyruqlari. APK'da faqat 7 ta ruxsat qoladi: INTERNET, POST_NOTIFICATIONS,
+FOREGROUND_SERVICE(+SPECIAL_USE), RECEIVE_BOOT_COMPLETED, SYSTEM_ALERT_WINDOW,
+PACKAGE_USAGE_STATS.
 
 > `local.properties` (Android SDK yo'li) `.gitignore`da — Android Studio uni o'zi yaratadi.
 

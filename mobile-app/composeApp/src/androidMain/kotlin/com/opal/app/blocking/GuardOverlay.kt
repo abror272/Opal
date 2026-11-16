@@ -1,7 +1,10 @@
 package com.opal.app.blocking
 
+import android.animation.ValueAnimator
 import android.content.Context
+import android.graphics.Canvas
 import android.graphics.Color as AColor
+import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Handler
@@ -11,6 +14,8 @@ import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.DecelerateInterpolator
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -40,6 +45,7 @@ class GuardOverlay(
     private var countdownView: TextView? = null
     private var primary: TextView? = null
     private var secondary: TextView? = null
+    private var pulse: PulseRingView? = null
 
     private var exitCb: () -> Unit = {}
     private var falsePositiveCb: () -> Unit = {}
@@ -85,6 +91,19 @@ class GuardOverlay(
         val root = host ?: createHost() ?: return
         render(root, verdict)
         isShowing = true
+
+        // Yumshoq paydo bo'lish — to'satdan "sakrash" emas.
+        root.alpha = 0f
+        root.scaleX = 0.985f
+        root.scaleY = 0.985f
+        root.animate()
+            .alpha(1f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(260L)
+            .setInterpolator(DecelerateInterpolator())
+            .start()
+
         handler.removeCallbacks(tick)
         enableButtons(false)
         countdownView?.text = "Nafas oling · $remaining"
@@ -93,6 +112,7 @@ class GuardOverlay(
 
     fun hide() {
         handler.removeCallbacks(tick)
+        pulse?.let { it.animate().cancel(); it.alpha = 0f }
         val h = host ?: run {
             isShowing = false
             blockedPackage = null
@@ -108,6 +128,7 @@ class GuardOverlay(
         countdownView = null
         primary = null
         secondary = null
+        pulse = null
     }
 
     /* ==================== ko'rinish ==================== */
@@ -171,22 +192,32 @@ class GuardOverlay(
             )
         )
 
-        // 18+ nishoni
-        column.addView(
-            TextView(service).apply {
-                text = "18+"
-                textSize = 24f
-                typeface = Typeface.DEFAULT_BOLD
-                gravity = Gravity.CENTER
-                setTextColor(AColor.parseColor("#FFD9DF"))
-                background = GradientDrawable().apply {
-                    cornerRadius = dpf(26f)
-                    setColor(AColor.parseColor("#2EFF5A76"))
-                    setStroke(dp(1.5f), AColor.parseColor("#8CFF5A76"))
-                }
-            },
-            LinearLayout.LayoutParams(dp(88f), dp(88f))
-        )
+        // 18+ nishoni (atrofida "nafas oluvchi" halqa)
+        val badge = TextView(service).apply {
+            text = "18+"
+            textSize = 24f
+            typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+            setTextColor(AColor.parseColor("#FFD9DF"))
+            background = GradientDrawable().apply {
+                cornerRadius = dpf(26f)
+                setColor(AColor.parseColor("#2EFF5A76"))
+                setStroke(dp(1.5f), AColor.parseColor("#8CFF5A76"))
+            }
+        }
+        val ring = PulseRingView(service)
+        pulse = ring
+        val badgeWrap = FrameLayout(service).apply {
+            addView(
+                ring,
+                FrameLayout.LayoutParams(dp(128f), dp(128f)).apply { gravity = Gravity.CENTER }
+            )
+            addView(
+                badge,
+                FrameLayout.LayoutParams(dp(88f), dp(88f)).apply { gravity = Gravity.CENTER }
+            )
+        }
+        column.addView(badgeWrap, LinearLayout.LayoutParams(dp(150f), dp(150f)))
 
         if (selfTest) {
             column.addView(space(12f))
@@ -271,26 +302,30 @@ class GuardOverlay(
         }
         column.addView(primary, LinearLayout.LayoutParams(dp(300f), dp(50f)))
 
-        column.addView(space(8f))
-        secondary = TextView(service).apply {
-            text = "Bu xato — davom etish"
-            textSize = 11.5f
-            typeface = Typeface.DEFAULT_BOLD
-            gravity = Gravity.CENTER
-            setTextColor(AColor.parseColor("#73FFFFFF"))
-            setPadding(dp(14f), dp(9f), dp(14f), dp(9f))
-            isClickable = true
-            setOnClickListener {
-                if (remaining > 0) return@setOnClickListener
-                val cb = falsePositiveCb
-                hide()
-                cb()
+        if (!selfTest) {
+            column.addView(space(8f))
+            secondary = TextView(service).apply {
+                text = "Bu xato — davom etish"
+                textSize = 11.5f
+                typeface = Typeface.DEFAULT_BOLD
+                gravity = Gravity.CENTER
+                setTextColor(AColor.parseColor("#73FFFFFF"))
+                setPadding(dp(14f), dp(9f), dp(14f), dp(9f))
+                isClickable = true
+                setOnClickListener {
+                    if (remaining > 0) return@setOnClickListener
+                    val cb = falsePositiveCb
+                    hide()
+                    cb()
+                }
             }
+            column.addView(secondary)
+        } else {
+            secondary = null
         }
-        column.addView(secondary)
 
         column.addView(space(10f))
-        column.addView(label("Opal · 18+ himoyasi", 10f, "#40FFFFFF"))
+        column.addView(label("Lumirra · 18+ himoyasi", 10f, "#40FFFFFF"))
     }
 
     private fun enableButtons(enabled: Boolean) {
@@ -342,5 +377,46 @@ class GuardOverlay(
             "☀️   Telefonni qo'ying, 10 soniya turing, suv iching.",
             "🎯   Diqqat — eng qimmat resursingiz. Uni behuda sarflamang."
         )
+    }
+}
+
+/**
+ * 18+ nishoni atrofidagi sekin "nafas oluvchi" halqa.
+ * Og'ir animatsiya emas (faqat alpha + scale) — qurilma qotmaydi.
+ */
+private class PulseRingView(context: Context) : View(context) {
+
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 1.6f * context.resources.displayMetrics.density
+        color = AColor.parseColor("#FF5A76")
+    }
+
+    private val animator = ValueAnimator.ofFloat(0f, 1f).apply {
+        duration = 2_600L
+        repeatCount = ValueAnimator.INFINITE
+        repeatMode = ValueAnimator.REVERSE
+        interpolator = AccelerateDecelerateInterpolator()
+        addUpdateListener { anim ->
+            val v = anim.animatedValue as Float
+            alpha = 0.46f - 0.30f * v
+            val s = 0.86f + 0.14f * v
+            scaleX = s
+            scaleY = s
+        }
+    }
+
+    init {
+        animator.start()
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        val r = minOf(width, height) / 2f - paint.strokeWidth * 2f
+        canvas.drawCircle(width / 2f, height / 2f, r, paint)
+    }
+
+    override fun onDetachedFromWindow() {
+        animator.cancel()
+        super.onDetachedFromWindow()
     }
 }

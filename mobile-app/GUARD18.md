@@ -1,6 +1,6 @@
 # 18+ himoyasi (Adult Content Guard)
 
-Opal'ning yangi yuqori o'rve funksiyasi: **ekranda 18+ kontent paydo bo'lsa, ekran darhol
+Lumirra'ning yangi yuqori o'rve funksiyasi: **ekranda 18+ kontent paydo bo'lsa, ekran darhol
 to'siladi** va foydalanuvchini o'zini tiyishga undovchi xabarlar ko'rsatiladi.
 
 > Faqat Android. iOS'da boshqa ilova ekranini o'qish uchun API yo'q
@@ -82,13 +82,13 @@ GuardOverlay — to'liq ekranli to'siq + "nafas olish" hisoblagichi
    "secure" oynalar) — ularda aniqlash ishlamaydi.
 3. 100% emas: noto'g'ri aniqlash bo'lishi mumkin. Shuning uchun "Bu xato" tugmasi va
    sezgirlik sozlamasi bor.
-4. **Xizmat yoqilgan bo'lishi shart**: Sozlamalar → Maxsus imkoniyatlar → Opal himoyasi.
+4. **Xizmat yoqilgan bo'lishi shart**: Sozlamalar → Maxsus imkoniyatlar → Lumirra himoyasi.
    MIUI/HyperOS'da qo'shimcha: avtostart + batareya cheklovi o'chirilgan bo'lsin.
 
 ## Sinash
 
 1. `Ilovalar` → `18+ himoyasi` → **yoqilgan** bo'lsin.
-2. `Sozlamalar → Maxsus imkoniyatlar → Opal himoyasi` yoqilgan bo'lsin.
+2. `Sozlamalar → Maxsus imkoniyatlar → Lumirra himoyasi` yoqilgan bo'lsin.
 3. **"Sinash"** tugmasi — overlay, hisoblagich va tugmalarni tekshiradi.
 4. Haqiqiy aniqlash: brauzerda matnida `porn` / `18+` / domenda `*.xxx` bo'lgan sahifani
    oching (masalan, o'zingiz yaratgan lokal test HTML). ~1 soniya ichida to'siq chiqadi.
@@ -108,7 +108,7 @@ sezgirlik, ilova nomi, takrorlanish, bo'sh kirish.
 Accessibility event turlari o'zgargan (`typeWindowContentChanged` qo'shildi). Ilovani
 yangilagandan so'ng, agar aniqlash ishlamasa:
 
-1. `Sozlamalar → Maxsus imkoniyatlar → Opal himoyasi` ni **o'chirib, qayta yoqing**
+1. `Sozlamalar → Maxsus imkoniyatlar → Lumirra himoyasi` ni **o'chirib, qayta yoqing**
    (yoki telefonni qayta ishga tushiring) — Android xizmat konfiguratsiyasini qayta o'qiydi.
 2. MIUI/HyperOS: `Avtostart` yoqilgan, batareya tejash cheklovi o'chirilgan bo'lsin.
 3. `Ilovalar → 18+ himoyasi → Sinash` bilan overlay ishlashini tekshiring.

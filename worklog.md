@@ -1,6 +1,27 @@
 # Worklog
 
 ---
+Task ID: 8
+Agent: pi (brand / Android / security)
+Task: Yangi nom + professional logo + UI sayqallash + APK "yuqori risk" bayrog'ini pasaytirish
+
+Work Log:
+- NOM: **Lumirra** tanlandi (lumen + mirra). Tekshiruv: Play'da shu nomdagi ilova yo'q, `lumirra.com` bo'sh, faqat 5 ta GitHub repo'da uchraydi. `applicationId` → `com.lumirra.app`, version 1.1.0 (code 2), iOS bundle id ham yangilandi
+- LOGO: `mobile-app/branding/` — qalqon + to'rt qirrali yulduzcha, mint→cyan→periwinkle gradient, midnight fon. `@resvg/resvg-js` bilan render: 5 mipmap, adaptive (background/foreground/monochrome), iOS 1024 (alpha'siz), store 512, ilova ichidagi shaffof mark. Preview'lar va `branding/README.md`
+- UI: header wordmark yangi logo + "Lumirra"; onboarding header yangi belgi; OpalSwitch spring animatsiya (thumb + track); 18+ kartasi `animateContentSize`; GuardOverlay paydo bo'lishi fade+scale, 18+ nishoni atrofida "nafas oluvchi" halqa (ValueAnimator), sinov rejimida ortiqcha "Bu xato" tugmasi yashirildi
+- RISK: manifestdan `QUERY_ALL_PACKAGES`, `WRITE_SECURE_SETTINGS`, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` olib tashlandi; `usesCleartextTraffic=false`, `allowBackup=false`, BootReceiver `exported=false`. WRITE_SECURE_SETTINGS bilan o'z-o'zini tiklash no-op qilindi (xizmat o'chsa Watchdog ishlaydi). Release keystore `~/.lumirra/lumirra-release.jks` (CN=Lumirra), `keystore.properties` gitignore'da, R8 + shrinkResources + proguard qoidalari
+- NATIJA APK: 13.7 MB → **2.6 MB**, `debuggable=false`, 7 ta ruxsat, imzo `CN=Lumirra`, `package=com.lumirra.app`, label=Lumirra
+- QURILMADA TEST (Redmi Note 9 Pro, MIUI 14 / Android 12): release APK o'rnatildi (MIUI "USB orqali o'rnatish" dialogini tasdiqlash kerak); accessibility yoqildi; lokal test sahifa (pornhub.com + 18+) ochildi → **~1 soniyada guard overlay**, hit prefs'ga yozildi, "Chiqish" → HOME; "Sinash" overlay + breathing ring ishladi; logcat'da crash/ANR yo'q
+- MUAMMO: MIUI accessibility xizmatini bir necha daqiqadan keyin jimgina o'chirib qo'ydi (`Bound services:{}`) — qayta yoqish kerak; `docs`da yozildi. Install paytida overlay ochiq bo'lsa MIUI `INSTALL_FAILED_USER_RESTRICTED` beradi — overlay yopilishi shart
+- HUJJAT: `SECURITY.md` (risk izohi, olib tashlangan ruxsatlar, tekshirish buyruqlari), `branding/README.md`, README yangilandi, GUARD18 Lumirra'ga o'tkazildi
+
+Stage Summary:
+- Ilova endi **Lumirra** — yangi logo, adaptive/monochrome icon, izchil wordmark, silliq animatsiyalar
+- Release APK imzolangan, kichraytirilgan va minimal ruxsatli — skanerlardagi "debug/xavfli" bayroqlari keskin kamaydi
+- Halol cheklov: accessibility + overlay kombinatsiyasi ayrim skanerlarda baribir "potensial xavfli" bo'lib qoladi; sideload APK uchun Play Protect ogohlantirishi mumkin
+- Keyingi qadam: Play Store nashri uchun accessibility deklaratsiyasi; xohlasa debug imzo bilan emas, faqat release APK tarqatish
+
+---
 Task ID: 7
 Agent: pi (mobile / Android)
 Task: 18+ kontent himoyasi (ekran darajasida) — mavjud bloklash tizimini "yuqori o'rve"ga chiqarish

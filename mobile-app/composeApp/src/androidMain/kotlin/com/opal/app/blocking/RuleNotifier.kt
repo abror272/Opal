@@ -28,7 +28,7 @@ class RuleNotifier(private val context: Context) {
             if (mgr.getNotificationChannel(id) == null) {
                 val ch = NotificationChannel(
                     id,
-                    "Opal qoidalari",
+                    "Lumirra qoidalari",
                     NotificationManager.IMPORTANCE_DEFAULT
                 ).apply { description = "Qoida boshlanishi va tugashi haqida xabar" }
                 mgr.createNotificationChannel(ch)

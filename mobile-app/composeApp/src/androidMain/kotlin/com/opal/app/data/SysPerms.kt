@@ -16,7 +16,6 @@ import android.provider.Settings
 
 private const val OPAL_A11Y_COMPONENT =
     "com.opal.app/com.opal.app.blocking.OpalAccessibilityService"
-
 /** "Boshqa ilovalar ustida ko'rsatish" (SYSTEM_ALERT_WINDOW). */
 actual fun canDrawOverlays(): Boolean = try {
     Settings.canDrawOverlays(opalContext())
@@ -80,41 +79,13 @@ actual fun openUsageAccessSettings() {
 }
 
 /**
- * WRITE_SECURE_SETTINGS — bir marta `adb shell pm grant` bilan beriladi.
- * Bo'lsa, Opal o'z accessibility xizmatini O'ZI qayta yoqadi (MIUI o'chirsa ham).
+ * WRITE_SECURE_SETTINGS ATAYLAB ISHLATILMAYDI — bu ruxsat xavfsizlik skanerlarida
+ * yuqori risk deb belgilanadi. Shuning uchun o'z-o'zini tiklash o'chirilgan:
+ * xizmat o'chsa WatchdogService ikkinchi dvigatel sifatida ishlaydi.
  */
-actual fun canWriteSecureSettings(): Boolean = try {
-    opalContext().checkPermission(
-        android.Manifest.permission.WRITE_SECURE_SETTINGS,
-        Process.myPid(),
-        Process.myUid()
-    ) == PackageManager.PERMISSION_GRANTED
-} catch (_: Throwable) {
-    false
-}
+actual fun canWriteSecureSettings(): Boolean = false
 
-/** Accessibility xizmatini majburiy qayta ulash (toggle) — MIUI "enabled but dead" holati uchun. */
-actual fun forceRebindAccessibility(): Boolean {
-    if (!canWriteSecureSettings()) return false
-    val ctx = opalContext()
-    return try {
-        val cr = ctx.contentResolver
-        val cur = Settings.Secure.getString(cr, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: ""
-        val set = cur.split(':').filter { it.isNotBlank() }.toMutableSet()
-        set.add(OPAL_A11Y_COMPONENT)
-        val joined = set.joinToString(":")
-
-        // O'chirib-yoqish binding'ni majburiy yangilaydi.
-        Settings.Secure.putString(cr, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, "")
-        Settings.Secure.putString(cr, Settings.Secure.ACCESSIBILITY_ENABLED, "0")
-        android.os.SystemClock.sleep(220)
-        Settings.Secure.putString(cr, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, joined)
-        Settings.Secure.putString(cr, Settings.Secure.ACCESSIBILITY_ENABLED, "1")
-        true
-    } catch (_: Throwable) {
-        false
-    }
-}
+actual fun forceRebindAccessibility(): Boolean = false
 
 /** Xizmat haqiqatan tizimga ulanganmi (heartbeat'dan qat'i nazar). */
 fun isAccessibilityBound(): Boolean = AccessibilityBridge.isBound()

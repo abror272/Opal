@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.10546875"
+        android:scaleY="0.10546875">
+        <!-- evenOdd: qalqon ichidagi yulduzcha o'yib tashlanadi -->
+        <path
+            android:pathData="M512,292 C588,330 664,352 700,360 L700,552 C700,668 604,744 512,782 C420,744 324,668 324,552 L324,360 C360,352 436,330 512,292 Z M512,424 C522,496 544,518 616,528 C544,538 522,560 512,632 C502,560 480,538 408,528 C480,518 502,496 512,424 Z"
+            android:fillColor="#FFFFFFFF"
+            android:fillType="evenOdd" />
+    </group>
+</vector>
