@@ -80,7 +80,7 @@ $ANDROID_HOME/build-tools/35.0.0/aapt2 dump xmltree \
 - Matn skaneri: 800 node / 8000 belgi / 24 ms / 28 depth — Telegram va uzun sahifalar uchun.
 - `PanohVision` logiga `lum=...` qo'shildi: qora/himoyalangan skrin (masalan, Telegram
   secret chat) bo'lsa ko'rinadi; bunday oynani hech qanday skrinshot-asosli ilova o'qiy olmaydi.
-- Telefon USB'dan uzilgani uchun 1.3.3 qurilmaga o'rnatilmadi; APK tayyor.
+- 1.3.3 qurilmaga o'rnatildi (16:49). Bo'sh sahifadagi `/porn/video` manzili ham ~1s da bloklandi (SITE).
 
 ## 1.3.2 — kech bloklar tuzatildi
 

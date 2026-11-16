@@ -1,6 +1,24 @@
 # Worklog
 
 ---
+Task ID: 14
+Agent: pi (install / device QA)
+Task: 1.3.3'ni telefonga o'rnatish va real vaqtda tekshirish
+
+Work Log:
+- O'RNATISH: Redmi Note 9 Pro (fa662cbe) qayta ulandi; `Panoh-1.3.3.apk` (code 7) `pm install -r` bilan o'rnatildi; accessibility `Panoh himoyasi` qayta yoqildi va `Bound services`da.
+- URL YO'LI TESTI: lokal serverda sahifa matni faqat "hello", manzil `http://127.0.0.1:8099/porn/video` → **~1s da GuardOverlay**, logda `verdict=SITE sig=[porn]`; avvalgi versiyada bu holat umuman bloklanmasdi.
+- MATN SKANERI: Telegramda `text=459` (avval 42) — 800 node/28 depth haqiqatan ko'proq matn o'qiydi.
+- YORQINLIK: `lum=62` (Telegram), `lum=26` (Chrome) — qora/himoyalangan skrin emas; vizual ball pastligi modelning o'ziga xosligi.
+- POL: HIGH (foydalanuvchi tanlovi) `threshold=0.55`, saqlangan.
+- KECH BLOK YO'Q: blokdan chiqib Google'ga o'tildi, 8s kuzatuvda overlay yo'q; `verdict=NONE`.
+- APK SHA-256 `23510edc6cecfa5e7efae1444f420a3ffaf6fb38309fe69796197da778ab08ac`.
+- TOZALASH: lokal server/reverse/APK tozalandi; Chrome google.com; accessibility yoqilgan holda qoldirildi.
+
+Stage Summary:
+- 1.3.3 o'rnatildi; URL yo'li va matn aniq ishlaydi. Vizual model uchun foydalanuvchi kontenti balli kerak — logdan o'qib sozlanadi.
+
+---
 Task ID: 13
 Agent: pi (detection tuning)
 Task: "Umuman reaksiya yo'q" — xizmat tirikligi va kontent aniqlanmasligini tekshirish
