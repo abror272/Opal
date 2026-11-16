@@ -70,6 +70,18 @@ $ANDROID_HOME/build-tools/35.0.0/aapt2 dump xmltree \
 - Saqlanadigan yagona ma'lumot: bloklar soni, qoidalar, vaqtinchalik istisnolar.
 - `allowBackup=false` — zaxira nusxasida ham chiqmaydi.
 
+## 1.3.3 — sezgirlik oshirildi
+
+- Vizual pol: Past 0.82 / **O'rta 0.65** / Yuqori 0.55 (avval 0.96/0.91/0.85).
+  Maqsad — real rasm/videoni qamrash; bikini kabi chegara rasmlar baribir past ball oladi.
+- **URL yo'l/query kalitlari**: `/porn/`, `/sex/`, `/nude/`, `/adult/`, `/hentai/`,
+  `/onlyfans/` va h.k. — sahifa matni ko'rinmasa ham manzil satridan darhol blok.
+  Ta'lim hostlari (wikipedia/wikimedia/.edu/.gov) va `sex education` kabi iboralar istisno.
+- Matn skaneri: 800 node / 8000 belgi / 24 ms / 28 depth — Telegram va uzun sahifalar uchun.
+- `PanohVision` logiga `lum=...` qo'shildi: qora/himoyalangan skrin (masalan, Telegram
+  secret chat) bo'lsa ko'rinadi; bunday oynani hech qanday skrinshot-asosli ilova o'qiy olmaydi.
+- Telefon USB'dan uzilgani uchun 1.3.3 qurilmaga o'rnatilmadi; APK tayyor.
+
 ## 1.3.2 — kech bloklar tuzatildi
 
 - Vizual "strike" tizimi noto'g'ri ishlardi: birinchi kadr polldan o'tsa strike

@@ -27,6 +27,7 @@ GuardOverlay — to'liq ekranli to'siq + "nafas olish" hisoblagichi
 | **O'rtacha + zaif** | `nude` + `sex` + `adult` | 1 o'rtacha + 2 zaif guruh |
 | **Zaif** | `sex`, `adult`, `intim` | faqat 3 xil guruh (HIGH) |
 | **Domén** | `pornhub.com`, `*.xxx` | faqat **manzil satridan** |
+| **URL kaliti** | `/porn/`, `/sex/`, `/nude/`, `/adult/` | manzil satrida bo'lsa — darhol |
 
 - `sex` / `18+` / `nude` **yolg'iz bloklanmaydi** — YouTube, musiqa, yangiliklar xavfsiz.
 - Ta'lim/tibbiyot/yangilik/musiqa konteksti (`sex education`, `same-sex`, `jinsiy tarbiya`,
@@ -44,7 +45,7 @@ GuardOverlay — to'liq ekranli to'siq + "nafas olish" hisoblagichi
   sabab bo'lgani uchun olib tashlandi.
 - **Sahifa generation:** yangi oyna/sahifada eski skrinshot natijasi bekor qilinadi
   (`gen == pageGeneration`) — boshqa sahifada kech blok bo'lmaydi.
-- Pol: Past 0.96 · **O'rta 0.91** · Yuqori 0.85.
+- Pol: Past 0.82 · **O'rta 0.65** · Yuqori 0.55 (real kontentni qamrash uchun).
 - Skanerlash: content-change'dan keyin 450ms debounce, 700ms throttle, faqat foreground.
 - Launcher, tizim UI, klaviatura, o'rnatuvchi — skanerlanmaydi.
 
@@ -92,6 +93,6 @@ cd mobile-app
 ```
 
 Qurilmada: rasm/video sahifasini oching → logcat'da `PanohVision: score=...`.
-`score ≥ 0.85` bir marta bo'lsa — to'siq chiqadi.
+`score ≥ 0.55` (Yuqori) bir marta bo'lsa — to'siq chiqadi.
 
 Model litsenziyasi: [THIRD_PARTY.md](THIRD_PARTY.md).

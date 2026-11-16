@@ -23,10 +23,10 @@ internal data class ScreenSnapshot(
  */
 internal object ScreenTextScanner {
 
-    private const val MAX_NODES = 300
-    private const val MAX_CHARS = 5_000
-    private const val BUDGET_MS = 12L
-    private const val MAX_DEPTH = 18
+    private const val MAX_NODES = 800
+    private const val MAX_CHARS = 8_000
+    private const val BUDGET_MS = 24L
+    private const val MAX_DEPTH = 28
 
     private val URL_RE = Regex("""^(https?://)?[a-z0-9.-]+\.[a-z]{2,24}(/\S*)?$""", RegexOption.IGNORE_CASE)
 

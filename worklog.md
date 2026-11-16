@@ -1,6 +1,22 @@
 # Worklog
 
 ---
+Task ID: 13
+Agent: pi (detection tuning)
+Task: "Umuman reaksiya yo'q" — xizmat tirikligi va kontent aniqlanmasligini tekshirish
+
+Work Log:
+- DIAGNOSTIKA (1.3.2, Redmi Note 9 Pro): accessibility `Bound services`da, `WatchdogService` foreground, appops overlay/usage allow; self-test broadcast overlay'ni ko'rsatdi (focus `com.panoh.app`); lokal "porn" matn sahifasi 16:28da bloklandi. Xizmat/overlay o'lik emas.
+- MUAMMO: foydalanuvchi kontenti aniqlanmayapti. Telegram skanlarida `text=42`, `score=0.000`; Wikimedia bikini skrini `score=0.106`; `threshold=0.85` (HIGH). Model real kontentni past baholayapti yoki skrin qora/himoyalangan.
+- TUZATISH (1.3.3): vizual pol 0.82/0.65/0.55; URL yo'l kalitlari (`/porn/`, `/sex/`...) — sahifa matnisiz ham blok; skaner 800 node/8000 belgi/24ms/28 depth; `PanohVision`ga `lum` logi.
+- TEST: 15 unit test PASS (URL `/porn/video` bo'sh sahifada blok; `sex-education` bloklanmaydi; eski 13 test).
+- QURILMA: 1.3.3 o'rnatish paytida telefon USB'dan uzildi (`adb devices` bo'sh) — o'rnatilmadi. APK `Panoh-1.3.3.apk` tayyor, SHA-256 `23510edc6cecfa5e7efae1444f420a3ffaf6fb38309fe69796197da778ab08ac`.
+- KEYINGI QADAM: telefonni qayta ulash yoki APK'ni qo'lda o'rnatish; foydalanuvchi 18+ sahifani ochganda `PanohVision`dagi `score/lum`ni o'qib, polni aniq sozlash. Agar `lum<10` bo'lsa — himoyalangan oyna, skrinshot yo'li ishlamaydi.
+
+Stage Summary:
+- Xizmat ishlaydi; muammo aniqlash sezgirligida. 1.3.3 sezgirlikni sezilarli oshirdi; qurilmaga o'rnatish uchun USB qayta ulanishi kerak.
+
+---
 Task ID: 12
 Agent: pi (real-time fix)
 Task: Kech bloklash (boshqa sahifada) va sezgirlik muammosini tuzatish

@@ -115,6 +115,18 @@ class AdultContentGuardTest {
     }
 
     @Test
+    fun urlPathTermBlocksEvenWithBlankPage() {
+        val v = eval(address = "http://127.0.0.1:8099/porn/video")
+        assertEquals(GuardKind.SITE, v.kind)
+        assertTrue(v.isBlocking)
+    }
+
+    @Test
+    fun safeUrlPhraseIsNotBlocked() {
+        assertFalse(eval(address = "https://example.com/sex-education").isBlocking)
+    }
+
+    @Test
     fun emptyInputIsSafe() {
         val verdict = eval()
         assertEquals(GuardKind.NONE, verdict.kind)

@@ -76,6 +76,23 @@ object AdultContentGuard {
         "pornografiya", "pornografik"
     )
 
+    /** Manzil satri (domén + yo'l/query) uchun qo'shimcha kalitlar. */
+    private val URL_TERMS: List<String> = listOf(
+        "porn", "porno", "pornography", "xxx", "xrated", "hentai",
+        "nude", "nudes", "nudity", "naked", "sex", "seks", "adult",
+        "erotic", "erotika", "onlyfans", "fansly", "camgirl", "camsex",
+        "webcamsex", "nsfw", "bdsm", "fetish", "escort", "prostitut",
+        "milf", "anal", "boobs", "tits", "pussy", "dick", "cock",
+        "cum", "orgy", "incest", "18+", "порно", "секс", "эрот",
+        "интим", "хентай", "голая", "голые"
+    )
+
+    /** Ta'limiy/rasmiy doménlar — URL kalitlari bo'yicha bloklanmaydi. */
+    private val SAFE_URL_HOSTS: List<String> = listOf(
+        "wikipedia.org", "wikimedia.org", "britannica.com",
+        "khanacademy.org", ".edu/", ".gov/"
+    )
+
     /**
      * Platforma/brand nomlari. Bular sahifa MATNIDA yolg'iz uchrasa bloklanmaydi
      * (izohdagi havola, yangilik maqolasi), lekin manzil satri yoki ilova nomida
@@ -152,8 +169,9 @@ object AdultContentGuard {
     /** Xavfsiz iboralar — tahlildan oldin neytrallanadi. */
     private val SAFE_PHRASES = listOf(
         Regex("(?i)same[\\s-]*sex"),
-        Regex("(?i)sex\\s*education"),
-        Regex("(?i)sexual\\s*education"),
+        Regex("(?i)sex[\\s_-]*education"),
+        Regex("(?i)sexual[\\s_-]*education"),
+        Regex("(?i)sex[\\s_-]*health"),
         Regex("(?i)sexual\\s*health"),
         Regex("(?i)sexual\\s*harassment"),
         Regex("(?i)sex\\s*ism"),
@@ -188,6 +206,10 @@ object AdultContentGuard {
         ".xxx", ".porn", ".sex", ".adult", ".sexy"
     )
 
+    private val URL_TERM_RES: List<Regex> = URL_TERMS.map { term ->
+        Regex("(?i)(^|[^a-z0-9])" + Regex.escape(term) + "([^a-z0-9]|$)")
+    }
+
     private val DOMAIN_RE =
         Regex("""(?i)\b((?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:[a-z]{2,24}))\b""")
 
@@ -219,6 +241,13 @@ object AdultContentGuard {
         val host = findAdultHost(input.addressBarText)
         if (host != null) {
             return GuardVerdict(GuardKind.SITE, listOf(host), host)
+        }
+
+        // 1b) Manzil satridagi 18+ kalit so'z (yo'l/query) — sahifa matni
+        // ko'rinmasa ham darhol bloklaydi (masalan, /porn/video).
+        val urlHits = urlTermHits(input.addressBarText)
+        if (urlHits.isNotEmpty()) {
+            return GuardVerdict(GuardKind.SITE, urlHits)
         }
 
         // 2) Ilova nomi — kuchli atama yoki brand.
@@ -257,6 +286,20 @@ object AdultContentGuard {
         )
     }
 
+    private fun urlTermHits(addressBar: String): List<String> {
+        if (addressBar.isBlank()) return emptyList()
+        val url = addressBar.lowercase()
+        if (SAFE_PHRASES.any { it.containsMatchIn(url) }) return emptyList()
+        if (SAFE_URL_HOSTS.any { url.contains(it) }) return emptyList()
+        val hits = ArrayList<String>(2)
+        for (re in URL_TERM_RES) {
+            val m = re.find(url) ?: continue
+            hits += m.value.trim(' ', '/', '.', '-', '_', '?', '&', '=', ':')
+            if (hits.size >= 3) break
+        }
+        return hits.distinct()
+    }
+
     /** Ilova nomi bo'yicha (Watchdog zaxira dvigateli uchun). */
     fun evaluateLabel(appLabel: String): GuardVerdict {
         if (appLabel.isBlank()) return GuardVerdict()
@@ -284,9 +327,9 @@ object AdultContentGuard {
 
     /** Vizual model uchun pol (qanchalik yuqori bo'lsa, shunchalik qat'iy). */
     fun visualThreshold(sensitivity: GuardSensitivity): Float = when (sensitivity) {
-        GuardSensitivity.LOW -> 0.96f
-        GuardSensitivity.MEDIUM -> 0.91f
-        GuardSensitivity.HIGH -> 0.85f
+        GuardSensitivity.LOW -> 0.82f
+        GuardSensitivity.MEDIUM -> 0.65f
+        GuardSensitivity.HIGH -> 0.55f
     }
 
     private fun isAdultDomain(host: String): Boolean {

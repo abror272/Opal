@@ -446,10 +446,26 @@ class OpalAccessibilityService : AccessibilityService() {
                     val threshold = AdultContentGuard.visualThreshold(sensitivity)
                     val model = classifier ?: NsfwClassifier(this).also { classifier = it }
                     val score = runCatching { model.score(bitmap) }.getOrDefault(0f)
+                    val luma = runCatching {
+                        var sum = 0L
+                        var count = 0
+                        var yy = 0
+                        while (yy < bitmap.height) {
+                            var xx = 0
+                            while (xx < bitmap.width) {
+                                val c = bitmap.getPixel(xx, yy)
+                                sum += ((c shr 16 and 0xFF) + (c shr 8 and 0xFF) + (c and 0xFF)) / 3
+                                count++
+                                xx += 32
+                            }
+                            yy += 32
+                        }
+                        if (count > 0) (sum / count).toInt() else -1
+                    }.getOrDefault(-1)
                     android.util.Log.d(
                         "PanohVision",
                         "score=${String.format("%.3f", score)} threshold=$threshold " +
-                            "gen=$gen/$pageGeneration pkg=$pkg"
+                            "lum=$luma gen=$gen/$pageGeneration pkg=$pkg"
                     )
                     // Bir kadr — darhol qaror. Avvalgi "strike" tizimi sahifa
                     // almashganda eski ballni olib o'tib, kech bloklarga sabab bo'lardi.
