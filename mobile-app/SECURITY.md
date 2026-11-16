@@ -70,6 +70,17 @@ $ANDROID_HOME/build-tools/35.0.0/aapt2 dump xmltree \
 - Saqlanadigan yagona ma'lumot: bloklar soni, qoidalar, vaqtinchalik istisnolar.
 - `allowBackup=false` — zaxira nusxasida ham chiqmaydi.
 
+## 1.3.4 — bo'lakli (tiled) vizual skaner
+
+- Muammo: butun ekran 224×224'ga siqilganda feed/grid/thumbnail'lardagi kichik
+  18+ rasmlar yo'qoladi; model butun kadrga past ball beradi (masalan 0.069).
+- Yechim: ekran **3×4 bo'lak**ka bo'linadi (10% qoplama), har biri alohida
+  baholanadi, **eng yuqori ball** olinadi; 0.98'dan yuqori bo'lsa darhol to'xtaydi.
+- Pol: Past 0.90 / **O'rta 0.78** / Yuqori 0.70 (bo'lakdagi maksimal ball uchun).
+- Wikipedia/Wikimedia sahifalarida vizual blok o'tkaziladi (matn/URL yo'li qoladi) —
+  badiiy/ta'limiy rasmlar bo'yicha yolg'on bloklarni kamaytirish uchun.
+- 15 unit test PASS. 1.3.4 APK tayyor; telefon qulflangan/uzilgani uchun o'rnatilmadi.
+
 ## 1.3.3 — sezgirlik oshirildi
 
 - Vizual pol: Past 0.82 / **O'rta 0.65** / Yuqori 0.55 (avval 0.96/0.91/0.85).

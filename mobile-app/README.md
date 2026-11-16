@@ -30,7 +30,7 @@ API band bo'lmasa — ilova offline demo ma'lumotlari bilan to'liq ishlaydi.
 
 - **Nom:** Panoh (*lumen* + *mirra*) — logo, palitra va render yo'riqnomasi: [branding/README.md](branding/README.md)
 - **Risk bayroqlari:** qaysi ruxsatlar olib tashlangan, release imzo, R8 va tekshirish buyruqlari: [SECURITY.md](SECURITY.md)
-- **Ilova ID:** `com.panoh.app` · **versiya:** 1.3.3 (code 7)
+- **Ilova ID:** `com.panoh.app` · **versiya:** 1.3.4 (code 8)
 
 ## 📁 Struktura
 

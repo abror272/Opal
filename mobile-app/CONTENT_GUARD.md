@@ -40,9 +40,11 @@ GuardOverlay — to'liq ekranli to'siq + "nafas olish" hisoblagichi
 
 - **Model:** Yahoo **open_nsfw** (BSD-2-Clause), TFLite 5.7 MB, 224×224, BGR, mean `[104,117,123]`.
 - Faqat qurilmada ishlaydi; rasm xotirada tahlil qilinadi va darhol bo'shatiladi.
-- **Bir kadr — darhol qaror:** ball ≥ pol bo'lsa, shu zahoti to'siq chiqadi.
-  Avvalgi "strike"/2-kadr tizimi sahifalar orasida ball ko'chirib, kech bloklarga
-  sabab bo'lgani uchun olib tashlandi.
+- **Bo'lakli skaner:** ekran 3×4 bo'lakka bo'linadi (10% qoplama), har biri
+  224×224 da baholanadi, **eng yuqori ball** olinadi — feed/grid/thumbnail2019lardagi
+  kichik rasmlar butun ekran siqilganda yo'qolmaydi.
+- **Bir kadr — darhol qaror:** ball ≥ pol bo'lsa, shu zahoti to'siq chiqadi;
+  sahifa generation eski natijani bekor qiladi.
 - **Sahifa generation:** yangi oyna/sahifada eski skrinshot natijasi bekor qilinadi
   (`gen == pageGeneration`) — boshqa sahifada kech blok bo'lmaydi.
 - Pol: Past 0.82 · **O'rta 0.65** · Yuqori 0.55 (real kontentni qamrash uchun).
@@ -93,6 +95,6 @@ cd mobile-app
 ```
 
 Qurilmada: rasm/video sahifasini oching → logcat'da `PanohVision: score=...`.
-`score ≥ 0.55` (Yuqori) bir marta bo'lsa — to'siq chiqadi.
+`score ≥ 0.70` (Yuqori) bir marta bo'lsa — to'siq chiqadi.
 
 Model litsenziyasi: [THIRD_PARTY.md](THIRD_PARTY.md).

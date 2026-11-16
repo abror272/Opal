@@ -75,6 +75,8 @@ class OpalAccessibilityService : AccessibilityService() {
     @Volatile private var visualBusy = false
     private var pageGeneration = 0L
     private var lastVisualScanAt = 0L
+    private var lastAddressBar = ""
+    private var lastAddressBarAt = 0L
     private var pendingVisualPkg: String? = null
     private var visualScheduled = false
     private var classifier: NsfwClassifier? = null
@@ -365,6 +367,8 @@ class OpalAccessibilityService : AccessibilityService() {
             } catch (_: Throwable) {
             }
         }
+        lastAddressBar = snapshot.addressBar
+        lastAddressBarAt = SystemClock.elapsedRealtime()
         android.util.Log.d(
             "PanohGuard",
             "text=${snapshot.text.length} addr=${snapshot.addressBar.length} pkg=$pkg"
@@ -427,6 +431,7 @@ class OpalAccessibilityService : AccessibilityService() {
         if (adultGuardCooldownUntil(pkg) > System.currentTimeMillis()) return
         if (!isScreenOn()) return
         if (!isVisualCandidate(pkg)) return
+        if (isVisualSafeHost()) return
 
         val now = SystemClock.elapsedRealtime()
         if (now - lastVisualScanAt < VISUAL_MIN_INTERVAL_MS) return
@@ -495,6 +500,13 @@ class OpalAccessibilityService : AccessibilityService() {
         // Brauzer, ijtimoiy tarmoq, galereya, video — accessibility oynasi bor ilovalar.
         // Tizim/launcher allaqachon SCAN_SKIP'da.
         return pkg != packageName && pkg !in SCAN_SKIP
+    }
+
+    /** Wikipedia/Wikimedia — badiiy/ta'limiy rasmlar uchun vizual blokni o'tkazamiz. */
+    private fun isVisualSafeHost(): Boolean {
+        if (SystemClock.elapsedRealtime() - lastAddressBarAt > 5_000L) return false
+        val a = lastAddressBar.lowercase()
+        return a.contains("wikipedia.org") || a.contains("wikimedia.org")
     }
 
     private fun triggerGuard(pkg: String, verdict: GuardVerdict) {

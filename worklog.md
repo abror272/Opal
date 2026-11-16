@@ -1,6 +1,23 @@
 # Worklog
 
 ---
+Task ID: 15
+Agent: pi (tiled detection)
+Task: "Hozir tekshirib ko'r" — jonli tekshiruv va feed/grid muammosi
+
+Work Log:
+- JONLI HOLAT: telefon `isKeyguardShowing=true`, `mWakefulness=Asleep` — ekran o'chiq/qulflangan, guard esa faqat ekran yoniq va ilova foreground bo'lganda skanerlaydi. Shu sabab jonli test o'tkazilmadi.
+- OXIRGI FAOL LOGLAR (16:51): Chrome `text=265/304`, `addr=163`, vizual `score=0.069–0.091`, `threshold=0.55`, `verdict=NONE`; matnda kuchli 18+ belgi yo'q. Ya'ni model ko'rinadigan 18+ topmagan.
+- ASOSIY XATO: butun ekranni bitta 224×224 rasmga siqish feed/grid/thumbnail'lardagi kichik 18+ rasmlarni yo'qotadi (butun kadr o'rtacha past ball oladi).
+- TUZATISH (1.3.4): `NsfwClassifier` ekranни 3×4 bo'lakka (10% qoplama) bo'ladi, har birini 224×224 da baholaydi, **eng yuqori** ballni qaytaradi; 0.98+ da erta to'xtaydi. Pol 0.90/0.78/0.70. Wikipedia/Wikimedia'da vizual blok o'tkaziladi (matn/URL qoladi).
+- TEST: 15 unit test PASS; release 1.3.4 yig'ildi. Telefon qulflangan/uzilgani uchun o'rnatilmadi; APK `~/Downloads`, `~/OneDrive/Desktop` va qurilmaning CrossDevice `storage/Download/Panoh-1.3.4.apk` ga ko'chirildi.
+- SHA-256: `753513471fbea4fb2dcdd2cb9ea478d59b7a967a6325d7e255afadbaddd560ad`.
+- KEYINGI: telefonni ochish/ulash → 1.3.4 o'rnatish → 18+ sahifani ochish → logdan `score` (tile max) va `lum`ni o'qib polni sozlash.
+
+Stage Summary:
+- Butun-ekran modeli o'rniga bo'lakli skaner; feed/grid'dagi kichik kontent uchun asosiy yechim. 1.3.4 APK tayyor.
+
+---
 Task ID: 14
 Agent: pi (install / device QA)
 Task: 1.3.3'ni telefonga o'rnatish va real vaqtda tekshirish

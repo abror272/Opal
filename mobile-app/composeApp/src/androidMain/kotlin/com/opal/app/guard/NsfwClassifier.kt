@@ -29,6 +29,7 @@ internal class NsfwClassifier(context: Context) : AutoCloseable {
     private val canvas = Canvas(scaled)
     private val paint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
     private val dst = Rect(0, 0, SIZE, SIZE)
+    private val src = Rect()
 
     init {
         val model = context.assets.openFd(MODEL).use { afd ->
@@ -47,9 +48,46 @@ internal class NsfwClassifier(context: Context) : AutoCloseable {
         input = ByteBuffer.allocateDirect(SIZE * SIZE * 3 * 4).order(ByteOrder.nativeOrder())
     }
 
-    /** @return 0f..1f — nomaqbul kontent ehtimoli. */
+    /**
+     * @return 0f..1f — nomaqbul kontent ehtimoli.
+     *
+     * Ekran 3×4 bo'laklarga bo'linadi: feed/grid/thumbnail'lardagi kichik
+     * 18+ rasmlar butun ekranni 224×224'ga siqganda yo'qolib qoladi.
+     * Har bir bo'lak alohida baholanadi va eng yuqori ball qaytariladi.
+     */
     fun score(bitmap: Bitmap): Float {
-        canvas.drawBitmap(bitmap, null, dst, paint)
+        val w = bitmap.width
+        val h = bitmap.height
+        if (w <= 0 || h <= 0) return 0f
+
+        val tileW = w / COLS
+        val tileH = h / ROWS
+        if (tileW < 16 || tileH < 16) {
+            src.set(0, 0, w, h)
+            return infer(bitmap)
+        }
+
+        val ox = (tileW * OVERLAP).toInt()
+        val oy = (tileH * OVERLAP).toInt()
+        var best = 0f
+        for (row in 0 until ROWS) {
+            for (col in 0 until COLS) {
+                val left = (col * tileW - ox).coerceAtLeast(0)
+                val top = (row * tileH - oy).coerceAtLeast(0)
+                val right = ((col + 1) * tileW + ox).coerceAtMost(w)
+                val bottom = ((row + 1) * tileH + oy).coerceAtMost(h)
+                if (right - left < 16 || bottom - top < 16) continue
+                src.set(left, top, right, bottom)
+                val s = infer(bitmap)
+                if (s > best) best = s
+                if (best >= 0.98f) return best
+            }
+        }
+        return best
+    }
+
+    private fun infer(bitmap: Bitmap): Float {
+        canvas.drawBitmap(bitmap, src, dst, paint)
         scaled.getPixels(pixels, 0, SIZE, 0, 0, SIZE, SIZE)
         input.rewind()
         var i = 0
@@ -74,5 +112,8 @@ internal class NsfwClassifier(context: Context) : AutoCloseable {
     companion object {
         private const val SIZE = 224
         private const val MODEL = "nsfw.tflite"
+        private const val COLS = 3
+        private const val ROWS = 4
+        private const val OVERLAP = 0.10f
     }
 }
