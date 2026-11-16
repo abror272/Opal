@@ -70,6 +70,18 @@ $ANDROID_HOME/build-tools/35.0.0/aapt2 dump xmltree \
 - Saqlanadigan yagona ma'lumot: bloklar soni, qoidalar, vaqtinchalik istisnolar.
 - `allowBackup=false` — zaxira nusxasida ham chiqmaydi.
 
+## 1.3.1 — sezgirlik saqlanishi tuzatildi
+
+- **Xato:** `setAdultGuardSensitivity` o'zini-o'zi chaqirib (recursion), pref
+  saqlanmasdi; har 1.5 s'da ishlaydigan `refreshBlockingService` esa UI'ni
+  yana "O'rta"ga qaytarardi. Endi top-level funksiya alias bilan chaqiriladi —
+  tanlov darhol saqlanadi va qayta ochilganda ham qoladi.
+- Tekshirildi: "Past" tanlandi → 3 s kutildi → ilova to'liq yopildi → qayta
+  ochildi: **Past saqlangan**. "Bugun: 1 ta blok" ham yozildi.
+- MIUI'da **Fonda avtomatik ishga tushirish** Panoh uchun yoqildi; accessibility
+  xizmati barqarorroq turadi. Xizmat baribir o'chsa — Sozlamalar → Qulaylik →
+  Panoh himoyasi'ni qayta yoqing.
+
 ## 1.3.0 — Panoh nomi
 
 - Brend **Panoh**'ga o'tkazildi: ilova ID `com.panoh.app`, imzo CN=Panoh,

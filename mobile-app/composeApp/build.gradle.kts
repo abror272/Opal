@@ -133,8 +133,8 @@ if (androidEnabled) {
             applicationId = "com.panoh.app"
             minSdk = libs.versions.minSdk.get().toInt()
             targetSdk = libs.versions.targetSdk.get().toInt()
-            versionCode = 4
-            versionName = "1.3.0"
+            versionCode = 5
+            versionName = "1.3.1"
             ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
         }
 

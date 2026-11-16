@@ -76,7 +76,9 @@ GuardOverlay — to'liq ekranli to'siq + "nafas olish" hisoblagichi
    ham 100% aniqlanmaydi; ba'zi badiiy rasmlar past ball oladi.
 2. Android 11+ talab qilinadi (screenshot API). Undan pastda faqat matn/URL.
 3. Accessibility o'chirilgan bo'lsa hech narsa ishlamaydi. MIUI xizmatni jimgina
-   o'chirib qo'yishi mumkin — Sozlamalar → Qulaylik → **Panoh himoyasi**ni qayta yoqing.
+   o'chirib qo'yishi mumkin. **Bir marta** MIUI Sozlamalar → Ilovalar → Panoh →
+   "Fonda avtomatik ishga tushirish"ni yoqing (bu telefonda yoqildi). Baribir
+   o'chsa — Sozlamalar → Qulaylik → **Panoh himoyasi**ni qayta yoqing.
 4. 100% aniqlik kafolatlanmaydi — shuning uchun "Bu xato" va sezgirlik sozlamasi bor.
 
 ## Sinash

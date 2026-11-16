@@ -1,6 +1,23 @@
 # Worklog
 
 ---
+Task ID: 11
+Agent: pi (bugfix / device QA)
+Task: Sezgirlik tanlanmasligi va "ishlamayapti" muammosini tuzatish
+
+Work Log:
+- SABAB 1: `OpalRepository.setAdultGuardSensitivity()` ichida `setAdultGuardSensitivity(value)` o'zini-o'zi chaqirardi (recursion) — pref saqlanmasdi. Ustiga `AppsScreen`dagi 1.5 s'lik `refreshBlockingService()` loop `adultGuardSens`ni prefs'dan qayta o'qib, UI'ni "O'rta"ga qaytarardi. Tuzatish: top-level funksiya `saveAdultGuardSensitivity` aliasi bilan chaqiriladi.
+- SABAB 2: Avvalgi release testida xizmat `Bound services:{}` bo'lib qolgan edi (Panoh'ni `am force-stop` qilgach MIUI qayta ulamagan). Shuning uchun matn yo'li ishlamagan. Debug build bilan tekshirildi: `verdict=TEXT sig=[porn, xxx]` va overlay chiqdi; release 1.3.1'da ham takrorlandi.
+- TEST: lokal `localhost:8099` sahifasi ("porn xxx nude...") → 1.5 s ichida GuardOverlay, portret 1080×2400, "Chiqish va orqaga qaytish" ishladi; "Bugun: 1 ta blok".
+- SEZGIRLIK: "Past" tanlandi → 3 s → force-stop → qayta ochish: **Past saqlangan** (avval har doim O'rta bo'lardi). "Past" tanlangan holat skrinshot bilan tasdiqlandi.
+- MIUI: `com.miui.securitycenter/...AutoStartManagementActivity` orqali Panoh uchun "Fonda avtomatik ishga tushirish" yoqildi (35 → 34 ta cheklangan ilova). Xizmat qayta yoqildi va `Bound services`da turibdi.
+- RELIZ: 1.3.1 (code 5), 14 MB, R8, CN=Panoh, 7 ruxsat. SHA-256 `307d0232610da934f961230287cfc84de2d5d7842ff5ba1868303c5ad6b5ac33`.
+- TOZALASH: debug APK o'chirildi, node server to'xtatildi, `adb reverse --remove-all`, `/data/local/tmp` tozalandi, Chrome `google.com` bilan tekshirildi.
+
+Stage Summary:
+- Sezgirlik endi tanlanadi va saqlanadi; guard matn/URL yo'lida ishlaydi; MIUI autostart yoqildi.
+
+---
 Task ID: 10
 Agent: pi (brand / portrait QA)
 Task: Nomni Panoh'ga o'tkazish + portret rejimda tekshirish

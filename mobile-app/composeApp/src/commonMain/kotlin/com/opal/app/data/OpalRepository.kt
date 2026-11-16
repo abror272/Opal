@@ -9,7 +9,7 @@ import com.opal.app.guard.setAdultGuardVisualEnabled
 import com.opal.app.guard.isAdultGuardEnabled
 import com.opal.app.guard.requestAdultGuardSelfTest
 import com.opal.app.guard.setAdultGuardEnabled
-import com.opal.app.guard.setAdultGuardSensitivity
+import com.opal.app.guard.setAdultGuardSensitivity as saveAdultGuardSensitivity
 import com.opal.app.network.createHttpClient
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -276,7 +276,7 @@ class OpalRepository(private val client: HttpClient = createHttpClient()) {
 
     fun setAdultGuardSensitivity(value: GuardSensitivity) {
         adultGuardSens.value = value
-        runCatching { setAdultGuardSensitivity(value) }
+        runCatching { saveAdultGuardSensitivity(value) }
     }
 
     fun setAdultGuardVisual(on: Boolean) {

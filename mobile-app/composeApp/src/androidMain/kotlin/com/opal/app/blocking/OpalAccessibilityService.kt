@@ -348,6 +348,7 @@ class OpalAccessibilityService : AccessibilityService() {
         } catch (_: Throwable) {
             null
         }
+        android.util.Log.d("PanohGuard", "root=${root != null} pkg=$pkg")
         val screenHeight = try {
             resources.displayMetrics.heightPixels
         } catch (_: Throwable) {
@@ -363,6 +364,10 @@ class OpalAccessibilityService : AccessibilityService() {
             } catch (_: Throwable) {
             }
         }
+        android.util.Log.d(
+            "PanohGuard",
+            "text=${snapshot.text.length} addr=${snapshot.addressBar.length} pkg=$pkg"
+        )
         if (snapshot.text.length < 3 && snapshot.addressBar.isBlank()) return
 
         val sensitivity = runCatching { adultGuardSensitivity() }.getOrDefault(
@@ -380,6 +385,10 @@ class OpalAccessibilityService : AccessibilityService() {
         } catch (_: Throwable) {
             GuardVerdict()
         }
+        android.util.Log.d(
+            "PanohGuard",
+            "verdict=${verdict.kind} sig=${verdict.signals} pkg=$pkg"
+        )
         if (!verdict.isBlocking) return
 
         triggerGuard(pkg, verdict)
